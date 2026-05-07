@@ -240,7 +240,7 @@ export function SubscriptionForm({ open, onOpenChange, editing }: Props) {
               </div>
               <div className="w-28">
                 <Label className="text-xs mb-1 block">สกุลเงิน</Label>
-                <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
+                <Select value={form.currency} onValueChange={(v) => v && setForm({ ...form, currency: v })}>
                   <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
