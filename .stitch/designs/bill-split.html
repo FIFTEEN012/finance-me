@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceMe - แบ่งบิล</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary": "#cdbff0",
+                        "surface-dim": "#141219",
+                        "secondary-container": "#4b4069",
+                        "tertiary": "#dbc839",
+                        "on-tertiary-fixed-variant": "#504700",
+                        "on-secondary-fixed-variant": "#4b4069",
+                        "inverse-primary": "#674bb5",
+                        "tertiary-fixed-dim": "#dbc839",
+                        "surface-container-high": "#2b2930",
+                        "on-tertiary": "#373100",
+                        "on-tertiary-container": "#3b3500",
+                        "surface-variant": "#36343b",
+                        "primary-fixed": "#e8ddff",
+                        "on-surface": "#e6e0ea",
+                        "primary-container": "#a78bfa",
+                        "on-tertiary-fixed": "#201c00",
+                        "background": "#141219",
+                        "surface": "#141219",
+                        "tertiary-container": "#af9e00",
+                        "on-primary-container": "#3c1989",
+                        "outline-variant": "#494552",
+                        "on-primary-fixed-variant": "#4f319c",
+                        "secondary-fixed-dim": "#cdbff0",
+                        "on-secondary-fixed": "#1f153b",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#e6e0ea",
+                        "surface-bright": "#3b383f",
+                        "primary": "#cebdff",
+                        "surface-tint": "#cebdff",
+                        "surface-container": "#211e25",
+                        "primary-fixed-dim": "#cebdff",
+                        "on-primary-fixed": "#21005e",
+                        "surface-container-lowest": "#0f0d14",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#cac4d4",
+                        "secondary-fixed": "#e8ddff",
+                        "outline": "#948e9d",
+                        "on-primary": "#381385",
+                        "inverse-surface": "#e6e0ea",
+                        "surface-container-low": "#1d1a21",
+                        "surface-container-highest": "#36343b",
+                        "on-secondary": "#342a51",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#322f37",
+                        "error-container": "#93000a",
+                        "tertiary-fixed": "#f8e454",
+                        "on-secondary-container": "#bbaede"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "2xl": "1.375rem"
+                    },
+                    spacing: {
+                        "container_padding": "24px",
+                        "unit": "4px",
+                        "grid_overlay_size": "48px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Inter"],
+                        "data-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-main": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" }],
+                        "data-lg": ["32px", { lineHeight: "1", letterSpacing: "-0.05em", fontWeight: "700" }],
+                        "label-caps": ["12px", { lineHeight: "1", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "display-lg": ["48px", { lineHeight: "1.1", letterSpacing: "-0.04em", fontWeight: "700" }],
+                        "body-main": ["16px", { lineHeight: "1.5", letterSpacing: "-0.01em", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #08051a; /* Custom background color as requested */
+            color: #e6e0ea; /* on-background */
+        }
+        /* Atmospheric Orbs */
+        .orb-top-left {
+            position: fixed;
+            top: -200px;
+            left: -200px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(167,139,250,0.15) 0%, rgba(8,5,26,0) 70%);
+            z-index: -2;
+            pointer-events: none;
+        }
+        .orb-bottom-right {
+            position: fixed;
+            bottom: -300px;
+            right: -200px;
+            width: 1000px;
+            height: 1000px;
+            background: radial-gradient(circle, rgba(103,75,181,0.15) 0%, rgba(8,5,26,0) 70%);
+            z-index: -2;
+            pointer-events: none;
+        }
+        /* The Grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.012) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background-color: rgba(20, 18, 25, 0.6); /* surface/60 */
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        /* Data Row Border */
+        .row-border {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .row-border:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- Atmospheric Backgrounds -->
+<div class="orb-top-left"></div>
+<div class="orb-bottom-right"></div>
+<div class="bg-grid"></div>
+<!-- SideNavBar (WEB) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-surface/60 backdrop-blur-[24px] border-r border-white/10 z-50 py-6">
+<div class="px-6 mb-8">
+<h1 class="font-display-lg text-display-lg text-primary tracking-tighter">FinanceMe</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-2 uppercase tracking-wider">Premium Account</p>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<!-- Inactive -->
+<a class="text-on-surface-variant flex items-center gap-3 p-3 mx-2 hover:text-on-surface hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-headline-md text-base font-medium">Dashboard</span>
+</a>
+<!-- Active: Bill Splitting -->
+<a class="bg-primary-container text-on-primary-container rounded-lg mx-2 flex items-center gap-3 p-3 transition-transform duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-headline-md text-base font-bold">Bill Splitting</span>
+</a>
+<!-- Inactive -->
+<a class="text-on-surface-variant flex items-center gap-3 p-3 mx-2 hover:text-on-surface hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-headline-md text-base font-medium">History</span>
+</a>
+<!-- Inactive -->
+<a class="text-on-surface-variant flex items-center gap-3 p-3 mx-2 hover:text-on-surface hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-headline-md text-base font-medium">Settings</span>
+</a>
+</div>
+<!-- User Profile Area -->
+<div class="mt-auto px-6 flex items-center gap-3 pt-6 border-t border-white/10 mx-4">
+<img alt="FinanceMe User profile avatar" class="w-10 h-10 rounded-full border border-white/10 object-cover" data-alt="A close-up portrait of a young woman with a neutral expression, dramatically lit with deep violet and blue neon hues against a dark background, embodying a sleek, futuristic cyberpunk aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmDxq3LVdlV3fOWkcFzfWPS3Dt0XQNiA4mo9i3VC23Mi6Bt8tRB7IxW_k1DB_KLdVrtjrVWUFvbp23umrAReySNTcze9XFeCh6nsVkfRhVBlHsRATsWBv_kI9Tmd0ygG53GtTdYEUMxPn8X4bNRcqHL0BiBI-QjTqCrGEflUJI2wr4-7jiAGgRKbbDl73WZqYV6jWFMVOY7rBcwoKUgLAmYsdJgZo8mrCEBQ5nWYuLPgmXKZu41YVdf_aa0s4GAF1jVWRCFs16VQA"/>
+<div>
+<p class="font-body-main text-body-main text-on-surface font-semibold">User Name</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">@username</p>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 relative min-h-screen">
+<!-- TopNavBar (MOBILE - Adjusted for Responsive Pivot) -->
+<header class="md:hidden flex justify-between items-center w-full px-container_padding h-20 z-40 bg-surface/60 backdrop-blur-[24px] border-b border-white/10 fixed top-0">
+<h1 class="font-display-lg text-2xl text-primary tracking-tighter">FinanceMe</h1>
+<div class="flex items-center gap-4 text-primary">
+<button class="hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- TopAppBar (WEB - Content Header) -->
+<header class="hidden md:flex justify-between items-center w-full px-container_padding h-20 z-40 border-b border-transparent">
+<!-- No title here as it's in the side nav, but we keep the actions -->
+<div class="flex-1"></div> <!-- Spacer -->
+<div class="flex items-center gap-4 text-primary">
+<button class="hover:bg-white/5 p-2 rounded-full transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-white/5 p-2 rounded-full transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="p-container_padding pt-24 md:pt-8 max-w-6xl mx-auto space-y-8">
+<!-- Page Title -->
+<div class="flex justify-between items-end">
+<h2 class="font-display-lg text-[40px] leading-tight text-on-surface tracking-tighter">แบ่งบิล</h2>
+</div>
+<!-- HERO STATS ROW -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="glass-panel rounded-[22px] p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline-md text-lg text-on-surface-variant font-medium">คนอื่นค้างฉัน</h3>
+<span class="material-symbols-outlined text-emerald-400 p-2 bg-emerald-500/10 rounded-full">arrow_upward</span>
+</div>
+<p class="font-data-lg text-[32px] text-emerald-400 tabular-nums">฿1,240</p>
+</div>
+<!-- Card 2 -->
+<div class="glass-panel rounded-[22px] p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline-md text-lg text-on-surface-variant font-medium">ฉันค้างคนอื่น</h3>
+<span class="material-symbols-outlined text-red-400 p-2 bg-red-500/10 rounded-full">arrow_downward</span>
+</div>
+<p class="font-data-lg text-[32px] text-red-400 tabular-nums">฿680</p>
+</div>
+<!-- Card 3 -->
+<div class="glass-panel rounded-[22px] p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline-md text-lg text-on-surface-variant font-medium">รอชำระ</h3>
+<span class="material-symbols-outlined text-amber-400 p-2 bg-amber-500/10 rounded-full">schedule</span>
+</div>
+<p class="font-data-lg text-[32px] text-amber-400 tabular-nums">3 <span class="text-xl font-headline-md text-amber-400/80">บิล</span></p>
+</div>
+</div>
+<!-- FILTER BAR & ACTION -->
+<div class="flex flex-col md:flex-row justify-between items-center gap-4 mt-10">
+<!-- Segmented Control -->
+<div class="flex bg-black/20 p-1 rounded-full border border-white/10 backdrop-blur-sm self-start w-full md:w-auto">
+<button class="px-6 py-2 rounded-full bg-surface-variant text-on-surface font-headline-md text-sm font-semibold transition-colors">ทั้งหมด</button>
+<button class="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-headline-md text-sm font-medium transition-colors">รอชำระ</button>
+<button class="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-headline-md text-sm font-medium transition-colors">เสร็จสิ้น</button>
+</div>
+<!-- Action Button -->
+<button class="w-full md:w-auto px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-headline-md text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary transition-colors duration-200 active:scale-95 shadow-[0_0_20px_rgba(167,139,250,0.3)]">
+<span class="material-symbols-outlined text-lg">add</span>
+                    แบ่งบิลใหม่
+                </button>
+</div>
+<!-- BILL CARDS -->
+<div class="space-y-6">
+<!-- Bill Card 1 (Pending) -->
+<div class="glass-panel rounded-2xl overflow-hidden">
+<!-- Card Header -->
+<div class="p-6 border-b border-white/10 bg-white/[0.02]">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-md text-xl text-on-surface mb-1">อาหารเย็น ร้าน XYZ</h4>
+<p class="font-body-main text-sm text-on-surface-variant">จ่ายโดย ฉัน</p>
+</div>
+<div class="text-right">
+<p class="font-data-lg text-2xl text-on-surface tabular-nums">฿1,200</p>
+</div>
+</div>
+</div>
+<!-- Participants List -->
+<div class="px-6 py-2">
+<!-- Me -->
+<div class="flex items-center justify-between py-4 row-border">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-md font-bold text-sm">
+                                    ฉ
+                                </div>
+<span class="font-body-main text-on-surface">ฉัน</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-main text-on-surface tabular-nums">฿400</span>
+<span class="font-label-caps text-[10px] px-2 py-1 bg-emerald-500/15 text-emerald-400 rounded-full uppercase">จ่ายแล้ว</span>
+</div>
+</div>
+<!-- Other 1 -->
+<div class="flex items-center justify-between py-4 row-border">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-headline-md font-bold text-sm border border-white/10">
+                                    พ
+                                </div>
+<span class="font-body-main text-on-surface">น้องแพรว</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-main text-on-surface tabular-nums">฿400</span>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+<!-- Other 2 -->
+<div class="flex items-center justify-between py-4 row-border">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-headline-md font-bold text-sm border border-white/10">
+                                    บ
+                                </div>
+<span class="font-body-main text-on-surface">พี่โบ</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-main text-on-surface tabular-nums">฿400</span>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bill Card 2 (Pending) -->
+<div class="glass-panel rounded-2xl overflow-hidden">
+<div class="p-6 border-b border-white/10 bg-white/[0.02]">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-md text-xl text-on-surface mb-1">ทริปเชียงใหม่</h4>
+<p class="font-body-main text-sm text-on-surface-variant">จ่ายโดย พี่โบ</p>
+</div>
+<div class="text-right">
+<p class="font-data-lg text-2xl text-on-surface tabular-nums">฿4,800</p>
+</div>
+</div>
+</div>
+<div class="px-6 py-2">
+<!-- Me (Owes money) -->
+<div class="flex items-center justify-between py-4 row-border">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-md font-bold text-sm">
+                                    ฉ
+                                </div>
+<span class="font-body-main text-on-surface">ฉัน</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-main text-red-400 tabular-nums font-semibold">฿1,200</span>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+<!-- Other (Settled) -->
+<div class="flex items-center justify-between py-4 row-border">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-headline-md font-bold text-sm border border-white/10">
+                                    ต
+                                </div>
+<span class="font-body-main text-on-surface">เต้</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-main text-on-surface-variant tabular-nums line-through">฿1,200</span>
+<span class="material-symbols-outlined text-emerald-400">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bill Card 3 (Settled) -->
+<div class="glass-panel rounded-2xl overflow-hidden border-emerald-500/20 bg-emerald-900/5">
+<div class="p-6 border-b border-emerald-500/10">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h4 class="font-headline-md text-xl text-on-surface">ปาร์ตี้วันเกิด</h4>
+<span class="font-label-caps text-[10px] px-2 py-1 bg-emerald-500/15 text-emerald-400 rounded-full uppercase border border-emerald-500/30">เสร็จสิ้น</span>
+</div>
+<p class="font-body-main text-sm text-on-surface-variant">จ่ายโดย ฉัน</p>
+</div>
+<div class="text-right">
+<p class="font-data-lg text-2xl text-on-surface-variant tabular-nums line-through">฿3,000</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State Prompt (Visual balance at bottom) -->
+<div class="py-12 text-center">
+<p class="font-body-main text-on-surface-variant text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base">receipt_long</span>
+                    เพิ่มบิลแรกของคุณเพื่อเริ่มต้นการหารค่าใช้จ่าย
+                </p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (MOBILE ONLY) -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface/80 backdrop-blur-[24px] border-t border-white/10 z-50 pb-safe">
+<div class="flex justify-around items-center h-16">
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">dashboard</span>
+</a>
+<!-- Active -->
+<a class="flex flex-col items-center justify-center w-full h-full text-primary font-bold" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<div class="w-1 h-1 bg-primary rounded-full absolute bottom-2"></div>
+</a>
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">history</span>
+</a>
+<!-- Inactive -->
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">settings</span>
+</a>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <!-- Wallet icon centered -->
+  <g transform="translate(112, 128)" fill="none" stroke="white" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Wallet body -->
+    <rect x="0" y="56" width="288" height="192" rx="24"/>
+    <!-- Wallet flap -->
+    <path d="M0 104 L48 56 Q72 20 120 20 L240 20 Q288 20 288 56 L288 104"/>
+    <!-- Coin slot -->
+    <circle cx="220" cy="152" r="28" stroke-width="20"/>
+  </g>
+</svg>

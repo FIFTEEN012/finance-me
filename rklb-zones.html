@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RKLB Price Zones Analysis</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; margin-bottom: 24px; font-size: 0.9rem; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .chart-wrapper { position: relative; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 32px 48px 32px 160px; margin-bottom: 24px; }
+  .price-scale { position: relative; height: 720px; }
+
+  .zone {
+    position: absolute; left: 0; right: 0;
+    border-radius: 6px;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    font-size: 0.85rem; font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .zone:hover { opacity: 0.9 !important; }
+
+  .zone-label {
+    position: absolute; right: calc(100% + 12px);
+    white-space: nowrap; font-size: 0.78rem; color: #8b949e;
+    text-align: right;
+  }
+  .zone .price-tag {
+    margin-left: auto;
+    font-family: 'Courier New', monospace; font-size: 0.9rem;
+  }
+
+  .line {
+    position: absolute; left: 0; right: 0;
+    height: 2px;
+    display: flex; align-items: center; padding: 0 16px;
+  }
+  .line .line-label {
+    position: absolute; right: calc(100% + 12px);
+    white-space: nowrap; font-size: 0.75rem; color: #8b949e;
+  }
+  .line .price-tag {
+    margin-left: auto; font-family: 'Courier New', monospace;
+    font-size: 0.82rem; font-weight: 600;
+    background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px;
+  }
+
+  .dashed { border-top: 2px dashed; height: 0; }
+
+  .current-price {
+    position: absolute; left: 0; right: 0;
+    height: 3px; background: #f0f6fc;
+    display: flex; align-items: center;
+    z-index: 10;
+  }
+  .current-price::before {
+    content: ''; position: absolute; left: -8px; top: -5px;
+    width: 0; height: 0;
+    border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+    border-left: 8px solid #f0f6fc;
+  }
+  .current-price .price-tag {
+    margin-left: auto;
+    background: #f0f6fc; color: #0d1117;
+    padding: 3px 10px; border-radius: 4px;
+    font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.95rem;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+  .legend-color { width: 16px; height: 16px; border-radius: 4px; }
+
+  .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .info-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .info-card h3 { font-size: 0.85rem; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-card .value { font-size: 1.3rem; font-weight: 700; }
+  .info-card .detail { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
+
+  .entry-table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 10px; overflow: hidden; border: 1px solid #30363d; }
+  .entry-table th { background: #1c2128; padding: 12px 16px; text-align: left; font-size: 0.8rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .entry-table td { padding: 12px 16px; border-top: 1px solid #21262d; font-size: 0.88rem; }
+  .entry-table tr:hover td { background: #1c2128; }
+  .buy { color: #3fb950; } .sell { color: #f85149; } .warn { color: #d29922; } .neutral { color: #58a6ff; }
+
+  .note { background: #1c1d21; border-left: 3px solid #d29922; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 0.82rem; color: #8b949e; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>RKLB — Rocket Lab USA</h1>
+  <p class="subtitle">Price Zone Analysis &bull; NASDAQ &bull; 12 Apr 2026</p>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>ราคาปัจจุบัน</h3>
+      <div class="value">$68.05</div>
+      <div class="detail sell">▼ -$1.03 (-1.49%) จากวันก่อน</div>
+    </div>
+    <div class="info-card">
+      <h3>52-Week Range</h3>
+      <div class="value">$18.21 — $99.58</div>
+      <div class="detail">ราคาอยู่ที่ 61.2% ของ range</div>
+    </div>
+    <div class="info-card">
+      <h3>สัญญาณหลัก</h3>
+      <div class="value buy">MACD Bullish Cross</div>
+      <div class="detail">RSI 49.76 ↑ | Golden Cross ยังอยู่</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#f8514966;"></div> แนวต้าน (Resistance)</div>
+    <div class="legend-item"><div class="legend-color" style="background:#3fb95055;"></div> โซนเข้าซื้อ (Buy Zone)</div>
+    <div class="legend-item"><div class="legend-color" style="background:#58a6ff44;"></div> Moving Average</div>
+    <div class="legend-item"><div class="legend-color" style="background:#d2992244;"></div> Bollinger Bands</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f0f6fc;"></div> ราคาปัจจุบัน</div>
+  </div>
+
+  <div class="chart-wrapper">
+    <div class="price-scale" id="chart"></div>
+  </div>
+
+  <h2 style="font-size:1.1rem; margin-bottom:12px;">แผนเข้าซื้อแบบแบ่งไม้</h2>
+  <table class="entry-table">
+    <thead>
+      <tr><th>ไม้</th><th>โซนราคา</th><th>สัดส่วน</th><th>เหตุผล</th><th>สถานะ</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ไม้ 1</strong></td>
+        <td class="buy">$65.00 — $66.30</td>
+        <td>25%</td>
+        <td>Pivot + SMA10 แนวรับระยะสั้น</td>
+        <td class="warn">รอราคาลงมา</td>
+      </tr>
+      <tr>
+        <td><strong>ไม้ 2</strong></td>
+        <td class="buy">$59.00 — $60.00</td>
+        <td>35%</td>
+        <td>Bollinger Lower + EMA200 แนวรับแข็ง</td>
+        <td class="warn">รอราคาลงมา</td>
+      </tr>
+      <tr>
+        <td><strong>ไม้ 3</strong></td>
+        <td class="buy">$54.00 — $55.00</td>
+        <td>40%</td>
+        <td>Support 1 — Deep pullback zone</td>
+        <td class="warn">รอราคาลงมา</td>
+      </tr>
+      <tr>
+        <td><strong>Breakout</strong></td>
+        <td class="neutral">ยืนเหนือ $69.33</td>
+        <td>—</td>
+        <td>ยืนเหนือ EMA50 + Volume เพิ่ม = ยืนยันกลับตัว</td>
+        <td class="neutral">เฝ้าดู</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="entry-table" style="margin-top:16px;">
+    <thead>
+      <tr><th>Stop Loss</th><th>เป้าหมาย 1</th><th>เป้าหมาย 2</th><th>เป้าหมาย 3</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sell"><strong>&lt; $53.00</strong></td>
+        <td class="buy">$70.30 (SMA50)</td>
+        <td class="buy">$76.55 (R1)</td>
+        <td class="buy">$88.88 (R2)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    ⚠️ ข้อมูลนี้เป็นการวิเคราะห์ทางเทคนิคเท่านั้น ไม่ใช่คำแนะนำการลงทุน ควรศึกษาปัจจัยพื้นฐานและบริหารความเสี่ยงด้วย
+  </div>
+</div>
+
+<script>
+const chart = document.getElementById('chart');
+const chartHeight = 720;
+
+// Price range for the chart
+const priceMin = 50;
+const priceMax = 92;
+const priceRange = priceMax - priceMin;
+
+function priceToY(price) {
+  return chartHeight - ((price - priceMin) / priceRange) * chartHeight;
+}
+
+function addZone(top, bottom, color, label, leftLabel) {
+  const y = priceToY(top);
+  const h = priceToY(bottom) - priceToY(top);
+  const el = document.createElement('div');
+  el.className = 'zone';
+  el.style.top = y + 'px';
+  el.style.height = Math.max(h, 8) + 'px';
+  el.style.background = color;
+  el.style.border = `1px solid ${color.replace(/[\d.]+\)$/, '0.6)')}`;
+  el.innerHTML = `<span class="zone-label">${leftLabel || ''}</span><span>${label}</span><span class="price-tag">$${bottom.toFixed(2)} — $${top.toFixed(2)}</span>`;
+  chart.appendChild(el);
+}
+
+function addLine(price, color, label, dashed) {
+  const y = priceToY(price);
+  const el = document.createElement('div');
+  el.className = 'line' + (dashed ? ' dashed' : '');
+  el.style.top = y + 'px';
+  if (dashed) {
+    el.style.borderColor = color;
+  } else {
+    el.style.background = color;
+  }
+  el.innerHTML = `<span class="line-label">${label}</span><span class="price-tag" style="color:${color}">$${price.toFixed(2)}</span>`;
+  chart.appendChild(el);
+}
+
+function addCurrentPrice(price) {
+  const y = priceToY(price);
+  const el = document.createElement('div');
+  el.className = 'current-price';
+  el.style.top = y + 'px';
+  el.innerHTML = `<span class="price-tag">$${price.toFixed(2)} ← ราคาปัจจุบัน</span>`;
+  chart.appendChild(el);
+}
+
+// Resistance zones
+addZone(88.88, 86.00, 'rgba(248,81,73,0.15)', 'แนวต้าน 2 (R2)', 'RESISTANCE 2');
+addZone(76.55, 76.16, 'rgba(248,81,73,0.25)', 'แนวต้าน 1 + BB Upper', 'RESISTANCE 1');
+
+// Moving averages
+addLine(70.30, '#58a6ff', 'SMA50', true);
+addLine(69.33, '#7ee787', 'EMA50', true);
+addLine(67.67, '#d2a8ff', 'BB Middle / SMA20', true);
+addLine(65.36, '#79c0ff', 'SMA10', true);
+
+// Buy zones
+addZone(66.30, 65.00, 'rgba(63,185,80,0.25)', '🟢 ไม้ 1 — Pivot + SMA10', 'BUY ZONE 1');
+addZone(60.00, 59.00, 'rgba(63,185,80,0.35)', '🟢 ไม้ 2 — BB Lower + EMA200', 'BUY ZONE 2');
+addZone(55.00, 54.00, 'rgba(63,185,80,0.45)', '🟢 ไม้ 3 — Support 1', 'BUY ZONE 3');
+
+// Key MAs
+addLine(59.19, '#d29922', 'Bollinger Lower', true);
+addLine(58.59, '#f0883e', 'EMA200', true);
+
+// Stop loss
+addLine(53.00, '#f85149', 'STOP LOSS', false);
+
+// Current price
+addCurrentPrice(68.05);
+
+// Price scale on far right
+for (let p = Math.ceil(priceMin / 5) * 5; p <= priceMax; p += 5) {
+  const y = priceToY(p);
+  const tick = document.createElement('div');
+  tick.style.cssText = `position:absolute; right:-40px; top:${y - 8}px; font-size:0.7rem; color:#484f58; font-family:'Courier New',monospace;`;
+  tick.textContent = '$' + p;
+  chart.appendChild(tick);
+
+  const gridLine = document.createElement('div');
+  gridLine.style.cssText = `position:absolute; left:0; right:0; top:${y}px; height:1px; background:rgba(48,54,61,0.5);`;
+  chart.appendChild(gridLine);
+}
+</script>
+</body>
+</html>

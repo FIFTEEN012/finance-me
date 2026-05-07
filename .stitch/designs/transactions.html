@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceMe - Transactions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#c3a6ff",
+                        "surface-container": "#221e28",
+                        "primary-fixed-dim": "#d2bbff",
+                        "on-background": "#e8dfee",
+                        "on-secondary": "#3b1e6f",
+                        "primary-fixed": "#eaddff",
+                        "tertiary": "#ffb784",
+                        "on-surface-variant": "#ccc3d8",
+                        "outline": "#958da1",
+                        "surface-variant": "#37333e",
+                        "surface-container-high": "#2c2833",
+                        "surface-container-low": "#1d1a24",
+                        "inverse-on-surface": "#332f39",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "inverse-surface": "#e8dfee",
+                        "surface-dim": "#15121b",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#ffe0cd",
+                        "primary": "#d2bbff",
+                        "tertiary-container": "#a15100",
+                        "surface-container-lowest": "#100d16",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#523787",
+                        "on-primary": "#3f008e",
+                        "on-surface": "#e8dfee",
+                        "inverse-primary": "#732ee4",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3c3742",
+                        "error-container": "#93000a",
+                        "on-primary-container": "#ede0ff",
+                        "outline-variant": "#4a4455",
+                        "surface-tint": "#d2bbff",
+                        "tertiary-fixed-dim": "#ffb784",
+                        "secondary-fixed": "#eaddff",
+                        "secondary-container": "#523787",
+                        "secondary": "#d2bbff",
+                        "on-primary-fixed": "#25005a",
+                        "surface": "#15121b",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface-container-highest": "#37333e",
+                        "on-tertiary": "#4f2500",
+                        "on-secondary-fixed": "#25005a",
+                        "primary-container": "#7c3aed",
+                        "on-tertiary-fixed": "#301400",
+                        "background": "#15121b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "md": "16px",
+                        "xs": "8px",
+                        "xl": "32px",
+                        "base": "4px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "amount-sm": ["Geist Mono"],
+                        "label-caps": ["Geist Sans"],
+                        "body-md": ["Geist Sans"],
+                        "amount-lg": ["Geist Mono"],
+                        "headline-md": ["Geist Sans"],
+                        "display-lg": ["Geist Sans"]
+                    },
+                    "fontSize": {
+                        "amount-sm": ["14px", { "lineHeight": "1.4", "letterSpacing": "0em", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "amount-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #08051a; color: white; }
+        .glass-panel { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-hover:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); }
+        .text-emerald { color: #10b981; }
+        .text-red { color: #ef4444; }
+        .text-violet { color: #7c3aed; }
+        .bg-emerald-dim { background-color: rgba(16, 185, 129, 0.1); }
+        .bg-red-dim { background-color: rgba(239, 68, 68, 0.1); }
+        .bg-violet-dim { background-color: rgba(124, 58, 237, 0.1); }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden min-h-screen">
+<!-- SideNavBar (Desktop Fixed) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-screen w-[224px] bg-[#08051a]/80 backdrop-blur-3xl border-r border-white/5 shadow-2xl flex-col p-4 z-40">
+<!-- Brand -->
+<div class="mb-10 px-4 mt-2">
+<h1 class="text-xl font-headline-md font-bold text-white tracking-tighter">FinanceMe</h1>
+<p class="font-label-caps text-label-caps text-white/45 mt-1">Violet Pro v2.0</p>
+</div>
+<!-- Main Tabs -->
+<div class="flex-1 space-y-2">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<!-- Active (Transactions) -->
+<a class="relative flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#7c3aed]/20 to-transparent text-[#a78bfa] font-medium before:absolute before:left-0 before:w-[2px] before:h-2/3 before:bg-[#7c3aed] before:rounded-full font-body text-[13px] tracking-tight hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+                Transactions
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+                Budgets
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+<!-- Footer Tabs -->
+<div class="mt-auto space-y-2 mb-4">
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">ios_share</span>
+                Export
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">file_upload</span>
+                Import
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/45 hover:text-white/70 transition-colors hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98] font-body text-[13px] tracking-tight" href="#">
+<span class="material-symbols-outlined">dark_mode</span>
+                Theme
+            </a>
+</div>
+<!-- CTA -->
+<div class="px-2">
+<button class="w-full bg-[#7c3aed] text-white py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">Upgrade to Pro</button>
+</div>
+</nav>
+<!-- TopNavBar (Sticky Glass) -->
+<header class="sticky top-0 right-0 h-[52px] w-full md:w-[calc(100%-224px)] md:ml-[224px] z-50 bg-[#080518]/70 backdrop-blur-md border-b border-white/5 flex justify-between items-center px-6">
+<div class="font-headline-md text-headline-md tracking-tight text-white">Transactions</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2">
+<span class="material-symbols-outlined text-white hover:bg-white/[0.07] rounded-full p-2 transition-all cursor-pointer active:opacity-80">notifications</span>
+<span class="material-symbols-outlined text-white hover:bg-white/[0.07] rounded-full p-2 transition-all cursor-pointer active:opacity-80">help_outline</span>
+</div>
+<img alt="User avatar" class="w-8 h-8 rounded-full border border-white/10 cursor-pointer object-cover" data-alt="A close-up portrait of a professional individual in a futuristic, neon-lit environment. The lighting is soft but vibrant, highlighting the contours of the face with subtle purple and blue hues, perfectly matching the deep, nocturnal, high-tech glassmorphism aesthetic of the UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCOvnfnIk5HussziIIkTiL0ctnaKHnIdMeEpN7MwO7Ans4CQsRJ9rPiRoaSp7zqGOAkl7zP6DjqXucs3U2cq7uuu2JrVtSSR5LYJYyQmQqA8IQ7v28BcJ56ZznAfHTDaNFbkWOwDd8gHAqHg4tsWCvAE6q9mKDzJmQgOnKULeuEo4jG-g8UUmYGBdczZXaBESvIMV1168NsW8FdlQ1P--QgY-rU6tU96Y26ZU1WT1sL95xgfgyeE431Vlw0fEMXQWv7i7vZKt_V5Q"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full md:w-[calc(100%-224px)] md:ml-[224px] p-container-padding min-h-[calc(100vh-52px)]">
+<div class="max-w-5xl mx-auto space-y-lg">
+<!-- SUMMARY ROW (3 pills) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+<div class="glass-panel rounded-xl p-5 flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-white/50 mb-2 uppercase">Income</span>
+<span class="font-amount-lg text-amount-lg text-emerald tabular-nums tracking-tight">45,200 THB</span>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-white/50 mb-2 uppercase">Expense</span>
+<span class="font-amount-lg text-amount-lg text-red tabular-nums tracking-tight">28,900 THB</span>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-white/50 mb-2 uppercase">Net</span>
+<span class="font-amount-lg text-amount-lg text-violet tabular-nums tracking-tight">16,300 THB</span>
+</div>
+</div>
+<!-- FILTER ROW -->
+<div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 glass-panel rounded-xl p-4">
+<!-- Search & Month -->
+<div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+<div class="relative flex-1 sm:flex-none sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">search</span>
+<input class="w-full bg-[#08051a]/50 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#7c3aed] transition-colors" placeholder="Search transactions..." type="text"/>
+</div>
+<button class="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-lg px-4 py-2 text-sm text-white transition-colors">
+<span class="material-symbols-outlined text-sm text-white/70">calendar_month</span>
+<span>May 2026</span>
+<span class="material-symbols-outlined text-sm text-white/50 ml-1">expand_more</span>
+</button>
+</div>
+<!-- Filters & Add -->
+<div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+<div class="flex bg-white/[0.04] border border-white/10 rounded-lg p-1">
+<button class="px-4 py-1.5 rounded-md text-sm font-medium bg-[#7c3aed] text-white shadow-sm transition-all">All</button>
+<button class="px-4 py-1.5 rounded-md text-sm font-medium text-white/60 hover:text-white transition-all">Income</button>
+<button class="px-4 py-1.5 rounded-md text-sm font-medium text-white/60 hover:text-white transition-all">Expense</button>
+</div>
+<button class="flex items-center gap-2 bg-[#7c3aed] hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+                        + Add Transaction
+                    </button>
+</div>
+</div>
+<!-- TRANSACTION LIST -->
+<div class="glass-panel rounded-xl overflow-hidden">
+<!-- Date Group: Today -->
+<div class="px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+<h3 class="font-label-caps text-label-caps text-white/50 uppercase tracking-widest">Today</h3>
+</div>
+<div class="divide-y divide-white/5">
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 border border-orange-500/30">
+<span class="material-symbols-outlined text-sm">restaurant</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Noodles</span>
+<span class="text-xs text-white/40">Food</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -85 THB
+                        </div>
+</div>
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 border border-blue-500/30">
+<span class="material-symbols-outlined text-sm">train</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">BTS</span>
+<span class="text-xs text-white/40">Transport</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -44 THB
+                        </div>
+</div>
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+<span class="material-symbols-outlined text-sm">payments</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Salary</span>
+<span class="text-xs text-white/40">Income</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-emerald tabular-nums text-right">
+                            +35,000 THB
+                        </div>
+</div>
+</div>
+<!-- Date Group: Yesterday -->
+<div class="px-6 py-4 border-b border-t border-white/5 bg-white/[0.01]">
+<h3 class="font-label-caps text-label-caps text-white/50 uppercase tracking-widest">Yesterday</h3>
+</div>
+<div class="divide-y divide-white/5">
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 border border-purple-500/30">
+<span class="material-symbols-outlined text-sm">movie</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Netflix</span>
+<span class="text-xs text-white/40">Entertainment</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -349 THB
+                        </div>
+</div>
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400 border border-teal-500/30">
+<span class="material-symbols-outlined text-sm">local_cafe</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Coffee</span>
+<span class="text-xs text-white/40">Food</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -165 THB
+                        </div>
+</div>
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/30">
+<span class="material-symbols-outlined text-sm">smartphone</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Phone bill</span>
+<span class="text-xs text-white/40">Utilities</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -599 THB
+                        </div>
+</div>
+</div>
+<!-- Date Group: 3 days ago -->
+<div class="px-6 py-4 border-b border-t border-white/5 bg-white/[0.01]">
+<h3 class="font-label-caps text-label-caps text-white/50 uppercase tracking-widest">3 days ago</h3>
+</div>
+<div class="divide-y divide-white/5">
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30">
+<span class="material-symbols-outlined text-sm">local_gas_station</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Gas station</span>
+<span class="text-xs text-white/40">Transport</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-red tabular-nums text-right">
+                            -800 THB
+                        </div>
+</div>
+<!-- Item -->
+<div class="flex items-center justify-between px-6 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer group h-[48px]">
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+<span class="material-symbols-outlined text-sm">account_balance</span>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-sm font-medium text-white/90 group-hover:text-white transition-colors">Freelance</span>
+<span class="text-xs text-white/40">Income</span>
+</div>
+</div>
+<div class="font-amount-sm text-amount-sm text-emerald tabular-nums text-right">
+                            +5,000 THB
+                        </div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
