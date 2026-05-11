@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { z } from 'zod'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimiter'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+let _client: Anthropic | null = null
+function getClient() {
+  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  return _client
+}
+
+const receiptSchema = z.object({
+  amount:      z.number().nullable(),
+  currency:    z.string().default('THB'),
+  type:        z.enum(['EXPENSE', 'INCOME', 'UNKNOWN']),
+  merchant:    z.string().nullable(),
+  description: z.string().nullable(),
+  date:        z.string().nullable(),
+  confidence:  z.number().min(0).max(1),
+})
 
 const PARSE_PROMPT = `
 คุณเป็น OCR parser สำหรับสลิปและใบเสร็จภาษาไทย
@@ -38,6 +54,15 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const ip = getClientIp(request)
+  const rl = checkRateLimit(`parse-receipt:${ip}`, 10, 60_000) // 10 req/min
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   let body: { image: string; mimeType: string }
   try {
     body = await request.json()
@@ -56,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await client.messages.create({
+    const response = await getClient().messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 512,
       messages: [
@@ -89,7 +114,11 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = JSON.parse(jsonMatch[0])
-    return NextResponse.json(parsed)
+    const validated = receiptSchema.safeParse(parsed)
+    if (!validated.success) {
+      return NextResponse.json({ error: 'AI ส่งข้อมูลในรูปแบบที่ไม่ถูกต้อง', raw: parsed }, { status: 422 })
+    }
+    return NextResponse.json(validated.data)
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)

@@ -38,11 +38,14 @@ function writeAllStores(stores: Record<string, unknown>) {
 }
 
 /* ── Stats helpers ── */
+interface StoreBlob {
+  state?: Record<string, unknown>
+}
+
 function countItems(stores: Record<string, unknown>) {
   function len(key: string) {
-    const blob = stores[key] as any
+    const blob = stores[key] as StoreBlob | undefined
     const state = blob?.state ?? {}
-    // find first array value in state
     const arr = Object.values(state).find(Array.isArray) as unknown[] | undefined
     return arr?.length ?? 0
   }
@@ -57,8 +60,8 @@ function countItems(stores: Record<string, unknown>) {
     bankAccounts:   len('finance-bank-accounts'),
     billSplits:     len('finance-bill-splits'),
     netWorthItems: (() => {
-      const s = (stores['finance-networth'] as any)?.state ?? {}
-      return (s.items?.length ?? 0)
+      const s = (stores['finance-networth'] as StoreBlob | undefined)?.state ?? {}
+      return ((s.items as unknown[])?.length ?? 0)
     })(),
   }
 }

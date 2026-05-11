@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimiter'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+let _client: Anthropic | null = null
+function getClient() {
+  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  return _client
+}
 
 /* ── Types ──────────────────────────────────────────── */
 
@@ -100,6 +105,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 })
   }
 
+  const ip = getClientIp(request)
+  const rl = checkRateLimit(`coach:${ip}`, 30, 60_000) // 30 req/min
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   let body: { messages: Message[]; context: FinancialContext }
   try {
     body = await request.json()
@@ -127,7 +141,7 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const response = await client.messages.create({
+          const response = await getClient().messages.create({
             model:      'claude-haiku-4-5',
             max_tokens: 1024,
             system:     systemPrompt,

@@ -116,12 +116,20 @@ export function SpendingTrend() {
 
   /* Chart data: 6 actual + 1 forecast */
   const chartData = useMemo(() => {
-    const actual = history.map((h) => ({
+    type ChartPoint = {
+      name: string
+      รายรับ: number | undefined
+      รายจ่าย: number | undefined
+      'รายรับ (คาด)': number | undefined
+      'รายจ่าย (คาด)': number | undefined
+      isForecast: boolean
+    }
+    const actual: ChartPoint[] = history.map((h) => ({
       name: h.label,
       รายรับ: h.income,
       รายจ่าย: h.expense,
-      'รายรับ (คาด)': undefined as number | undefined,
-      'รายจ่าย (คาด)': undefined as number | undefined,
+      'รายรับ (คาด)': undefined,
+      'รายจ่าย (คาด)': undefined,
       isForecast: false,
     }))
     // Bridge: repeat last actual point so dashed line connects smoothly
@@ -133,8 +141,8 @@ export function SpendingTrend() {
     }
     actual.push({
       name: forecastData.label,
-      รายรับ: undefined as unknown as number,
-      รายจ่าย: undefined as unknown as number,
+      รายรับ: undefined,
+      รายจ่าย: undefined,
       'รายรับ (คาด)': forecastData.income,
       'รายจ่าย (คาด)': forecastData.expense,
       isForecast: true,

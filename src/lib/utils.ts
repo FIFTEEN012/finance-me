@@ -14,14 +14,25 @@ const CURRENCY_LOCALES: Record<string, string> = {
   GBP: 'en-GB',
 }
 
+// Cached lazily to avoid circular deps at import time (utils ← stores ← utils)
+let _settingsStore: { getState: () => { currency: string } } | null = null
+function getSettingsStore() {
+  if (!_settingsStore) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _settingsStore = require('@/store/useSettingsStore').useSettingsStore
+    } catch {
+      // store not ready yet
+    }
+  }
+  return _settingsStore
+}
+
 export function formatCurrency(amount: number, currency?: string): string {
-  // lazy-import to avoid circular deps; falls back to THB if store not ready
   let curr = currency
   if (!curr) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { useSettingsStore } = require('@/store/useSettingsStore')
-      curr = useSettingsStore.getState().currency as string
+      curr = getSettingsStore()?.getState().currency ?? 'THB'
     } catch {
       curr = 'THB'
     }

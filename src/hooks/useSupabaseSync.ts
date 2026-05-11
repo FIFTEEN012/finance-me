@@ -5,8 +5,24 @@ import { supabase, isCloudEnabled } from '@/lib/supabase'
 import { pushToCloud, pullFromCloud } from '@/lib/cloudSync'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const PUSH_DEBOUNCE_MS = 30_000   // push every 30 s max while logged in
-const PUSH_ON_HIDE    = true      // push when tab loses focus
+const PUSH_DEBOUNCE_MS = 30_000
+const PUSH_ON_HIDE    = true
+const FINANCE_DIRTY_EVENT = 'finance:store-dirty'
+
+/*
+ * Patch localStorage once at module level so the wrapper is never stacked.
+ * Dispatches a CustomEvent instead of mutating React state directly,
+ * keeping the patch side-effect-free w.r.t. component lifecycle.
+ */
+if (typeof window !== 'undefined') {
+  const _original = localStorage.setItem.bind(localStorage)
+  localStorage.setItem = function patchedSetItem(key: string, value: string) {
+    _original(key, value)
+    if (key.startsWith('finance-')) {
+      window.dispatchEvent(new CustomEvent(FINANCE_DIRTY_EVENT))
+    }
+  }
+}
 
 export function useSupabaseSync() {
   const { setUser, setLoading, setSyncStatus, setSyncError, setLastSyncAt } = useAuthStore()
@@ -39,7 +55,6 @@ export function useSupabaseSync() {
       setLoading(false)
 
       if (session?.user) {
-        // Restore data from cloud on load
         doSync(session.user.id, 'pull')
         startAutoSync(session.user.id)
       }
@@ -53,7 +68,6 @@ export function useSupabaseSync() {
 
         if (user) {
           if (_event === 'SIGNED_IN') {
-            // Fresh login → pull latest cloud data
             doSync(user.id, 'pull')
           }
           startAutoSync(user.id)
@@ -80,14 +94,11 @@ export function useSupabaseSync() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /* Mark data as dirty whenever localStorage changes */
+  /* Mark dirty via CustomEvent from the module-level localStorage patch */
   useEffect(() => {
-    const original = localStorage.setItem.bind(localStorage)
-    localStorage.setItem = function (key, value) {
-      original(key, value)
-      if (key.startsWith('finance-')) dirtyRef.current = true
-    }
-    return () => { localStorage.setItem = original }
+    const onDirty = () => { dirtyRef.current = true }
+    window.addEventListener(FINANCE_DIRTY_EVENT, onDirty)
+    return () => window.removeEventListener(FINANCE_DIRTY_EVENT, onDirty)
   }, [])
 
   function startAutoSync(userId: string) {

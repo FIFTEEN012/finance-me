@@ -141,7 +141,11 @@ function splitLine(line: string): string[] {
 
 function amt(s: string): number {
   if (!s || s.trim() === '' || s.trim() === '-') return 0
-  const n = parseFloat(s.replace(/[฿$,\s]/g, ''))
+  // Support accounting negative format: (1,000) → -1000
+  const stripped = s.replace(/[฿$,\s]/g, '')
+  const isParenNeg = /^\([\d.]+\)$/.test(stripped)
+  const raw = isParenNeg ? stripped.slice(1, -1) : stripped
+  const n = parseFloat(raw)
   return isNaN(n) ? 0 : Math.abs(n)
 }
 
@@ -209,8 +213,11 @@ function parseGeneric(lines: string[], headers: string[]): ParsedRow[] {
     let amount = 0, isDebit = false
     if (amtCol >= 0 && c[amtCol]) {
       const raw = c[amtCol].replace(/[฿$,\s]/g, '')
-      amount = Math.abs(parseFloat(raw) || 0)
-      isDebit = raw.startsWith('-')
+      // Support both leading minus (-1000) and accounting parens ((1000))
+      const isParenNeg = /^\([\d.]+\)$/.test(raw)
+      const isMinusNeg = raw.startsWith('-')
+      amount = Math.abs(parseFloat(isParenNeg ? raw.slice(1, -1) : raw) || 0)
+      isDebit = isMinusNeg || isParenNeg
     } else if (debitCol >= 0 || creditCol >= 0) {
       const d = debitCol >= 0 ? amt(c[debitCol] ?? '') : 0
       const cr = creditCol >= 0 ? amt(c[creditCol] ?? '') : 0
