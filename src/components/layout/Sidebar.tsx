@@ -20,7 +20,6 @@ import {
   Building2,
   SplitSquareHorizontal,
   FileUp,
-  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataManager } from '@/components/shared/DataManager'
@@ -41,7 +40,6 @@ const navItems = [
   { href: '/subscriptions', label: 'Subscriptions',     icon: Repeat2                    },
   { href: '/bill-split',    label: 'แบ่งบิล',           icon: SplitSquareHorizontal      },
   { href: '/calculators',   label: 'เครื่องคิดเลข',    icon: Calculator      },
-  { href: '/coach',         label: 'AI Coach',          icon: Sparkles        },
   { href: '/import',        label: 'นำเข้าข้อมูล',     icon: FileUp          },
   { href: '/settings',      label: 'ตั้งค่า',           icon: Settings        },
 ]

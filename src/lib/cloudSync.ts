@@ -19,7 +19,6 @@ export const SYNC_STORE_KEYS = [
   'finance-subscriptions',
   'finance-bank-accounts',
   'finance-bill-splits',
-  'finance-coach-chat',
 ] as const
 
 export type SyncResult = { ok: true } | { ok: false; error: string }
@@ -114,7 +113,6 @@ export async function rehydrateAllStores() {
     { useSubscriptionStore },
     { useBankAccountStore },
     { useBillSplitStore },
-    { useCoachStore },
   ] = await Promise.all([
     import('@/store/useTransactionStore'),
     import('@/store/useBudgetStore'),
@@ -131,7 +129,6 @@ export async function rehydrateAllStores() {
     import('@/store/useSubscriptionStore'),
     import('@/store/useBankAccountStore'),
     import('@/store/useBillSplitStore'),
-    import('@/store/useCoachStore'),
   ])
 
   type WithPersist = { persist?: { rehydrate?: () => void | Promise<void> } }
@@ -152,7 +149,6 @@ export async function rehydrateAllStores() {
     useSubscriptionStore,
     useBankAccountStore,
     useBillSplitStore,
-    useCoachStore,
   ]
 
   stores.forEach((store) => {

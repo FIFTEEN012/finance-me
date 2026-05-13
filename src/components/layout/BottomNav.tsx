@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ArrowLeftRight, BarChart3,
   PiggyBank, Tags, RefreshCw, Target, Scale, TrendingUp,
-  MoreHorizontal, Plus, X, Calculator, CreditCard, Settings, Repeat2, Building2, SplitSquareHorizontal, FileUp, Sparkles,
+  MoreHorizontal, Plus, X, Calculator, CreditCard, Settings, Repeat2, Building2, SplitSquareHorizontal, FileUp,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -35,7 +35,6 @@ const SECONDARY = [
   { href: '/subscriptions', label: 'Subscriptions',  icon: Repeat2                 },
   { href: '/bill-split',    label: 'แบ่งบิล',         icon: SplitSquareHorizontal  },
   { href: '/calculators',   label: 'คิดเลข',         icon: Calculator  },
-  { href: '/coach',         label: 'AI Coach',        icon: Sparkles    },
   { href: '/import',        label: 'นำเข้าข้อมูล',   icon: FileUp      },
   { href: '/settings',      label: 'ตั้งค่า',         icon: Settings    },
 ]

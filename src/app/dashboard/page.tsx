@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import {
   Flame, Star, Zap, Target, TrendingUp,
-  TrendingDown, Scale, Trophy, Coins, ShieldCheck, BookOpen, LayoutGrid, Sparkles, ChevronRight,
+  TrendingDown, Scale, Trophy, Coins, ShieldCheck, BookOpen, LayoutGrid, ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTransactionStore } from '@/store/useTransactionStore'
@@ -94,7 +94,7 @@ export default function DashboardPage() {
   const challengesDone = [hasLoggedToday, hasBudget, hasNetWorth].filter(Boolean).length
 
   return (
-    <div className="space-y-5 pb-20">
+    <div className="space-y-6 pb-20">
 
       {/* Page header */}
       <div className="flex items-center justify-between">
@@ -153,34 +153,13 @@ export default function DashboardPage() {
       {/* ── 1b. Payday Countdown ─── */}
       <PaydayCountdown />
 
-      {/* ── 1c. AI Coach Banner ─── */}
-      <Link href="/coach">
-        <PressCard
-          shadow="0 4px 0 0 #4c1d95"
-          shadowHover="0 2px 0 0 #4c1d95"
-          className="border-violet-400 bg-violet-500 p-4 cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-black text-sm leading-tight">FinanceMe Coach</p>
-              <p className="text-white/70 text-xs font-semibold mt-0.5">
-                ถามเรื่องการเงินของคุณกับ AI ได้เลย
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
-          </div>
-        </PressCard>
-      </Link>
 
       {/* ── 2. Big Stat Cards ─── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         <PressCard
           shadow="0 5px 0 0 #4c1d95"
           shadowHover="0 3px 0 0 #4c1d95"
-          className="border-violet-400 bg-violet-500 p-4"
+          className="border-violet-400 bg-violet-500 p-5"
         >
           <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
             <Scale className="w-5 h-5 text-white" />
@@ -192,7 +171,7 @@ export default function DashboardPage() {
         <PressCard
           shadow="0 5px 0 0 #065f46"
           shadowHover="0 3px 0 0 #065f46"
-          className="border-emerald-400 bg-emerald-500 p-4"
+          className="border-emerald-400 bg-emerald-500 p-5"
         >
           <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
             <TrendingUp className="w-5 h-5 text-white" />
@@ -204,7 +183,7 @@ export default function DashboardPage() {
         <PressCard
           shadow="0 5px 0 0 #9f1239"
           shadowHover="0 3px 0 0 #9f1239"
-          className="border-rose-400 bg-rose-500 p-4"
+          className="border-rose-400 bg-rose-500 p-5"
         >
           <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
             <TrendingDown className="w-5 h-5 text-white" />
