@@ -180,13 +180,11 @@ export default function ImportPage() {
       return
     }
     setFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
+
+    const tryParse = (text: string) => {
       const result = parseBankCSV(text, bankFormat === 'generic' ? undefined : bankFormat)
       setDetectedFormat(result.detectedFormat)
       setParseErrors(result.errors)
-
       const importRows: ImportRow[] = result.rows.map((r, i) => ({
         ...r,
         id: `row-${i}`,
@@ -195,8 +193,27 @@ export default function ImportPage() {
       }))
       setRows(importRows)
       if (result.rows.length > 0) setStep(2)
+      return result.rows.length
     }
-    reader.readAsText(file, 'utf-8')
+
+    // Try UTF-8 first; if garbled (replacement chars) or 0 rows, retry with TIS-620
+    const readerUtf8 = new FileReader()
+    readerUtf8.onload = (e) => {
+      const text = e.target?.result as string
+      const hasGarbled = text.includes('�')
+      const count = tryParse(text)
+
+      if (count === 0 || hasGarbled) {
+        // Fallback: Windows-874 / TIS-620 (common for Thai bank exports)
+        const readerTis = new FileReader()
+        readerTis.onload = (e2) => {
+          const text2 = e2.target?.result as string
+          tryParse(text2)
+        }
+        readerTis.readAsText(file, 'windows-874')
+      }
+    }
+    readerUtf8.readAsText(file, 'utf-8')
   }
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

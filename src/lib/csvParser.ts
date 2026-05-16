@@ -34,7 +34,10 @@ export function parseCsv(raw: string): string[][] {
 /** Try to parse a date string in common Thai/international formats.
  *  Returns ISO date string (YYYY-MM-DD) or null if unrecognized. */
 export function parseDate(raw: string): string | null {
-  const s = raw.trim()
+  if (!raw) return null
+
+  // Strip time component: "01/01/2566 08:30:00" → "01/01/2566"
+  const s = raw.trim().replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s.*)?$/, '').trim()
   if (!s) return null
 
   // YYYY-MM-DD or YYYY/MM/DD
@@ -57,8 +60,43 @@ export function parseDate(raw: string): string | null {
   m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/)
   if (m) {
     const [, d, mo, y] = m
-    const fullYear = parseInt(y) + 2000
+    const base = parseInt(y)
+    const fullYear = base >= 43 ? base + 2500 - 543 : base + 2000   // e.g. 66 → BE 2566 → CE 2023
     return `${fullYear}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+
+  // Thai abbreviated months: "01 ม.ค. 2566", "1 ก.พ. 66", "01 ม.ค.66"
+  const THAI_MONTHS: Record<string, string> = {
+    'ม.ค': '01', 'ก.พ': '02', 'มี.ค': '03', 'เม.ย': '04',
+    'พ.ค': '05', 'มิ.ย': '06', 'ก.ค': '07', 'ส.ค': '08',
+    'ก.ย': '09', 'ต.ค': '10', 'พ.ย': '11', 'ธ.ค': '12',
+  }
+  m = s.match(/^(\d{1,2})\s+([฀-๿.]+)\s*(\d{2,4})$/)
+  if (m) {
+    const [, d, thMon, y] = m
+    const key = Object.keys(THAI_MONTHS).find((k) => thMon.startsWith(k))
+    if (key) {
+      const mo = THAI_MONTHS[key]
+      const yr = parseInt(y)
+      const fullYear = yr > 2400 ? yr - 543 : yr < 100 ? (yr >= 43 ? yr + 1957 : yr + 2000) : yr
+      return `${fullYear}-${mo}-${d.padStart(2, '0')}`
+    }
+  }
+
+  // English abbreviated months: "01 Jan 2023", "1-Jan-23"
+  const ENG_MONTHS: Record<string, string> = {
+    jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06',
+    jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12',
+  }
+  m = s.match(/^(\d{1,2})[\s\-]([A-Za-z]{3})[\s\-](\d{2,4})$/)
+  if (m) {
+    const [, d, mon, y] = m
+    const mo = ENG_MONTHS[mon.toLowerCase()]
+    if (mo) {
+      const yr = parseInt(y)
+      const fullYear = yr > 2400 ? yr - 543 : yr < 100 ? yr + 2000 : yr
+      return `${fullYear}-${mo}-${d.padStart(2, '0')}`
+    }
   }
 
   return null
@@ -117,7 +155,9 @@ export const BANK_FORMAT_LABELS: Record<BankFormat, string> = {
 
 /* ── Internal CSV line parser ────────────────────── */
 
-function splitLine(line: string): string[] {
+function splitLine(line: string, sep?: string): string[] {
+  // Auto-detect separator if not provided
+  const delim = sep ?? ((line.match(/;/g) ?? []).length > (line.match(/,/g) ?? []).length ? ';' : ',')
   const result: string[] = []
   let cur = ''
   let inQ = false
@@ -126,7 +166,7 @@ function splitLine(line: string): string[] {
     if (ch === '"') {
       if (inQ && line[i + 1] === '"') { cur += '"'; i++ }
       else inQ = !inQ
-    } else if ((ch === ',' || ch === '\t') && !inQ) {
+    } else if ((ch === delim || ch === '\t') && !inQ) {
       result.push(cur.trim())
       cur = ''
     } else {
@@ -152,9 +192,9 @@ function amt(s: string): number {
 /* ── Bank-specific parsers ───────────────────────── */
 
 // KBank: วันที่, รายการ, ถอน, ฝาก, คงเหลือ
-function parseKBank(lines: string[]): ParsedRow[] {
+function parseKBank(lines: string[], sep?: string): ParsedRow[] {
   return lines.flatMap((line) => {
-    const c = splitLine(line)
+    const c = splitLine(line, sep)
     if (c.length < 4) return []
     const date = parseDate(c[0])
     if (!date) return []
@@ -165,9 +205,9 @@ function parseKBank(lines: string[]): ParsedRow[] {
 }
 
 // SCB: Transaction Date, Transaction Code, Channel, Debit, Credit, Balance
-function parseSCB(lines: string[]): ParsedRow[] {
+function parseSCB(lines: string[], sep?: string): ParsedRow[] {
   return lines.flatMap((line) => {
-    const c = splitLine(line)
+    const c = splitLine(line, sep)
     if (c.length < 5) return []
     const date = parseDate(c[0])
     if (!date) return []
@@ -179,9 +219,9 @@ function parseSCB(lines: string[]): ParsedRow[] {
 }
 
 // BBL: Date, Particulars, Debit, Credit, Balance
-function parseBBL(lines: string[]): ParsedRow[] {
+function parseBBL(lines: string[], sep?: string): ParsedRow[] {
   return lines.flatMap((line) => {
-    const c = splitLine(line)
+    const c = splitLine(line, sep)
     if (c.length < 4) return []
     const date = parseDate(c[0])
     if (!date) return []
@@ -192,20 +232,21 @@ function parseBBL(lines: string[]): ParsedRow[] {
 }
 
 // Generic: auto-detect columns
-function parseGeneric(lines: string[], headers: string[]): ParsedRow[] {
+function parseGeneric(lines: string[], headers: string[], sep?: string): ParsedRow[] {
   const h = headers.map((x) => x.toLowerCase())
   const fi = (...keys: string[]) => h.findIndex((x) => keys.some((k) => x.includes(k)))
 
-  const dateCol  = fi('date', 'วันที่', 'datetime', 'เวลา')
-  const descCol  = fi('description', 'particulars', 'รายการ', 'detail', 'memo', 'หมายเหตุ', 'narration')
-  const debitCol = fi('debit', 'ถอน', 'จ่าย', 'withdraw', 'dr', 'expense')
-  const creditCol= fi('credit', 'ฝาก', 'รับ', 'deposit', 'cr', 'income')
-  const amtCol   = fi('amount', 'จำนวน')
+  const dateCol  = fi('date', 'วันที่', 'datetime', 'เวลา', 'txn date', 'trans date', 'posting')
+  const descCol  = fi('description', 'particulars', 'รายการ', 'detail', 'memo', 'หมายเหตุ', 'narration', 'details', 'reference')
+  const debitCol = fi('debit', 'ถอน', 'จ่าย', 'withdraw', 'dr', 'expense', 'charges')
+  const creditCol= fi('credit', 'ฝาก', 'รับ', 'deposit', 'cr', 'income', 'deposits')
+  const amtCol   = fi('amount', 'จำนวน', 'value')
+  const balCol   = fi('balance', 'คงเหลือ', 'running')
 
   if (dateCol === -1) return []
 
   return lines.flatMap((line) => {
-    const c = splitLine(line)
+    const c = splitLine(line, sep)
     const date = parseDate(c[dateCol] ?? '')
     if (!date) return []
     const description = (descCol >= 0 ? c[descCol] : '')?.trim() || 'รายการธุรกรรม'
@@ -226,7 +267,8 @@ function parseGeneric(lines: string[], headers: string[]): ParsedRow[] {
     }
 
     if (amount === 0) return []
-    return [{ date, description, amount, isDebit, rawLine: line }]
+    const balance = balCol >= 0 ? amt(c[balCol] ?? '') : undefined
+    return [{ date, description, amount, isDebit, rawLine: line, ...(balance ? { balance } : {}) }]
   })
 }
 
@@ -243,23 +285,34 @@ export function parseBankCSV(text: string, forcedFormat?: BankFormat): BankParse
     return { rows: [], errors: ['ไฟล์ CSV ว่างเปล่าหรือมีข้อมูลไม่เพียงพอ'], detectedFormat: 'generic', headers: [] }
   }
 
-  // Find header row (first line with ≥ 3 columns)
+  // Detect separator from first 5 non-empty lines
+  const sample = allLines.slice(0, 5).join('\n')
+  const sep = (sample.match(/;/g) ?? []).length > (sample.match(/,/g) ?? []).length ? ';' : ','
+
+  // Find header row: first line with ≥ 3 columns AND contains a keyword
+  // OR fallback to first line with ≥ 3 columns
+  const HEADER_KEYWORDS = ['วันที่', 'date', 'transaction', 'รายการ', 'description', 'particulars', 'เดบิต', 'debit', 'ถอน', 'ฝาก', 'credit']
   let headerIdx = 0
-  for (let i = 0; i < Math.min(10, allLines.length); i++) {
-    if (splitLine(allLines[i]).length >= 3) { headerIdx = i; break }
+  // First pass: find a line that contains known header keywords
+  for (let i = 0; i < Math.min(15, allLines.length); i++) {
+    const lower = allLines[i].toLowerCase()
+    if (HEADER_KEYWORDS.some((k) => lower.includes(k)) && splitLine(allLines[i], sep).length >= 3) {
+      headerIdx = i
+      break
+    }
   }
 
-  const headers = splitLine(allLines[headerIdx])
+  const headers = splitLine(allLines[headerIdx], sep)
   const dataLines = allLines.slice(headerIdx + 1)
   const detectedFormat = forcedFormat ?? detectBankFormat(headers)
 
   let rows: ParsedRow[] = []
   try {
     switch (detectedFormat) {
-      case 'kbank': rows = parseKBank(dataLines);          break
-      case 'scb':   rows = parseSCB(dataLines);            break
-      case 'bbl':   rows = parseBBL(dataLines);            break
-      default:      rows = parseGeneric(dataLines, headers); break
+      case 'kbank': rows = parseKBank(dataLines, sep);           break
+      case 'scb':   rows = parseSCB(dataLines, sep);             break
+      case 'bbl':   rows = parseBBL(dataLines, sep);             break
+      default:      rows = parseGeneric(dataLines, headers, sep); break
     }
   } catch (e) {
     errors.push(`ข้อผิดพลาดในการแยกวิเคราะห์: ${String(e)}`)
