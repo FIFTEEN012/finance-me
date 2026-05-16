@@ -36,8 +36,12 @@ export function parseCsv(raw: string): string[][] {
 export function parseDate(raw: string): string | null {
   if (!raw) return null
 
-  // Strip time component: "01/01/2566 08:30:00" → "01/01/2566"
-  const s = raw.trim().replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s.*)?$/, '').trim()
+  // Strip ISO 8601 time: "2026-04-30T14:44:11.319Z" → "2026-04-30"
+  // Strip space-separated time: "01/01/2566 08:30:00" → "01/01/2566"
+  const s = raw.trim()
+    .replace(/T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, '')
+    .replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s.*)?$/, '')
+    .trim()
   if (!s) return null
 
   // YYYY-MM-DD or YYYY/MM/DD
