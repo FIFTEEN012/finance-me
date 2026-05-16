@@ -237,7 +237,8 @@ function parseGeneric(lines: string[], headers: string[], sep?: string): ParsedR
   const fi = (...keys: string[]) => h.findIndex((x) => keys.some((k) => x.includes(k)))
 
   const dateCol  = fi('date', 'วันที่', 'datetime', 'เวลา', 'txn date', 'trans date', 'posting')
-  const descCol  = fi('description', 'particulars', 'รายการ', 'detail', 'memo', 'หมายเหตุ', 'narration', 'details', 'reference')
+  const descCol  = fi('รายละเอียด', 'description', 'particulars', 'รายการ', 'detail', 'memo', 'หมายเหตุ', 'narration', 'details', 'reference')
+  const typeCol  = fi('ประเภท', 'type')   // รายรับ / รายจ่าย column (FinanceMe export)
   const debitCol = fi('debit', 'ถอน', 'จ่าย', 'withdraw', 'dr', 'expense', 'charges')
   const creditCol= fi('credit', 'ฝาก', 'รับ', 'deposit', 'cr', 'income', 'deposits')
   const amtCol   = fi('amount', 'จำนวน', 'value')
@@ -254,11 +255,15 @@ function parseGeneric(lines: string[], headers: string[], sep?: string): ParsedR
     let amount = 0, isDebit = false
     if (amtCol >= 0 && c[amtCol]) {
       const raw = c[amtCol].replace(/[฿$,\s]/g, '')
-      // Support both leading minus (-1000) and accounting parens ((1000))
       const isParenNeg = /^\([\d.]+\)$/.test(raw)
       const isMinusNeg = raw.startsWith('-')
       amount = Math.abs(parseFloat(isParenNeg ? raw.slice(1, -1) : raw) || 0)
-      isDebit = isMinusNeg || isParenNeg
+      // Use ประเภท column if available (FinanceMe export: รายจ่าย = debit)
+      if (typeCol >= 0 && c[typeCol]) {
+        isDebit = c[typeCol].includes('จ่าย') || c[typeCol].toLowerCase().includes('expense') || c[typeCol].toLowerCase() === 'debit'
+      } else {
+        isDebit = isMinusNeg || isParenNeg
+      }
     } else if (debitCol >= 0 || creditCol >= 0) {
       const d = debitCol >= 0 ? amt(c[debitCol] ?? '') : 0
       const cr = creditCol >= 0 ? amt(c[creditCol] ?? '') : 0
