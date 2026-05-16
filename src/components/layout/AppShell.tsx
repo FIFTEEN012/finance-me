@@ -1,6 +1,5 @@
 'use client'
 
-import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { BottomNav } from './BottomNav'
 import { QuickAddTransaction } from '@/components/shared/QuickAddTransaction'
@@ -46,11 +45,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-[oklch(0.972_0.007_275)] dark:bg-[oklch(0.065_0.028_272)] app-bg">
       {/* Background layers (dark only) */}
       <div className="dark:block hidden grid-overlay" />
-
-      {/* Desktop sidebar — fixed, never scrolls */}
-      <div className="hidden md:flex md:flex-shrink-0 app-content">
-        <Sidebar />
-      </div>
 
       {/* Main content — scrolls independently */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden app-content">
