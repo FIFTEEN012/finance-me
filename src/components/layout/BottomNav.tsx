@@ -62,50 +62,56 @@ export function BottomNav() {
         'shadow-[0_-1px_0_rgba(0,0,0,0.04),0_-4px_16px_rgba(0,0,0,0.06)]',
         'dark:shadow-[0_-1px_0_rgba(255,255,255,0.04),0_-4px_24px_rgba(0,0,0,0.4)]',
       )}>
-        <div className="flex items-center justify-around w-full px-2 h-full">
-          {PRIMARY.map((item, idx) => {
-            /* Center + button */
-            if (item === null) {
-              return (
-                <button
-                  key="add"
-                  onClick={() => setOpen(true)}
-                  className={cn(
-                    'relative -top-4 flex items-center justify-center',
-                    'w-14 h-14 rounded-full',
-                    'bg-primary shadow-lg',
-                    'active:scale-95 transition-transform duration-150',
-                  )}
-                >
-                  <Plus className="w-6 h-6 text-white" />
-                </button>
-              )
-            }
-
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        {/* Left items — flex-1 ensures + stays exactly centered */}
+        <div className="flex flex-1 items-center justify-around h-full">
+          {PRIMARY.filter(Boolean).slice(0, 2).map((item) => {
+            const it = item!
+            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
             return (
               <Link
-                key={item.href}
-                href={item.href}
-                className="flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-0"
+                key={it.href}
+                href={it.href}
+                className="flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-0 relative"
               >
-                <item.icon className={cn(
-                  'w-5 h-5 transition-colors',
-                  isActive
-                    ? 'text-primary'
-                    : 'text-gray-400 dark:text-white/35',
-                )} />
-                <span className={cn(
-                  'text-[10px] font-medium transition-colors truncate',
-                  isActive
-                    ? 'text-primary'
-                    : 'text-gray-400 dark:text-white/30',
-                )}>
-                  {item.label}
+                <it.icon className={cn('w-5 h-5 transition-colors', isActive ? 'text-primary' : 'text-gray-400 dark:text-white/35')} />
+                <span className={cn('text-[10px] font-medium transition-colors truncate', isActive ? 'text-primary' : 'text-gray-400 dark:text-white/30')}>
+                  {it.label}
                 </span>
-                {isActive && (
-                  <span className="absolute top-0 w-5 h-0.5 rounded-full bg-primary" />
-                )}
+                {isActive && <span className="absolute top-0 w-5 h-0.5 rounded-full bg-primary" />}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Center + button */}
+        <button
+          onClick={() => setOpen(true)}
+          className={cn(
+            'relative -top-4 flex items-center justify-center flex-shrink-0',
+            'w-14 h-14 rounded-full',
+            'bg-primary shadow-lg',
+            'active:scale-95 transition-transform duration-150',
+          )}
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </button>
+
+        {/* Right items — flex-1 mirrors left side */}
+        <div className="flex flex-1 items-center justify-around h-full">
+          {PRIMARY.filter(Boolean).slice(2).map((item) => {
+            const it = item!
+            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
+            return (
+              <Link
+                key={it.href}
+                href={it.href}
+                className="flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-0 relative"
+              >
+                <it.icon className={cn('w-5 h-5 transition-colors', isActive ? 'text-primary' : 'text-gray-400 dark:text-white/35')} />
+                <span className={cn('text-[10px] font-medium transition-colors truncate', isActive ? 'text-primary' : 'text-gray-400 dark:text-white/30')}>
+                  {it.label}
+                </span>
+                {isActive && <span className="absolute top-0 w-5 h-0.5 rounded-full bg-primary" />}
               </Link>
             )
           })}
