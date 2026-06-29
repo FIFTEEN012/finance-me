@@ -21,7 +21,6 @@ import { useTransactionStore } from '@/store/useTransactionStore'
 import { useBudgetStore } from '@/store/useBudgetStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
-import { useRecurringStore } from '@/store/useRecurringStore'
 import { cn } from '@/lib/utils'
 
 /* ── Section wrapper ─────────────────────────────────────────── */
@@ -88,7 +87,6 @@ export default function SettingsPage() {
   const { transactions, replaceTransactions, deleteTransactions } = useTransactionStore()
   const { budgets, replaceBudgets }                               = useBudgetStore()
   const { categories, replaceCategories }                         = useCategoryStore()
-  const { recurrings }                                            = useRecurringStore()
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [importData, setImportData]           = useState<z.infer<typeof backupSchema> | null>(null)
@@ -412,7 +410,6 @@ export default function SettingsPage() {
           <div className="flex gap-3 text-right">
             {[
               { label: 'รายการ', value: transactions.length },
-              { label: 'ประจำ',  value: recurrings.length   },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-sm font-bold text-gray-800 dark:text-white/80">{value}</p>

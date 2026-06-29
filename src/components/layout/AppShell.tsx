@@ -8,9 +8,7 @@ import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { OnboardingWizard } from '@/components/shared/OnboardingWizard'
 import { PwaRegister } from '@/components/shared/PwaRegister'
 import { ThemeApplier } from '@/components/shared/ThemeApplier'
-import { useRecurringGenerator } from '@/hooks/useRecurringGenerator'
 import { useBudgetAlert } from '@/hooks/useBudgetAlert'
-import { useMonthlySnapshot } from '@/hooks/useMonthlySnapshot'
 import { useSupabaseSync } from '@/hooks/useSupabaseSync'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
@@ -20,7 +18,6 @@ import { useExchangeRateStore } from '@/store/useExchangeRateStore'
 import { useEffect } from 'react'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  useRecurringGenerator()
   useBudgetAlert()
   useSupabaseSync()
 
@@ -36,7 +33,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (s, h) => s + h.units * h.currentPricePerUnit * getRate(h.currency ?? 'THB'),
     0
   )
-  useMonthlySnapshot(portfolioValue)
   usePortfolioSnapshot()
   const hydrated = useHydrated()
   const onboardingCompleted = useOnboardingStore((s) => s.completed)

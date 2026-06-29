@@ -4,9 +4,8 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, X, LayoutDashboard, ArrowLeftRight, PiggyBank,
-  BarChart3, Tags, RefreshCw, Target, Scale, Calculator,
-  CreditCard, Plus, TrendingUp, TrendingDown, ArrowRight,
-  Wallet, Zap,
+  BarChart3, Tags, Target, Plus, TrendingUp, TrendingDown, ArrowRight,
+  Wallet, Zap, Dumbbell,
 } from 'lucide-react'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
@@ -39,12 +38,10 @@ const PAGES: Result[] = [
   { id: 'p-transactions', type: 'page', title: 'รายการธุรกรรม',      subtitle: 'บันทึกรายรับ-รายจ่าย',      icon: ArrowLeftRight,  iconColor: 'text-blue-500',   href: '/transactions' },
   { id: 'p-budgets',      type: 'page', title: 'งบประมาณ',            subtitle: 'ตั้งและติดตามงบ',            icon: PiggyBank,       iconColor: 'text-violet-500', href: '/budgets'      },
   { id: 'p-reports',      type: 'page', title: 'รายงาน',              subtitle: 'วิเคราะห์การเงิน',           icon: BarChart3,       iconColor: 'text-indigo-500', href: '/reports'      },
+  { id: 'p-workouts',     type: 'page', title: 'ออกกำลังกาย',          subtitle: 'คลังท่าและประวัติการออกกำลังกาย', icon: Dumbbell,       iconColor: 'text-violet-500', href: '/workouts'     },
+  { id: 'p-routines',     type: 'page', title: 'แผนออกกำลังกาย',       subtitle: 'ตารางฝึกและ Routine',       icon: Zap,            iconColor: 'text-amber-500',  href: '/routines'     },
   { id: 'p-categories',   type: 'page', title: 'หมวดหมู่',            subtitle: 'จัดการหมวดหมู่',             icon: Tags,            iconColor: 'text-pink-500',   href: '/categories'   },
-  { id: 'p-recurring',    type: 'page', title: 'รายการประจำ',         subtitle: 'รายรับ-จ่ายประจำ',           icon: RefreshCw,       iconColor: 'text-cyan-500',   href: '/recurring'    },
   { id: 'p-goals',        type: 'page', title: 'เป้าหมายการออม',      subtitle: 'ติดตามเป้าหมาย',             icon: Target,          iconColor: 'text-amber-500',  href: '/goals'        },
-  { id: 'p-networth',     type: 'page', title: 'Net Worth',            subtitle: 'สินทรัพย์และหนี้สิน',        icon: Scale,           iconColor: 'text-teal-500',   href: '/net-worth'    },
-  { id: 'p-debt',         type: 'page', title: 'Debt Tracker',         subtitle: 'ติดตามและวางแผนชำระหนี้',    icon: CreditCard,      iconColor: 'text-red-500',    href: '/debt'         },
-  { id: 'p-calc',         type: 'page', title: 'เครื่องคิดเลขการเงิน', subtitle: 'คำนวณดอกเบี้ย, ผ่อน, ออม',  icon: Calculator,      iconColor: 'text-violet-500', href: '/calculators'  },
 ]
 
 const GROUP_LABEL: Record<ResultType, string> = {

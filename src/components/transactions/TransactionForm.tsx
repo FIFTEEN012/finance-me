@@ -101,7 +101,7 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
       description: data.description,
       note: data.note,
       tags: tags.length > 0 ? tags : undefined,
-      date: data.date.toISOString(),
+      date: `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`,
     }
     if (editingTransaction) {
       updateTransaction(editingTransaction.id, payload)

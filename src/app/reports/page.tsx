@@ -14,7 +14,6 @@ import { SpendingIntensity } from '@/components/reports/SpendingIntensity'
 import { PrintableReport } from '@/components/reports/PrintableReport'
 import { IncomeBreakdown } from '@/components/reports/IncomeBreakdown'
 import { SavingsRateTracker } from '@/components/reports/SavingsRateTracker'
-import { CashFlowForecast } from '@/components/dashboard/CashFlowForecast'
 import { SpendingInsights } from '@/components/dashboard/SpendingInsights'
 import { PressCard } from '@/components/ui/PressCard'
 import { THAI_MONTHS } from '@/lib/utils'
@@ -89,7 +88,6 @@ export default function ReportsPage() {
       <PrintableReport open={printOpen} onOpenChange={setPrintOpen} year={year} month={month} />
 
       <SpendingInsights />
-      <CashFlowForecast />
       <MonthlyBarChart year={year} />
       <IncomeBreakdown year={year} month={month} />
       <SpendingTrend />

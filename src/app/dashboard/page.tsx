@@ -3,14 +3,13 @@
 import { useMemo } from 'react'
 import {
   Flame, Star, Zap, Target, TrendingUp,
-  TrendingDown, Scale, Trophy, Coins, ShieldCheck, BookOpen, LayoutGrid, ChevronRight,
+  TrendingDown, Trophy, Coins, ShieldCheck, BookOpen, LayoutGrid,
 } from 'lucide-react'
-import Link from 'next/link'
 import { useTransactionStore } from '@/store/useTransactionStore'
-import { useNetWorthStore }    from '@/store/useNetWorthStore'
 import { useGoalStore }        from '@/store/useGoalStore'
 import { useInvestmentStore }  from '@/store/useInvestmentStore'
 import { useBudgetStore }      from '@/store/useBudgetStore'
+import { useWorkoutStore }     from '@/store/useWorkoutStore'
 import { formatCurrency, THAI_MONTHS } from '@/lib/utils'
 import {
   PressCard, XpBar, WeekDot, ChallengeCard, AchievCard,
@@ -18,17 +17,17 @@ import {
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { BudgetProgressList } from '@/components/dashboard/BudgetProgressList'
 import { CategoryPieChart }   from '@/components/dashboard/CategoryPieChart'
-import { NetWorthSparkline }  from '@/components/dashboard/NetWorthSparkline'
 import { PaydayCountdown }    from '@/components/dashboard/PaydayCountdown'
+import { Dumbbell } from 'lucide-react'
 
 const DAYS = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
 
 export default function DashboardPage() {
   const { transactions, getSumByTypeAndMonth } = useTransactionStore()
-  const { items: nwItems }                     = useNetWorthStore()
   const { goals }                              = useGoalStore()
   const { holdings }                           = useInvestmentStore()
   const { getBudgetsByMonth }                  = useBudgetStore()
+  const { sessions, getWorkoutStreak, getWeeklyCount, getTotalSetsThisWeek, hasWorkedOutToday } = useWorkoutStore()
 
   const now      = new Date()
   const month    = now.getMonth() + 1
@@ -41,10 +40,6 @@ export default function DashboardPage() {
   const income  = getSumByTypeAndMonth('INCOME',  month, year)
   const expense = getSumByTypeAndMonth('EXPENSE', month, year)
 
-  const totalAssets      = nwItems.filter((i) => i.type === 'ASSET').reduce((s, i) => s + i.amount, 0)
-  const totalLiabilities = nwItems.filter((i) => i.type === 'LIABILITY').reduce((s, i) => s + i.amount, 0)
-  const netWorth         = totalAssets - totalLiabilities
-
   const savingsRate = income > 0 ? Math.round(((income - expense) / income) * 100) : 0
 
   const portfolioReturn = useMemo(() => {
@@ -56,42 +51,51 @@ export default function DashboardPage() {
 
   const completedGoals = goals.filter((g) => g.savedAmount >= g.targetAmount && g.targetAmount > 0).length
 
-  /* ── Gamification ── */
+  /* ── Gamification (Combined Finance & Workout Activity) ── */
   const { streak, xpToday, weekActive } = useMemo(() => {
-    const txDays   = new Set(transactions.map((t) => t.date.slice(0, 10)))
+    const activityDays = new Set([
+      ...transactions.map((t) => t.date.slice(0, 10)),
+      ...sessions.map((s) => s.date.slice(0, 10))
+    ])
     const todayStr = now.toISOString().slice(0, 10)
 
     let streak = 0
     const d    = new Date()
     while (true) {
       const key = d.toISOString().slice(0, 10)
-      if (txDays.has(key)) { streak++; d.setDate(d.getDate() - 1) }
+      if (activityDays.has(key)) { streak++; d.setDate(d.getDate() - 1) }
       else break
     }
 
-    const xpToday = transactions.filter((t) => t.date.slice(0, 10) === todayStr).length * 15
+    const workoutDoneToday = sessions.some((s) => s.date.slice(0, 10) === todayStr)
+    const xpToday = transactions.filter((t) => t.date.slice(0, 10) === todayStr).length * 15 + (workoutDoneToday ? 25 : 0)
 
     const weekActive = DAYS.map((_, i) => {
       const wd = new Date()
       wd.setDate(wd.getDate() - (todayDay - i))
-      return i <= todayDay && txDays.has(wd.toISOString().slice(0, 10))
+      return i <= todayDay && activityDays.has(wd.toISOString().slice(0, 10))
     })
 
     return { streak, xpToday, weekActive }
-  }, [transactions, todayDay])   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [transactions, sessions, todayDay])   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const xpTotal = transactions.length * 15 + completedGoals * 100
+  const xpTotal = transactions.length * 15 + completedGoals * 100 + sessions.length * 25
   const xpGoal  = Math.max(500, Math.ceil(xpTotal / 500) * 500)
 
+  /* ── Workout stats ── */
+  const workoutStreak = getWorkoutStreak()
+  const weeklyWorkoutCount = getWeeklyCount()
+  const weeklySetsCount = getTotalSetsThisWeek()
+  const workedOutToday = hasWorkedOutToday()
+
   /* ── Daily challenges ── */
-  const todayStr     = now.toISOString().slice(0, 10)
+  const todayStr       = now.toISOString().slice(0, 10)
   const hasLoggedToday = transactions.some((t) => t.date.slice(0, 10) === todayStr)
   const budgets        = getBudgetsByMonth(month, year)
   const hasBudget      = budgets.length > 0
-  const hasNetWorth    = nwItems.length > 0
   const budgetDays     = Math.min(now.getDate(), 30)
 
-  const challengesDone = [hasLoggedToday, hasBudget, hasNetWorth].filter(Boolean).length
+  const challengesDone = [hasLoggedToday, hasBudget, workedOutToday].filter(Boolean).length
 
   return (
     <div className="space-y-6 pb-20">
@@ -99,7 +103,7 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-white">ภาพรวมการเงิน</h2>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white">ภาพรวมการใช้งาน</h2>
           <p className="text-sm font-semibold text-gray-400">{monthName} {yearThai}</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-600">
@@ -153,21 +157,8 @@ export default function DashboardPage() {
       {/* ── 1b. Payday Countdown ─── */}
       <PaydayCountdown />
 
-
       {/* ── 2. Big Stat Cards ─── */}
-      <div className="grid grid-cols-3 gap-4">
-        <PressCard
-          shadow="0 5px 0 0 #4c1d95"
-          shadowHover="0 3px 0 0 #4c1d95"
-          className="border-violet-400 bg-violet-500 p-5"
-        >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <Scale className="w-5 h-5 text-white" />
-          </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">Net Worth</p>
-          <p className="text-white font-black text-lg leading-none num">{formatCurrency(netWorth)}</p>
-        </PressCard>
-
+      <div className="grid grid-cols-2 gap-4">
         <PressCard
           shadow="0 5px 0 0 #065f46"
           shadowHover="0 3px 0 0 #065f46"
@@ -191,6 +182,39 @@ export default function DashboardPage() {
           <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">รายจ่าย</p>
           <p className="text-white font-black text-lg leading-none num">{formatCurrency(expense)}</p>
         </PressCard>
+      </div>
+
+      {/* ── 2b. Workout Stats Cards ─── */}
+      <div>
+        <h2 className="text-base font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <Dumbbell className="w-4 h-4 text-violet-500" />
+          สถิติการออกกำลังกาย
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          <PressCard
+            shadow="0 5px 0 0 #5b21b6"
+            shadowHover="0 3px 0 0 #5b21b6"
+            className="border-violet-400 bg-violet-500 p-5"
+          >
+            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
+              <Flame className="w-5 h-5 text-white" />
+            </div>
+            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">Workout Streak</p>
+            <p className="text-white font-black text-lg leading-none num">{workoutStreak} วัน</p>
+          </PressCard>
+
+          <PressCard
+            shadow="0 5px 0 0 #0369a1"
+            shadowHover="0 3px 0 0 #0369a1"
+            className="border-sky-400 bg-sky-500 p-5"
+          >
+            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
+              <Dumbbell className="w-5 h-5 text-white" />
+            </div>
+            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">สัปดาห์นี้</p>
+            <p className="text-white font-black text-lg leading-none num">{weeklyWorkoutCount} ครั้ง ({weeklySetsCount} เซ็ต)</p>
+          </PressCard>
+        </div>
       </div>
 
       {/* ── 3. Financial Health XP Bar ─── */}
@@ -309,14 +333,14 @@ export default function DashboardPage() {
             shadow="0 4px 0 0 #164e63"
           />
           <ChallengeCard
-            icon={Scale}
-            title="อัปเดต Net Worth"
-            subtitle={hasNetWorth ? 'มีข้อมูลสินทรัพย์แล้ว ✓' : 'เพิ่มสินทรัพย์หรือหนี้สินของคุณ'}
+            icon={Dumbbell}
+            title="ออกกำลังกายวันนี้"
+            subtitle={workedOutToday ? 'ออกกำลังกายเสร็จแล้ว 💪' : 'ทำภารกิจหรือจดบันทึกการฝึกของวันนี้'}
             xp={25}
-            done={hasNetWorth}
-            color="#059669"
-            borderColor="#34d399"
-            shadow="0 4px 0 0 #064e3b"
+            done={workedOutToday}
+            color="#ec4899"
+            borderColor="#f472b6"
+            shadow="0 4px 0 0 #9d174d"
           />
         </div>
       </div>
@@ -347,23 +371,14 @@ export default function DashboardPage() {
           </PressCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 gap-4 mt-4">
           {/* Category Pie */}
           <PressCard
             shadow="0 4px 0 0 #fca5a5"
             shadowHover="0 2px 0 0 #fca5a5"
-            className="border-red-300 overflow-hidden p-0"
+            className="border-red-300 overflow-hidden p-0 max-w-xl mx-auto w-full"
           >
             <CategoryPieChart className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
-          </PressCard>
-
-          {/* Net Worth Sparkline */}
-          <PressCard
-            shadow="0 4px 0 0 #6ee7b7"
-            shadowHover="0 2px 0 0 #6ee7b7"
-            className="border-emerald-300 overflow-hidden p-0"
-          >
-            <NetWorthSparkline className="rounded-none border-0 shadow-none dark:bg-transparent dark:border-0" />
           </PressCard>
         </div>
       </div>

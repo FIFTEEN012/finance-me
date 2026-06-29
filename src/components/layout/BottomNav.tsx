@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ArrowLeftRight, BarChart3,
-  PiggyBank, Tags, RefreshCw, Target, Scale, TrendingUp,
-  MoreHorizontal, Plus, X, Calculator, CreditCard, Settings, Repeat2, Building2, SplitSquareHorizontal, FileUp,
+  PiggyBank, Tags, Target, TrendingUp,
+  MoreHorizontal, Plus, X, Settings, SplitSquareHorizontal, FileUp,
+  Dumbbell, Flame,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -25,16 +26,12 @@ const PRIMARY = [
 
 /* ── Secondary items (inside "More" sheet) ── */
 const SECONDARY = [
+  { href: '/workouts',   label: 'ออกกำลังกาย',   icon: Dumbbell },
+  { href: '/routines',   label: 'แผนออกกำลังกาย', icon: Flame    },
   { href: '/categories', label: 'หมวดหมู่',      icon: Tags     },
-  { href: '/recurring',  label: 'รายการประจำ',   icon: RefreshCw },
   { href: '/goals',        label: 'เป้าหมายออม',   icon: Target      },
-  { href: '/accounts',    label: 'บัญชีธนาคาร',    icon: Building2   },
-  { href: '/net-worth',   label: 'Net Worth',      icon: Scale       },
   { href: '/investments', label: 'พอร์ตลงทุน',     icon: TrendingUp  },
-  { href: '/debt',          label: 'หนี้สิน',        icon: CreditCard  },
-  { href: '/subscriptions', label: 'Subscriptions',  icon: Repeat2                 },
   { href: '/bill-split',    label: 'แบ่งบิล',         icon: SplitSquareHorizontal  },
-  { href: '/calculators',   label: 'คิดเลข',         icon: Calculator  },
   { href: '/import',        label: 'นำเข้าข้อมูล',   icon: FileUp      },
   { href: '/settings',      label: 'ตั้งค่า',         icon: Settings    },
 ]

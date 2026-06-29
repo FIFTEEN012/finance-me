@@ -7,7 +7,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useTransactionStore } from '@/store/useTransactionStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useBudgetStore } from '@/store/useBudgetStore'
-import { useNetWorthStore } from '@/store/useNetWorthStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { formatCurrency, calcRollover, THAI_MONTHS, THAI_MONTHS_SHORT } from '@/lib/utils'
 
@@ -23,7 +22,6 @@ export function PrintableReport({ open, onOpenChange, year, month }: PrintableRe
   const { transactions, getSumByTypeAndMonth } = useTransactionStore()
   const { getCategoryById } = useCategoryStore()
   const { getBudgetsByMonth } = useBudgetStore()
-  const { items: nwItems } = useNetWorthStore()
   const { goals } = useGoalStore()
 
   const now = new Date()
@@ -114,10 +112,6 @@ export function PrintableReport({ open, onOpenChange, year, month }: PrintableRe
     }).sort((a, b) => b.pct - a.pct)
   }, [getBudgetsByMonth, getCategoryById, transactions, targetMonth, targetYear])
 
-  /* ── Net Worth ─────────────────────────────────────────────── */
-  const totalAssets = nwItems.filter((i) => i.type === 'ASSET').reduce((s, i) => s + i.amount, 0)
-  const totalLiabilities = nwItems.filter((i) => i.type === 'LIABILITY').reduce((s, i) => s + i.amount, 0)
-  const netWorth = totalAssets - totalLiabilities
 
   /* ── Goals ─────────────────────────────────────────────────── */
   const activeGoals = goals.filter((g) => g.savedAmount < g.targetAmount)
@@ -402,73 +396,8 @@ export function PrintableReport({ open, onOpenChange, year, month }: PrintableRe
             </section>
           )}
 
-          {/* Section 6 & 7: Net Worth + Goals — side by side */}
-          <div className="grid grid-cols-2 gap-6 print:break-inside-avoid">
-            {/* Net Worth */}
-            <section>
-              <h2 className="text-base font-bold mb-3 text-gray-800 uppercase tracking-wide">
-                มูลค่าสุทธิ (Net Worth)
-              </h2>
-              {nwItems.length === 0 ? (
-                <p className="text-sm text-gray-400">ยังไม่มีข้อมูล</p>
-              ) : (
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-2 py-1.5 text-left font-semibold">รายการ</th>
-                      <th className="border border-gray-300 px-2 py-1.5 text-right font-semibold">มูลค่า</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Assets */}
-                    <tr className="bg-green-50">
-                      <td colSpan={2} className="border border-gray-200 px-2 py-1 text-xs font-semibold text-green-800 uppercase tracking-wide">
-                        สินทรัพย์
-                      </td>
-                    </tr>
-                    {nwItems.filter((i) => i.type === 'ASSET').map((item) => (
-                      <tr key={item.id} className="bg-white">
-                        <td className="border border-gray-200 px-2 py-1.5 pl-4">{item.name}</td>
-                        <td className="border border-gray-200 px-2 py-1.5 text-right text-green-700 font-medium">
-                          {formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="bg-green-100 font-semibold">
-                      <td className="border border-gray-300 px-2 py-1.5 pl-4 text-green-800">รวมสินทรัพย์</td>
-                      <td className="border border-gray-300 px-2 py-1.5 text-right text-green-800">{formatCurrency(totalAssets)}</td>
-                    </tr>
-                    {/* Liabilities */}
-                    <tr className="bg-red-50">
-                      <td colSpan={2} className="border border-gray-200 px-2 py-1 text-xs font-semibold text-red-800 uppercase tracking-wide">
-                        หนี้สิน
-                      </td>
-                    </tr>
-                    {nwItems.filter((i) => i.type === 'LIABILITY').map((item) => (
-                      <tr key={item.id} className="bg-white">
-                        <td className="border border-gray-200 px-2 py-1.5 pl-4">{item.name}</td>
-                        <td className="border border-gray-200 px-2 py-1.5 text-right text-red-600 font-medium">
-                          {formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="bg-red-100 font-semibold">
-                      <td className="border border-gray-300 px-2 py-1.5 pl-4 text-red-800">รวมหนี้สิน</td>
-                      <td className="border border-gray-300 px-2 py-1.5 text-right text-red-800">{formatCurrency(totalLiabilities)}</td>
-                    </tr>
-                    {/* Net Worth */}
-                    <tr className="bg-gray-900 text-white font-bold">
-                      <td className="border border-gray-700 px-2 py-2">มูลค่าสุทธิ</td>
-                      <td className={`border border-gray-700 px-2 py-2 text-right ${netWorth >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {formatCurrency(netWorth)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              )}
-            </section>
-
-            {/* Goals */}
+          {/* Section 6: Goals */}
+          <div className="print:break-inside-avoid mt-6">
             <section>
               <h2 className="text-base font-bold mb-3 text-gray-800 uppercase tracking-wide">
                 เป้าหมายการออม

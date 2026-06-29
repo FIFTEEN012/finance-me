@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 import { Wallet, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
-import { BillReminderBell } from '@/components/shared/BillReminderBell'
 import { CurrencyConverterWidget } from '@/components/shared/CurrencyConverterWidget'
 import { SyncButton } from '@/components/shared/SyncButton'
 import { useSearchStore } from '@/store/useSearchStore'
@@ -15,15 +14,11 @@ const pageTitles: Record<string, string> = {
   '/budgets':      'งบประมาณ',
   '/reports':      'รายงาน',
   '/categories':   'หมวดหมู่',
-  '/recurring':    'รายการประจำ',
   '/goals':        'เป้าหมายการออม',
-  '/net-worth':    'Net Worth',
-  '/calculators':  'เครื่องคิดเลขการเงิน',
-  '/debt':          'Debt Tracker',
-  '/accounts':      'บัญชีธนาคาร',
-  '/subscriptions': 'Subscriptions',
   '/bill-split':    'แบ่งบิล',
   '/settings':      'ตั้งค่า',
+  '/workouts':     'ออกกำลังกาย',
+  '/routines':     'แผนออกกำลังกาย',
 }
 
 export function Topbar() {
@@ -79,7 +74,6 @@ export function Topbar() {
           </span>
         </button>
         <CurrencyConverterWidget />
-        <BillReminderBell />
         <SyncButton />
         <ThemeToggle />
       </div>

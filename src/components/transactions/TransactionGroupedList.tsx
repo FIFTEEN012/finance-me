@@ -26,23 +26,27 @@ interface Props {
 
 /* ─── Date label helper ──────────────────────────────────── */
 
+function parseLocalDate(dateStr: string): Date {
+  // Parse "YYYY-MM-DD" as local time (not UTC) to avoid timezone offset issues
+  const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+/** Convert any date string (UTC ISO or YYYY-MM-DD) to local "YYYY-MM-DD" key */
+function toLocalDateKey(dateStr: string): string {
+  const d = new Date(dateStr)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
 function dateLabelFor(dateStr: string): string {
-  const txDate  = new Date(dateStr)
-  const today   = new Date()
-  today.setHours(0, 0, 0, 0)
-  txDate.setHours(0, 0, 0, 0)
-
-  const diffMs   = today.getTime() - txDate.getTime()
-  const diffDays = Math.round(diffMs / 86_400_000)
-
-  if (diffDays === 0)  return 'วันนี้'
-  if (diffDays === 1)  return 'เมื่อวาน'
-  if (diffDays <= 6)   return `${diffDays} วันก่อน`
-
-  return new Date(dateStr).toLocaleDateString('th-TH', {
-    day:   'numeric',
-    month: 'long',
-    year:  'numeric',
+  return parseLocalDate(dateStr).toLocaleDateString('th-TH', {
+    weekday: 'short',
+    day:     'numeric',
+    month:   'long',
+    year:    'numeric',
   })
 }
 
@@ -64,7 +68,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
   const [bulkTagInput, setBulkTagInput]       = useState<string[]>([])
   const [visibleCount, setVisibleCount]       = useState(PAGE_SIZE)
 
-  /* Sort newest first then group by date */
+  /* Sort newest first then group by local date */
   const { groups, allIds } = useMemo(() => {
     const sorted = [...transactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -72,7 +76,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
 
     const map = new Map<string, Transaction[]>()
     for (const tx of sorted) {
-      const key = tx.date.slice(0, 10)
+      const key = toLocalDateKey(tx.date)   // ใช้ local date key เสมอ แก้ปัญหา UTC offset
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(tx)
     }
@@ -193,19 +197,37 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
         'shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-none',
         className,
       )}>
-        {groups.map(([dateKey, txs], gi) => (
-          <div key={dateKey}>
-            {/* Date group header */}
-            <div className={cn(
-              'px-5 py-2.5',
-              'border-b border-gray-100 dark:border-white/[0.05]',
-              gi > 0 && 'border-t border-gray-100 dark:border-white/[0.05]',
-              'bg-gray-50/60 dark:bg-white/[0.015]',
-            )}>
-              <span className="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-widest">
-                {dateLabelFor(txs[0].date)}
-              </span>
-            </div>
+        {groups.map(([dateKey, txs], gi) => {
+          const dailyTotal = txs.reduce((sum, tx) => {
+            if (tx.type === 'INCOME') return sum + tx.amount
+            return sum - tx.amount
+          }, 0)
+
+          const isPositive = dailyTotal > 0
+          const isNegative = dailyTotal < 0
+          const absTotal = Math.abs(dailyTotal)
+
+          return (
+            <div key={dateKey}>
+              {/* Date group header */}
+              <div className={cn(
+                'px-5 py-2.5 flex items-center justify-between',
+                'border-b border-gray-100 dark:border-white/[0.05]',
+                gi > 0 && 'border-t border-gray-100 dark:border-white/[0.05]',
+                'bg-gray-50/60 dark:bg-white/[0.015]',
+              )}>
+                <span className="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-widest">
+                  {dateLabelFor(txs[0].date)}
+                </span>
+                <span className={cn(
+                  'text-[11px] font-bold num tabular-nums tracking-wide',
+                  isPositive
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-gray-500 dark:text-white/40'
+                )}>
+                  {isPositive ? '+' : isNegative ? '-' : ''}{formatCurrency(absTotal)}
+                </span>
+              </div>
 
             {/* Transaction rows */}
             <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
@@ -301,7 +323,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
               })}
             </div>
           </div>
-        ))}
+        )})}
 
         {/* Load more */}
         {hasMore && (

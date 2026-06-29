@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
 function getStoredTheme(): 'dark' | 'light' {
-  if (typeof window === 'undefined') return 'dark'
-  return (localStorage.getItem('theme') as 'dark' | 'light') ?? 'dark'
+  if (typeof window === 'undefined') return 'light'
+  return (localStorage.getItem('theme') as 'dark' | 'light') ?? 'light'
 }
 
 function applyTheme(theme: 'dark' | 'light') {
@@ -19,7 +19,7 @@ function applyTheme(theme: 'dark' | 'light') {
 }
 
 export function ThemeToggle() {
-  const [theme, setThemeState] = useState<'dark' | 'light'>('dark')
+  const [theme, setThemeState] = useState<'dark' | 'light'>('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

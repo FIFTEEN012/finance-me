@@ -12,10 +12,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useBudgetStore } from '@/store/useBudgetStore'
-import { useRecurringStore } from '@/store/useRecurringStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 4
 
 /* ── Step components ─────────────────────────────────────────────── */
 
@@ -165,94 +164,6 @@ function StepBudget({ onNext }: { onNext: () => void }) {
   )
 }
 
-function StepIncome({ onNext }: { onNext: () => void }) {
-  const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('เงินเดือน')
-  const { addRecurring } = useRecurringStore()
-  const { getCategoriesByType } = useCategoryStore()
-
-  function handleNext() {
-    const val = parseFloat(amount)
-    if (!isNaN(val) && val > 0) {
-      const incomeCats = getCategoriesByType('INCOME')
-      if (incomeCats.length > 0) {
-        addRecurring({
-          categoryId: incomeCats[0].id,
-          type: 'INCOME',
-          amount: val,
-          description: description || 'เงินเดือน',
-          frequency: 'monthly',
-          dayOfMonth: 25,
-          startDate: new Date().toISOString().split('T')[0],
-          isActive: true,
-        })
-      }
-    }
-    onNext()
-  }
-
-  return (
-    <div className="flex flex-col gap-6 py-4">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-50 dark:bg-violet-500/10 mb-3">
-          <TrendingUp className="w-7 h-7 text-violet-600 dark:text-violet-400" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">รายรับประจำเดือน</h2>
-        <p className="mt-1.5 text-sm text-gray-500 dark:text-white/45">
-          เพิ่มรายรับประจำ เช่น เงินเดือน เพื่อให้ระบบสร้างรายการอัตโนมัติ
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="income-desc" className="text-sm font-medium text-gray-700 dark:text-white/60">
-            ชื่อรายรับ
-          </Label>
-          <Input
-            id="income-desc"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="เช่น เงินเดือน"
-            className="h-11"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="income-amount" className="text-sm font-medium text-gray-700 dark:text-white/60">
-            จำนวนเงิน (บาท)
-          </Label>
-          <Input
-            id="income-amount"
-            type="number"
-            placeholder="เช่น 35000"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="text-lg h-12 text-center font-semibold"
-            min={0}
-          />
-        </div>
-      </div>
-
-      <div className="px-4 py-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
-        <p className="text-xs text-violet-700 dark:text-violet-400">
-          ระบบจะสร้างรายการรายรับให้อัตโนมัติทุกวันที่ 25 ของเดือน คุณสามารถเปลี่ยนวันได้ในภายหลัง
-        </p>
-      </div>
-
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onNext} className="flex-1 h-11">
-          ข้ามก่อน
-        </Button>
-        <Button
-          onClick={handleNext}
-          className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white h-11 gap-2"
-        >
-          ถัดไป
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 function StepFeatures({ onNext }: { onNext: () => void }) {
   const pages = [
@@ -404,9 +315,8 @@ export function OnboardingWizard() {
         <div className="px-5 pb-5">
           {step === 0 && <StepWelcome onNext={next} />}
           {step === 1 && <StepBudget onNext={next} />}
-          {step === 2 && <StepIncome onNext={next} />}
-          {step === 3 && <StepFeatures onNext={next} />}
-          {step === 4 && <StepDone onComplete={handleComplete} />}
+          {step === 2 && <StepFeatures onNext={next} />}
+          {step === 3 && <StepDone onComplete={handleComplete} />}
         </div>
       </div>
     </div>
