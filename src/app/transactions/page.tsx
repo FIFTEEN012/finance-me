@@ -114,66 +114,66 @@ export default function TransactionsPage() {
     <div className="space-y-5 pb-20">
 
       {/* ── Page header ── */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-lg font-black text-gray-900 dark:text-white">รายการธุรกรรม</h2>
           <p className="text-sm font-semibold text-gray-400">{transactions.length} รายการ</p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}
-            className="gap-1.5 border-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70 dark:hover:bg-white/[0.08]">
+            className="gap-1.5 border-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70 dark:hover:bg-white/[0.08] text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2">
             <Download className="w-3.5 h-3.5" /> Export
           </Button>
           <Button variant="outline" size="sm" onClick={() => router.push('/import')}
-            className="gap-1.5 border-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70 dark:hover:bg-white/[0.08]">
+            className="gap-1.5 border-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70 dark:hover:bg-white/[0.08] text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2">
             <Upload className="w-3.5 h-3.5" /> Import
           </Button>
           <Button onClick={handleOpenAdd}
-            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_16px_rgba(124,58,237,0.30)]">
+            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_16px_rgba(124,58,237,0.30)] text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2">
             <Plus className="w-4 h-4" /> เพิ่มรายการ
           </Button>
         </div>
       </div>
 
       {/* ── 3 Stat Cards (Duolingo press style) ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* Income — emerald */}
         <PressCard
-          shadow="0 5px 0 0 #065f46"
-          shadowHover="0 3px 0 0 #065f46"
-          className="border-emerald-400 bg-emerald-500 p-4"
+          shadow="0 4px 0 0 #065f46"
+          shadowHover="0 2px 0 0 #065f46"
+          className="border-emerald-400 bg-emerald-500 p-2 sm:p-4"
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <TrendingUp className="w-5 h-5 text-white" />
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-1.5 sm:mb-3">
+            <TrendingUp className="w-4 h-4 sm:w-5 h-5 text-white" />
           </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">รายรับ</p>
-          <p className="text-white font-black text-xl leading-none num">{formatCurrency(totalIncome)}</p>
+          <p className="text-white/70 text-[9px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">รายรับ</p>
+          <p className="text-white font-black text-xs sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalIncome)}>{formatCurrency(totalIncome)}</p>
         </PressCard>
 
         {/* Expense — rose */}
         <PressCard
-          shadow="0 5px 0 0 #9f1239"
-          shadowHover="0 3px 0 0 #9f1239"
-          className="border-rose-400 bg-rose-500 p-4"
+          shadow="0 4px 0 0 #9f1239"
+          shadowHover="0 2px 0 0 #9f1239"
+          className="border-rose-400 bg-rose-500 p-2 sm:p-4"
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <TrendingDown className="w-5 h-5 text-white" />
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-1.5 sm:mb-3">
+            <TrendingDown className="w-4 h-4 sm:w-5 h-5 text-white" />
           </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">รายจ่าย</p>
-          <p className="text-white font-black text-xl leading-none num">{formatCurrency(totalExpense)}</p>
+          <p className="text-white/70 text-[9px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">รายจ่าย</p>
+          <p className="text-white font-black text-xs sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalExpense)}>{formatCurrency(totalExpense)}</p>
         </PressCard>
 
         {/* Net — violet or red depending on sign */}
         <PressCard
-          shadow={net >= 0 ? '0 5px 0 0 #4c1d95' : '0 5px 0 0 #9f1239'}
-          shadowHover={net >= 0 ? '0 3px 0 0 #4c1d95' : '0 3px 0 0 #9f1239'}
-          className={net >= 0 ? 'border-violet-400 bg-violet-500 p-4' : 'border-rose-400 bg-rose-500 p-4'}
+          shadow={net >= 0 ? '0 4px 0 0 #4c1d95' : '0 4px 0 0 #9f1239'}
+          shadowHover={net >= 0 ? '0 2px 0 0 #4c1d95' : '0 2px 0 0 #9f1239'}
+          className={net >= 0 ? 'border-violet-400 bg-violet-500 p-2 sm:p-4' : 'border-rose-400 bg-rose-500 p-2 sm:p-4'}
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <Zap className="w-5 h-5 text-white" />
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-1.5 sm:mb-3">
+            <Zap className="w-4 h-4 sm:w-5 h-5 text-white" />
           </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">ยอดสุทธิ</p>
-          <p className="text-white font-black text-xl leading-none num">{formatCurrency(net)}</p>
+          <p className="text-white/70 text-[9px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">ยอดสุทธิ</p>
+          <p className="text-white font-black text-xs sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(net)}>{formatCurrency(net)}</p>
         </PressCard>
       </div>
 

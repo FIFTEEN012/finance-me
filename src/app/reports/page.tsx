@@ -36,12 +36,12 @@ export default function ReportsPage() {
           <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">รายงาน</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">วิเคราะห์รายรับ-รายจ่ายของคุณ</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <Button
             variant="outline"
             size="sm"
             onClick={() => router.push('/reports/wrapped')}
-            className="gap-1.5 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-300 hover:from-violet-100 hover:to-indigo-100"
+            className="gap-1.5 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-300 hover:from-violet-100 hover:to-indigo-100 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2"
           >
             <Sparkles className="w-3.5 h-3.5" />
             Year in Review
@@ -50,7 +50,7 @@ export default function ReportsPage() {
             value={month === null ? 'ALL' : String(month)}
             onValueChange={(v) => setMonth(!v || v === 'ALL' ? null : Number(v))}
           >
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-28 sm:w-36 h-9 text-xs sm:text-sm bg-white dark:bg-white/[0.02] border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200">
               <SelectValue placeholder="เลือกเดือน" />
             </SelectTrigger>
             <SelectContent>
@@ -62,7 +62,7 @@ export default function ReportsPage() {
           </Select>
 
           <Select value={String(year)} onValueChange={(v) => setYear(Number(v ?? year))}>
-            <SelectTrigger className="w-28">
+            <SelectTrigger className="w-24 sm:w-28 h-9 text-xs sm:text-sm bg-white dark:bg-white/[0.02] border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -75,7 +75,7 @@ export default function ReportsPage() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 h-9"
+            className="gap-1.5 h-9 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2 border-gray-200 dark:border-white/10 dark:bg-white/[0.04]"
             onClick={() => setPrintOpen(true)}
           >
             <Printer className="w-4 h-4" />

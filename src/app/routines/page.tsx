@@ -305,29 +305,29 @@ export default function RoutinesPage() {
   return (
     <div className="space-y-5 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-lg font-black text-gray-900 dark:text-white">แผนออกกำลังกาย</h2>
           <p className="text-sm font-semibold text-gray-400">{routines.length} แผน</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <PressCard
             shadow="0 3px 0 0 #d97706"
             shadowHover="0 1px 0 0 #d97706"
-            className="border-amber-400 bg-amber-500 px-3.5 py-2"
+            className="border-amber-400 bg-amber-500 px-2.5 py-1.5 sm:px-3.5 sm:py-2"
             onClick={() => setShowGenerator(true)}
           >
-            <span className="text-white font-bold text-sm flex items-center gap-1.5">
+            <span className="text-white font-bold text-xs sm:text-sm flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> AI สร้างแผน
             </span>
           </PressCard>
           <PressCard
             shadow="0 3px 0 0 #4c1d95"
             shadowHover="0 1px 0 0 #4c1d95"
-            className="border-violet-400 bg-violet-500 px-3.5 py-2"
+            className="border-violet-400 bg-violet-500 px-2.5 py-1.5 sm:px-3.5 sm:py-2"
             onClick={() => { setEditingRoutine(undefined); setShowEditor(true) }}
           >
-            <span className="text-white font-bold text-sm flex items-center gap-1.5">
+            <span className="text-white font-bold text-xs sm:text-sm flex items-center gap-1.5">
               <Plus className="w-3.5 h-3.5" /> สร้างเอง
             </span>
           </PressCard>

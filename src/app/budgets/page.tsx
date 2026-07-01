@@ -84,7 +84,7 @@ export default function BudgetsPage() {
           <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">งบประมาณ</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{budgets.length} หมวดหมู่</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View toggle */}
           <div className="flex items-center gap-0.5 p-1 rounded-xl bg-gray-100 dark:bg-white/[0.05]">
               {([
@@ -96,20 +96,20 @@ export default function BudgetsPage() {
                   key={key}
                   onClick={() => setView(key)}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                    'flex items-center gap-1.5 px-2 py-1.5 sm:px-3 rounded-lg text-xs font-medium transition-all',
                     view === key
                       ? 'bg-violet-600 text-white shadow-[0_2px_0_0_#4c1d95]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-white dark:hover:bg-white/[0.04]'
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {label}
+                  <span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
             </div>
           {view !== 'log' && (
-            <Button onClick={handleOpenAdd} className="bg-primary hover:bg-primary/90 shrink-0">
-              <Plus className="w-4 h-4 mr-1" />
+            <Button onClick={handleOpenAdd} className="bg-primary hover:bg-primary/90 shrink-0 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2">
+              <Plus className="w-3.5 h-3.5 mr-1" />
               ตั้งงบประมาณ
             </Button>
           )}
