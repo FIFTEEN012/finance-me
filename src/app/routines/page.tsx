@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Plus, X, Search, Dumbbell, Play, Trash2, Edit3, ListPlus, Sparkles,
 } from 'lucide-react'
@@ -281,6 +282,7 @@ function RoutineEditorSheet({
 
 /* ── Main Page ── */
 export default function RoutinesPage() {
+  const router = useRouter()
   const { routines, deleteRoutine } = useRoutineStore()
   const { startWorkout, addExerciseToActive } = useWorkoutStore()
   const [showEditor, setShowEditor] = useState(false)
@@ -292,8 +294,13 @@ export default function RoutinesPage() {
     // Add all exercises from routine with pre-filled sets
     setTimeout(() => {
       for (const ex of routine.exercises) {
-        addExerciseToActive(ex.exerciseId, ex.exerciseName)
+        const initialSets = Array.from({ length: ex.targetSets }).map(() => ({
+          reps: ex.targetReps,
+          weight: ex.targetWeight ?? 0
+        }))
+        addExerciseToActive(ex.exerciseId, ex.exerciseName, initialSets)
       }
+      router.push('/workouts')
     }, 50)
   }
 

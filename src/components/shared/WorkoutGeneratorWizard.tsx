@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Flame, Target, Dumbbell, Award, ChevronLeft } from 'lucide-react'
 import { PressCard } from '@/components/ui/PressCard'
 import { useExerciseStore } from '@/store/useExerciseStore'
@@ -13,7 +13,7 @@ interface WorkoutGeneratorWizardProps {
 }
 
 export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps) {
-  const { exercises, loadExercises } = useExerciseStore()
+  const { loadExercises } = useExerciseStore()
   const { addRoutine } = useRoutineStore()
   const [step, setStep] = useState(1)
 
@@ -23,6 +23,11 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
   const [equipment, setEquipment] = useState<'bodyweight' | 'dumbbell' | 'full'>('dumbbell')
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner')
   const [focus, setFocus] = useState<'all' | 'upper' | 'lower' | 'abs'>('all')
+
+  // Load exercises on mount
+  useEffect(() => {
+    loadExercises()
+  }, [loadExercises])
 
   const handleNext = () => {
     if (step < 5) setStep(step + 1)
@@ -34,7 +39,8 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
 
   const handleGenerate = async () => {
     await loadExercises() // ensure loaded
-    const generated = generateWorkoutRoutines(exercises, {
+    const freshExercises = useExerciseStore.getState().exercises
+    const generated = generateWorkoutRoutines(freshExercises, {
       goal,
       frequency,
       equipment,
@@ -246,7 +252,8 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
                     setFocus(opt.id)
                     // Instantly generate to avoid state async lag
                     await loadExercises()
-                    const generated = generateWorkoutRoutines(exercises, {
+                    const freshExercises = useExerciseStore.getState().exercises
+                    const generated = generateWorkoutRoutines(freshExercises, {
                       goal,
                       frequency,
                       equipment,

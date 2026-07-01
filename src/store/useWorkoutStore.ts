@@ -10,7 +10,7 @@ interface WorkoutStore {
 
   // Active workout
   startWorkout: (date?: string) => void
-  addExerciseToActive: (exerciseId: string, exerciseName: string) => void
+  addExerciseToActive: (exerciseId: string, exerciseName: string, initialSets?: { reps: number; weight: number }[]) => void
   removeExerciseFromActive: (entryId: string) => void
   addSet: (entryId: string) => void
   removeSet: (entryId: string, setIndex: number) => void
@@ -64,14 +64,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
         })
       },
 
-      addExerciseToActive: (exerciseId, exerciseName) => {
+      addExerciseToActive: (exerciseId, exerciseName, initialSets) => {
         const { activeSession } = get()
         if (!activeSession) return
+        const sets: WorkoutSet[] = initialSets && initialSets.length > 0
+          ? initialSets.map(s => ({ reps: s.reps, weight: s.weight, done: false }))
+          : [{ reps: 0, weight: 0, done: false }]
         const entry: WorkoutExerciseEntry = {
           id: generateId(),
           exerciseId,
           exerciseName,
-          sets: [{ reps: 0, weight: 0, done: false }],
+          sets,
         }
         set({
           activeSession: {
