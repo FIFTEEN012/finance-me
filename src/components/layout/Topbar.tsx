@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Wallet, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,7 +24,13 @@ const pageTitles: Record<string, string> = {
 
 export function Topbar() {
   const pathname        = usePathname()
-  const title           = pageTitles[pathname] ?? 'FinanceMe'
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const title           = mounted ? (pageTitles[pathname] ?? 'FinanceMe') : 'FinanceMe'
   const { setOpen }     = useSearchStore()
 
   return (
