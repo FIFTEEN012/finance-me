@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -40,9 +40,16 @@ export function BottomNav() {
   const pathname    = usePathname()
   const { setOpen } = useQuickAddStore()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const isSecondaryActive = SECONDARY.some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + '/')
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const activePath = mounted ? pathname : ''
+
+  const isSecondaryActive = mounted && SECONDARY.some(
+    (item) => activePath === item.href || activePath.startsWith(item.href + '/')
   )
 
   return (
@@ -63,7 +70,7 @@ export function BottomNav() {
         <div className="flex flex-1 items-center justify-around h-full">
           {PRIMARY.filter(Boolean).slice(0, 2).map((item) => {
             const it = item!
-            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
+            const isActive = mounted && (activePath === it.href || activePath.startsWith(it.href + '/'))
             return (
               <Link
                 key={it.href}
@@ -97,7 +104,7 @@ export function BottomNav() {
         <div className="flex flex-1 items-center justify-around h-full">
           {PRIMARY.filter(Boolean).slice(2).map((item) => {
             const it = item!
-            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
+            const isActive = mounted && (activePath === it.href || activePath.startsWith(it.href + '/'))
             return (
               <Link
                 key={it.href}

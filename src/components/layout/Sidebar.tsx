@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -38,6 +39,13 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const activePath = mounted ? pathname : ''
 
   return (
     <aside className={cn(
@@ -74,7 +82,7 @@ export function Sidebar() {
       {/* ── Nav ── */}
       <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
+          const isActive = mounted && (activePath === href || activePath.startsWith(href + '/'))
           return (
             <Link
               key={href}
