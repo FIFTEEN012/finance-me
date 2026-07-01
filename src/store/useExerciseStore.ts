@@ -51,8 +51,20 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
 
   getExerciseById: (id) => get().exercises.find((e) => e.id === id),
 
-  getImageUrl: (imagePath) => `${GITHUB_RAW}/${imagePath}`,
-  getGifUrl: (gifPath) => `${GITHUB_RAW}/${gifPath}`,
+  getImageUrl: (imagePath) => {
+    const filename = imagePath.split('/').pop() || ''
+    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
+    const mediaId = filenameNoExt.split('-')[1]
+    if (!mediaId) return `${GITHUB_RAW}/${imagePath}`
+    return `https://static.exercisedb.dev/media/${mediaId}.gif`
+  },
+  getGifUrl: (gifPath) => {
+    const filename = gifPath.split('/').pop() || ''
+    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
+    const mediaId = filenameNoExt.split('-')[1]
+    if (!mediaId) return `${GITHUB_RAW}/${gifPath}`
+    return `https://static.exercisedb.dev/media/${mediaId}.gif`
+  },
 
   getBodyParts: () => {
     const parts = new Set(get().exercises.map((e) => e.body_part))
