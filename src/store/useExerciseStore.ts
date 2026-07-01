@@ -52,18 +52,24 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
   getExerciseById: (id) => get().exercises.find((e) => e.id === id),
 
   getImageUrl: (imagePath) => {
+    if (!imagePath) return ''
     const filename = imagePath.split('/').pop() || ''
     const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
-    const mediaId = filenameNoExt.split('-')[1]
-    if (!mediaId) return `${GITHUB_RAW}/${imagePath}`
-    return `https://static.exercisedb.dev/media/${mediaId}.gif`
+    const mediaId = filenameNoExt.split('-')[0] // extract 4-digit numeric ID (e.g. "0001")
+    if (mediaId && /^\d+$/.test(mediaId)) {
+      return `https://static.exercisedb.dev/media/${mediaId}.gif`
+    }
+    return `${GITHUB_RAW}/${imagePath}`
   },
   getGifUrl: (gifPath) => {
+    if (!gifPath) return ''
     const filename = gifPath.split('/').pop() || ''
     const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
-    const mediaId = filenameNoExt.split('-')[1]
-    if (!mediaId) return `${GITHUB_RAW}/${gifPath}`
-    return `https://static.exercisedb.dev/media/${mediaId}.gif`
+    const mediaId = filenameNoExt.split('-')[0]
+    if (mediaId && /^\d+$/.test(mediaId)) {
+      return `https://static.exercisedb.dev/media/${mediaId}.gif`
+    }
+    return `${GITHUB_RAW}/${gifPath}`
   },
 
   getBodyParts: () => {
