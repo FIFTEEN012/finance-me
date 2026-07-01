@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import {
-  Plus, X, Search, Dumbbell, Play, Trash2, Edit3, ListPlus,
+  Plus, X, Search, Dumbbell, Play, Trash2, Edit3, ListPlus, Sparkles,
 } from 'lucide-react'
 import { useRoutineStore } from '@/store/useRoutineStore'
 import { useExerciseStore } from '@/store/useExerciseStore'
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { ExerciseData, Routine, RoutineExercise } from '@/types/workout'
+import { WorkoutGeneratorWizard } from '@/components/shared/WorkoutGeneratorWizard'
 
 const ROUTINE_COLORS = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#dc2626', '#ec4899', '#06b6d4', '#8b5cf6']
 const ROUTINE_EMOJIS = ['🏋️', '💪', '🦵', '🏃', '🔥', '⚡', '🎯', '🌟', '🦾', '👊', '🤸', '🧘']
@@ -283,6 +284,7 @@ export default function RoutinesPage() {
   const { routines, deleteRoutine } = useRoutineStore()
   const { startWorkout, addExerciseToActive } = useWorkoutStore()
   const [showEditor, setShowEditor] = useState(false)
+  const [showGenerator, setShowGenerator] = useState(false)
   const [editingRoutine, setEditingRoutine] = useState<Routine | undefined>()
 
   const handleStartRoutine = (routine: Routine) => {
@@ -308,16 +310,28 @@ export default function RoutinesPage() {
           <h2 className="text-lg font-black text-gray-900 dark:text-white">แผนออกกำลังกาย</h2>
           <p className="text-sm font-semibold text-gray-400">{routines.length} แผน</p>
         </div>
-        <PressCard
-          shadow="0 3px 0 0 #4c1d95"
-          shadowHover="0 1px 0 0 #4c1d95"
-          className="border-violet-400 bg-violet-500 px-4 py-2"
-          onClick={() => { setEditingRoutine(undefined); setShowEditor(true) }}
-        >
-          <span className="text-white font-bold text-sm flex items-center gap-1.5">
-            <Plus className="w-4 h-4" /> สร้างแผน
-          </span>
-        </PressCard>
+        <div className="flex gap-2">
+          <PressCard
+            shadow="0 3px 0 0 #d97706"
+            shadowHover="0 1px 0 0 #d97706"
+            className="border-amber-400 bg-amber-500 px-3.5 py-2"
+            onClick={() => setShowGenerator(true)}
+          >
+            <span className="text-white font-bold text-sm flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> AI สร้างแผน
+            </span>
+          </PressCard>
+          <PressCard
+            shadow="0 3px 0 0 #4c1d95"
+            shadowHover="0 1px 0 0 #4c1d95"
+            className="border-violet-400 bg-violet-500 px-3.5 py-2"
+            onClick={() => { setEditingRoutine(undefined); setShowEditor(true) }}
+          >
+            <span className="text-white font-bold text-sm flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> สร้างเอง
+            </span>
+          </PressCard>
+        </div>
       </div>
 
       {/* Routines List */}
@@ -325,7 +339,7 @@ export default function RoutinesPage() {
         <div className="text-center py-16 text-gray-400">
           <ListPlus className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm font-semibold">ยังไม่มีแผนออกกำลังกาย</p>
-          <p className="text-xs mt-1">สร้างแผนเช่น Push Day, Pull Day, Leg Day</p>
+          <p className="text-xs mt-1">ให้ AI สร้างตารางฝึก หรือสร้างแผนใหม่ด้วยตนเองด้านบน</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -406,6 +420,14 @@ export default function RoutinesPage() {
           onClose={() => { setShowEditor(false); setEditingRoutine(undefined) }}
         />
       )}
+
+      {/* AI Generator Wizard */}
+      {showGenerator && (
+        <WorkoutGeneratorWizard
+          onClose={() => setShowGenerator(false)}
+        />
+      )}
     </div>
   )
 }
+
