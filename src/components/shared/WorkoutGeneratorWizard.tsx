@@ -51,7 +51,7 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pb-16 sm:pb-0">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
@@ -101,7 +101,10 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
               ].map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => setGoal(opt.id)}
+                  onClick={() => {
+                    setGoal(opt.id)
+                    setTimeout(handleNext, 120)
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3.5 p-3 rounded-xl border-2 text-left transition-all active:scale-98',
                     goal === opt.id
@@ -133,7 +136,10 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
               ].map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => setFrequency(opt.id)}
+                  onClick={() => {
+                    setFrequency(opt.id)
+                    setTimeout(handleNext, 120)
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3.5 p-3 rounded-xl border-2 text-left transition-all active:scale-98',
                     frequency === opt.id
@@ -165,7 +171,10 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
               ].map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => setEquipment(opt.id)}
+                  onClick={() => {
+                    setEquipment(opt.id)
+                    setTimeout(handleNext, 120)
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3.5 p-3 rounded-xl border-2 text-left transition-all active:scale-98',
                     equipment === opt.id
@@ -197,7 +206,10 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
               ].map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => setLevel(opt.id)}
+                  onClick={() => {
+                    setLevel(opt.id)
+                    setTimeout(handleNext, 120)
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3.5 p-3 rounded-xl border-2 text-left transition-all active:scale-98',
                     level === opt.id
@@ -230,7 +242,22 @@ export function WorkoutGeneratorWizard({ onClose }: WorkoutGeneratorWizardProps)
               ].map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => setFocus(opt.id)}
+                  onClick={async () => {
+                    setFocus(opt.id)
+                    // Instantly generate to avoid state async lag
+                    await loadExercises()
+                    const generated = generateWorkoutRoutines(exercises, {
+                      goal,
+                      frequency,
+                      equipment,
+                      level,
+                      focus: opt.id
+                    })
+                    for (const r of generated) {
+                      addRoutine(r)
+                    }
+                    onClose()
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3.5 p-3 rounded-xl border-2 text-left transition-all active:scale-98',
                     focus === opt.id
