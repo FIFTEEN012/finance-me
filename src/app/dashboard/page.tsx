@@ -98,285 +98,359 @@ export default function DashboardPage() {
   const challengesDone = [hasLoggedToday, hasBudget, workedOutToday].filter(Boolean).length
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-8 pb-24 text-slate-800 dark:text-slate-100">
 
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-white">ภาพรวมการใช้งาน</h2>
-          <p className="text-sm font-semibold text-gray-400">{monthName} {yearThai}</p>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-600">
-          <Flame className="w-4 h-4" />
-          <span className="text-sm font-black num">{streak}</span>
-          <span className="text-xs font-bold">วัน</span>
-        </div>
-      </div>
-
-      {/* ── 1. Streak Banner ─── */}
+      {/* ── 1. HERO SECTION (Green/Playful Hero Card) ── */}
       <PressCard
-        shadow="0 5px 0 0 #92400e"
-        shadowHover="0 3px 0 0 #92400e"
-        className="border-amber-400 bg-gradient-to-r from-amber-400 to-orange-400 p-5"
+        shadow="0 6px 0 0 #2b6c00"
+        shadowHover="0 3px 0 0 #2b6c00"
+        className="relative overflow-hidden border-2 border-[#2b6c00] bg-gradient-to-r from-[#58cc02] to-[#2b6c00] p-6 text-white rounded-3xl"
       >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-white/25 border-2 border-white/40 flex items-center justify-center">
-              <Flame className="w-8 h-8 text-white" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
+            <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center shrink-0 text-3xl animate-bounce">
+              🦉
             </div>
             <div>
-              <p className="text-white/80 text-xs font-bold uppercase tracking-wider">สายต่อเนื่อง</p>
-              <p className="text-white font-black text-4xl leading-none num">{streak}</p>
-              <p className="text-white/70 text-xs font-semibold">วัน</p>
+              <h2 className="text-xl md:text-2xl font-black leading-tight">สวัสดี! วันนี้มาทำภารกิจการเงินกัน</h2>
+              <p className="text-xs font-bold text-green-100 uppercase tracking-widest mt-1 opacity-90">
+                {monthName} {yearThai}
+              </p>
             </div>
           </div>
-
-          <div className="text-right">
-            <p className="text-white/80 text-xs font-bold uppercase tracking-wider mb-1">XP วันนี้</p>
-            <div className="flex items-center gap-1.5 justify-end">
-              <Zap className="w-5 h-5 text-white" />
-              <span className="text-white font-black text-2xl num">{xpToday}</span>
+          
+          <div className="flex items-center gap-4 bg-black/10 border border-white/25 rounded-2xl p-3 shrink-0">
+            <div className="flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1 rounded-xl shadow-[0_3px_0_0_#b45309] font-black border border-amber-600">
+              <Flame className="w-4 h-4 fill-white" />
+              <span className="text-sm num">{streak}</span>
+              <span className="text-[10px] font-bold">วัน</span>
             </div>
-            <p className="text-white/60 text-[10px] font-semibold mt-0.5">รวม {xpTotal} XP</p>
+            <div className="flex flex-col text-right">
+              <span className="text-xs font-bold opacity-80">วันนี้: +{xpToday} XP</span>
+              <span className="text-[10px] font-medium opacity-65">สะสม: {xpTotal} XP</span>
+            </div>
           </div>
-        </div>
-
-        {/* Weekly dots */}
-        <div className="flex items-center justify-between">
-          {DAYS.map((d, i) => (
-            <WeekDot
-              key={d}
-              label={d}
-              active={weekActive[i] ?? false}
-              today={i === todayDay}
-            />
-          ))}
         </div>
       </PressCard>
 
-      {/* ── 1b. Payday Countdown ─── */}
-      <PaydayCountdown />
-
-      {/* ── 2. Big Stat Cards ─── */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* ── 2. PROGRESS & WEEKLY STREAK ROW ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* XP Progress Card */}
         <PressCard
-          shadow="0 5px 0 0 #065f46"
-          shadowHover="0 3px 0 0 #065f46"
-          className="border-emerald-400 bg-emerald-500 p-5"
+          shadow="0 6px 0 0 #e5e5e5"
+          shadowHover="0 3px 0 0 #e5e5e5"
+          className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 rounded-3xl"
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <TrendingUp className="w-5 h-5 text-white" />
+          <div className="flex justify-between items-end mb-3">
+            <div>
+              <p className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-indigo-500 fill-indigo-500" />
+                Financial Health XP
+              </p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Lv. 5 Pioneer</p>
+            </div>
+            <div className="text-right">
+              <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 num">{xpTotal}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs font-bold"> / {xpGoal} XP</span>
+            </div>
           </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">รายรับ</p>
-          <p className="text-white font-black text-lg leading-none num">{formatCurrency(income)}</p>
+
+          <div className="mt-2.5">
+            <XpBar value={xpTotal} max={xpGoal} color="#58cc02" />
+          </div>
+
+          <div className="flex justify-between items-center mt-3 text-xs font-bold">
+            <span className="text-slate-400 dark:text-slate-500">
+              {Math.round((xpTotal / xpGoal) * 100)}% เสร็จสิ้น
+            </span>
+            <span className="text-amber-500 flex items-center gap-1">
+              <Trophy className="w-3.5 h-3.5 fill-amber-500/20" />
+              อีก {Math.max(0, xpGoal - xpTotal)} XP เพื่ออัพเลเวล!
+            </span>
+          </div>
         </PressCard>
 
+        {/* Weekly Activity Streak */}
         <PressCard
-          shadow="0 5px 0 0 #9f1239"
-          shadowHover="0 3px 0 0 #9f1239"
-          className="border-rose-400 bg-rose-500 p-5"
+          shadow="0 6px 0 0 #e5e5e5"
+          shadowHover="0 3px 0 0 #e5e5e5"
+          className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 rounded-3xl"
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <TrendingDown className="w-5 h-5 text-white" />
+          <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">
+            ความต่อเนื่องสัปดาห์นี้
+          </p>
+          <div className="flex justify-between items-center">
+            {DAYS.map((d, i) => (
+              <WeekDot
+                key={d}
+                label={d}
+                active={weekActive[i] ?? false}
+                today={i === todayDay}
+              />
+            ))}
           </div>
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">รายจ่าย</p>
-          <p className="text-white font-black text-lg leading-none num">{formatCurrency(expense)}</p>
         </PressCard>
       </div>
 
-      {/* ── 2b. Workout Stats Cards ─── */}
+      {/* ── 3. QUICK STATS CARDS ── */}
       <div>
-        <h2 className="text-base font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-violet-500" />
-          สถิติการออกกำลังกาย
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+          สถิติเควสเดือนนี้
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Income Card */}
+          <PressCard
+            shadow="0 5px 0 0 #065f46"
+            shadowHover="0 3px 0 0 #065f46"
+            className="border-emerald-400 bg-emerald-500 text-white p-4 flex flex-col justify-between h-28 rounded-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-100">รายรับ</span>
+              <TrendingUp className="w-4 h-4 text-emerald-100" />
+            </div>
+            <p className="font-black text-lg md:text-xl leading-none num truncate">
+              {formatCurrency(income)}
+            </p>
+          </PressCard>
+
+          {/* Expense Card */}
+          <PressCard
+            shadow="0 5px 0 0 #9f1239"
+            shadowHover="0 3px 0 0 #9f1239"
+            className="border-rose-400 bg-rose-500 text-white p-4 flex flex-col justify-between h-28 rounded-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-100">รายจ่าย</span>
+              <TrendingDown className="w-4 h-4 text-rose-100" />
+            </div>
+            <p className="font-black text-lg md:text-xl leading-none num truncate">
+              {formatCurrency(expense)}
+            </p>
+          </PressCard>
+
+          {/* Savings Rate Card */}
+          <PressCard
+            shadow="0 5px 0 0 #1e3a8a"
+            shadowHover="0 3px 0 0 #1e3a8a"
+            className="border-blue-400 bg-blue-500 text-white p-4 flex flex-col justify-between h-28 rounded-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-100">อัตราออม</span>
+              <Coins className="w-4 h-4 text-blue-100" />
+            </div>
+            <p className="font-black text-lg md:text-xl leading-none num">
+              {savingsRate}%
+            </p>
+          </PressCard>
+
+          {/* Portfolio return Card */}
           <PressCard
             shadow="0 5px 0 0 #5b21b6"
             shadowHover="0 3px 0 0 #5b21b6"
-            className="border-violet-400 bg-violet-500 p-5"
+            className="border-violet-400 bg-violet-500 text-white p-4 flex flex-col justify-between h-28 rounded-2xl"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-              <Flame className="w-5 h-5 text-white" />
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-violet-100">พอร์ตลงทุน</span>
+              <Trophy className="w-4 h-4 text-violet-100" />
             </div>
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">Workout Streak</p>
-            <p className="text-white font-black text-lg leading-none num">{workoutStreak} วัน</p>
-          </PressCard>
-
-          <PressCard
-            shadow="0 5px 0 0 #0369a1"
-            shadowHover="0 3px 0 0 #0369a1"
-            className="border-sky-400 bg-sky-500 p-5"
-          >
-            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-              <Dumbbell className="w-5 h-5 text-white" />
-            </div>
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">สัปดาห์นี้</p>
-            <p className="text-white font-black text-lg leading-none num">{weeklyWorkoutCount} ครั้ง ({weeklySetsCount} เซ็ต)</p>
+            <p className="font-black text-lg md:text-xl leading-none num truncate">
+              {holdings.length ? `${portfolioReturn >= 0 ? '+' : ''}${portfolioReturn.toFixed(1)}%` : '—'}
+            </p>
           </PressCard>
         </div>
       </div>
 
-      {/* ── 3. Financial Health XP Bar ─── */}
-      <PressCard
-        shadow="0 5px 0 0 #3730a3"
-        shadowHover="0 3px 0 0 #3730a3"
-        className="border-indigo-400 bg-white p-5"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center">
-              <Star className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <p className="font-black text-gray-800 text-sm">Financial Health XP</p>
-              <p className="text-xs text-gray-400 font-semibold">เป้าหมายเดือนนี้</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-2xl font-black text-indigo-600 num">{xpTotal}</span>
-            <span className="text-gray-400 font-bold text-sm"> / {xpGoal}</span>
-          </div>
-        </div>
-
-        <XpBar value={xpTotal} max={xpGoal} color="#6366f1" />
-
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs font-bold text-gray-400">
-            {Math.round((xpTotal / xpGoal) * 100)}% สำเร็จ
-          </span>
-          <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
-            <Trophy className="w-3.5 h-3.5" />
-            อีก {Math.max(0, xpGoal - xpTotal)} XP ถึงเลเวลถัดไป
-          </div>
-        </div>
-      </PressCard>
-
-      {/* ── 4. Achievement Mini Cards ─── */}
-      <div>
-        <h2 className="text-base font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-amber-500" />
-          ความสำเร็จ
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <AchievCard
-            label="Savings Rate"
-            value={`${savingsRate}%`}
-            icon={Coins}
-            borderColor={savingsRate >= 20 ? '#34d399' : '#fbbf24'}
-            shadowColor={savingsRate >= 20 ? '#065f46' : '#92400e'}
-            iconBg={savingsRate >= 20 ? '#d1fae5' : '#fef3c7'}
-            iconColor={savingsRate >= 20 ? '#059669' : '#d97706'}
-          />
-          <AchievCard
-            label="อยู่ในงบ"
-            value={`${budgetDays}`}
-            unit="วัน"
-            icon={ShieldCheck}
-            borderColor={hasBudget ? '#818cf8' : '#e5e7eb'}
-            shadowColor={hasBudget ? '#3730a3' : '#d1d5db'}
-            iconBg={hasBudget ? '#e0e7ff' : '#f3f4f6'}
-            iconColor={hasBudget ? '#4f46e5' : '#9ca3af'}
-          />
-          <AchievCard
-            label="เป้าหมายสำเร็จ"
-            value={`${completedGoals}`}
-            unit={`/ ${goals.length}`}
-            icon={Target}
-            borderColor="#f472b6"
-            shadowColor="#9d174d"
-            iconBg="#fce7f3"
-            iconColor="#db2777"
-          />
-          <AchievCard
-            label="Portfolio Return"
-            value={holdings.length ? `${portfolioReturn >= 0 ? '+' : ''}${portfolioReturn.toFixed(1)}%` : '—'}
-            icon={TrendingUp}
-            borderColor={portfolioReturn >= 0 ? '#34d399' : '#f87171'}
-            shadowColor={portfolioReturn >= 0 ? '#065f46' : '#9f1239'}
-            iconBg={portfolioReturn >= 0 ? '#d1fae5' : '#fee2e2'}
-            iconColor={portfolioReturn >= 0 ? '#059669' : '#ef4444'}
-          />
-        </div>
-      </div>
-
-      {/* ── 5. Daily Challenges ─── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Zap className="w-4 h-4 text-violet-500" />
-            ภารกิจประจำวัน
-          </h2>
-          <span className="text-xs font-bold text-gray-400">
-            {challengesDone} / 3 เสร็จแล้ว
-          </span>
-        </div>
+      {/* ── 4. DOUBLE COLUMN: CHALLENGES & WORKOUTS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Daily Challenges */}
         <div className="space-y-3">
-          <ChallengeCard
-            icon={BookOpen}
-            title="บันทึกรายจ่ายวันนี้"
-            subtitle={hasLoggedToday ? 'บันทึกแล้ววันนี้ 🎉' : 'เพิ่มรายการอย่างน้อย 1 รายการ'}
-            xp={15}
-            done={hasLoggedToday}
-            color="#7c3aed"
-            borderColor="#a78bfa"
-            shadow="0 4px 0 0 #4c1d95"
-          />
-          <ChallengeCard
-            icon={Target}
-            title="ตรวจสอบงบประมาณ"
-            subtitle={hasBudget ? 'ตั้งงบประมาณแล้ว ✓' : 'ตั้งงบประมาณสำหรับเดือนนี้'}
-            xp={20}
-            done={hasBudget}
-            color="#0891b2"
-            borderColor="#67e8f9"
-            shadow="0 4px 0 0 #164e63"
-          />
-          <ChallengeCard
-            icon={Dumbbell}
-            title="ออกกำลังกายวันนี้"
-            subtitle={workedOutToday ? 'ออกกำลังกายเสร็จแล้ว 💪' : 'ทำภารกิจหรือจดบันทึกการฝึกของวันนี้'}
-            xp={25}
-            done={workedOutToday}
-            color="#ec4899"
-            borderColor="#f472b6"
-            shadow="0 4px 0 0 #9d174d"
-          />
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 uppercase">
+              <Zap className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+              ภารกิจวันนี้
+            </h2>
+            <span className="text-xs font-black text-[#58cc02]">
+              {challengesDone} / 3 สำเร็จ
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            <ChallengeCard
+              icon={BookOpen}
+              title="บันทึกรายรับ/รายจ่าย"
+              subtitle={hasLoggedToday ? 'บันทึกเรียบร้อย 🎉' : 'เพิ่มรายการธุรกรรมอย่างน้อย 1 รายการ'}
+              xp={15}
+              done={hasLoggedToday}
+              color="#58cc02"
+              borderColor="#58cc02"
+              shadow="0 4px 0 0 #2b6c00"
+            />
+            <ChallengeCard
+              icon={Target}
+              title="ตั้งงบประมาณเดือนนี้"
+              subtitle={hasBudget ? 'ตั้งงบประมาณเสร็จสิ้น ✓' : 'เปิดและดูแลแผนการใช้งบประมาณ'}
+              xp={20}
+              done={hasBudget}
+              color="#3b82f6"
+              borderColor="#60a5fa"
+              shadow="0 4px 0 0 #1d4ed8"
+            />
+            <ChallengeCard
+              icon={Dumbbell}
+              title="ออกกำลังกายวันนี้"
+              subtitle={workedOutToday ? 'เควสสุขภาพสำเร็จ 💪' : 'ทำเควสฝึกฝนหรือออกกำลังกายวันนี้'}
+              xp={25}
+              done={workedOutToday}
+              color="#ec4899"
+              borderColor="#f472b6"
+              shadow="0 4px 0 0 #9d174d"
+            />
+          </div>
+        </div>
+
+        {/* Workout Quest */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 uppercase px-1">
+            <Dumbbell className="w-4 h-4 text-violet-500" />
+            ภารกิจสุขภาพ
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <PressCard
+              shadow="0 5px 0 0 #5b21b6"
+              shadowHover="0 3px 0 0 #5b21b6"
+              className="border-violet-400 bg-violet-500 text-white p-5 flex flex-col justify-between h-36 rounded-2xl"
+            >
+              <div className="flex justify-between items-start">
+                <p className="text-[10px] font-black uppercase tracking-wider text-violet-100">Workout Streak</p>
+                <Flame className="w-5 h-5 text-violet-200 fill-violet-200" />
+              </div>
+              <div>
+                <p className="text-2xl font-black num">{workoutStreak} วัน</p>
+                <p className="text-[10px] text-violet-100 mt-1 opacity-80">ออกกำลังกายอย่างต่อเนื่อง</p>
+              </div>
+            </PressCard>
+
+            <PressCard
+              shadow="0 5px 0 0 #0369a1"
+              shadowHover="0 3px 0 0 #0369a1"
+              className="border-sky-400 bg-sky-500 text-white p-5 flex flex-col justify-between h-36 rounded-2xl"
+            >
+              <div className="flex justify-between items-start">
+                <p className="text-[10px] font-black uppercase tracking-wider text-sky-100">สัปดาห์นี้</p>
+                <Dumbbell className="w-5 h-5 text-sky-200" />
+              </div>
+              <div>
+                <p className="text-xl font-black leading-tight num">
+                  {weeklyWorkoutCount} ครั้ง
+                </p>
+                <p className="text-[10px] text-sky-100 mt-1 opacity-80">
+                  ทั้งหมด {weeklySetsCount} เซ็ต
+                </p>
+              </div>
+            </PressCard>
+          </div>
         </div>
       </div>
 
-      {/* ── 6. Data Widgets ─── */}
+      {/* ── 5. ACHIEVEMENTS SECTION (Horizontal Scroll) ── */}
       <div>
-        <h2 className="text-base font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <LayoutGrid className="w-4 h-4 text-violet-500" />
-          รายละเอียด
+        <h2 className="text-xs font-black text-slate-800 dark:text-white mb-3 flex items-center gap-1.5 uppercase px-1">
+          <Trophy className="w-4 h-4 text-amber-500" />
+          เหรียญตราความสำเร็จ
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="flex gap-4 overflow-x-auto pb-3 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex-shrink-0 w-44">
+            <AchievCard
+              label="Savings Rate"
+              value={`${savingsRate}%`}
+              icon={Coins}
+              borderColor={savingsRate >= 20 ? '#34d399' : '#fbbf24'}
+              shadowColor={savingsRate >= 20 ? '#065f46' : '#92400e'}
+              iconBg={savingsRate >= 20 ? '#d1fae5' : '#fef3c7'}
+              iconColor={savingsRate >= 20 ? '#059669' : '#d97706'}
+            />
+          </div>
+          <div className="flex-shrink-0 w-44">
+            <AchievCard
+              label="อยู่ในงบ"
+              value={`${budgetDays}`}
+              unit="วัน"
+              icon={ShieldCheck}
+              borderColor={hasBudget ? '#818cf8' : '#e5e7eb'}
+              shadowColor={hasBudget ? '#3730a3' : '#d1d5db'}
+              iconBg={hasBudget ? '#e0e7ff' : '#f3f4f6'}
+              iconColor={hasBudget ? '#4f46e5' : '#9ca3af'}
+            />
+          </div>
+          <div className="flex-shrink-0 w-44">
+            <AchievCard
+              label="เป้าหมายสำเร็จ"
+              value={`${completedGoals}`}
+              unit={`/ ${goals.length}`}
+              icon={Target}
+              borderColor="#f472b6"
+              shadowColor="#9d174d"
+              iconBg="#fce7f3"
+              iconColor="#db2777"
+            />
+          </div>
+          <div className="flex-shrink-0 w-44">
+            <AchievCard
+              label="พอร์ตลงทุน"
+              value={holdings.length ? `${portfolioReturn >= 0 ? '+' : ''}${portfolioReturn.toFixed(1)}%` : '—'}
+              icon={TrendingUp}
+              borderColor={portfolioReturn >= 0 ? '#34d399' : '#f87171'}
+              shadowColor={portfolioReturn >= 0 ? '#065f46' : '#9f1239'}
+              iconBg={portfolioReturn >= 0 ? '#d1fae5' : '#fee2e2'}
+              iconColor={portfolioReturn >= 0 ? '#059669' : '#ef4444'}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 6. DATA WIDGETS SECTION (Clean grid layout) ── */}
+      <div className="space-y-6">
+        {/* Payday countdown banner */}
+        <PaydayCountdown />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Transactions */}
-          <PressCard
-            shadow="0 4px 0 0 #d1d5db"
-            shadowHover="0 2px 0 0 #d1d5db"
-            className="border-gray-200 overflow-hidden p-0"
-          >
-            <RecentTransactions className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
-          </PressCard>
+          <div className="space-y-2">
+            <h3 className="text-xs font-black text-slate-450 dark:text-slate-400 uppercase tracking-widest px-1">
+              ธุรกรรมล่าสุด
+            </h3>
+            <PressCard
+              shadow="0 5px 0 0 #e5e5e5"
+              shadowHover="0 3px 0 0 #e5e5e5"
+              className="border-slate-200 dark:border-slate-800 overflow-hidden p-0 rounded-3xl bg-white dark:bg-slate-900"
+            >
+              <RecentTransactions className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
+            </PressCard>
+          </div>
 
           {/* Budget Progress */}
-          <PressCard
-            shadow="0 4px 0 0 #c4b5fd"
-            shadowHover="0 2px 0 0 #c4b5fd"
-            className="border-violet-300 overflow-hidden p-0"
-          >
-            <BudgetProgressList className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
-          </PressCard>
+          <div className="space-y-2">
+            <h3 className="text-xs font-black text-slate-450 dark:text-slate-400 uppercase tracking-widest px-1">
+              เควสงบประมาณประจำเดือน
+            </h3>
+            <PressCard
+              shadow="0 5px 0 0 #e5e5e5"
+              shadowHover="0 3px 0 0 #e5e5e5"
+              className="border-slate-200 dark:border-slate-800 overflow-hidden p-0 rounded-3xl bg-white dark:bg-slate-900"
+            >
+              <BudgetProgressList className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
+            </PressCard>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 mt-4">
-          {/* Category Pie */}
+        {/* Category Pie Chart */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-black text-slate-405 dark:text-slate-500 uppercase tracking-widest px-1">
+            สัดส่วนการใช้จ่ายรายหมวดหมู่
+          </h3>
           <PressCard
-            shadow="0 4px 0 0 #fca5a5"
-            shadowHover="0 2px 0 0 #fca5a5"
-            className="border-red-300 overflow-hidden p-0 max-w-xl mx-auto w-full"
+            shadow="0 5px 0 0 #e5e5e5"
+            shadowHover="0 3px 0 0 #e5e5e5"
+            className="border-slate-200 dark:border-slate-800 overflow-hidden p-0 rounded-3xl max-w-2xl mx-auto w-full bg-white dark:bg-slate-900"
           >
             <CategoryPieChart className="border-0 shadow-none rounded-none dark:bg-transparent dark:border-0 dark:hover:bg-transparent" />
           </PressCard>
