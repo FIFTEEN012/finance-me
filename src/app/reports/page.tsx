@@ -16,7 +16,8 @@ import { IncomeBreakdown } from '@/components/reports/IncomeBreakdown'
 import { SavingsRateTracker } from '@/components/reports/SavingsRateTracker'
 import { SpendingInsights } from '@/components/dashboard/SpendingInsights'
 import { PressCard } from '@/components/ui/PressCard'
-import { THAI_MONTHS } from '@/lib/utils'
+import { THAI_MONTHS, cn } from '@/lib/utils'
+import { BarChart3, TrendingUp, Target, Trophy, CalendarDays } from 'lucide-react'
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -27,75 +28,210 @@ export default function ReportsPage() {
 
   const years = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear()]
 
+  const periodText = month === null 
+    ? `ทั้งปี พ.ศ. ${year + 543}` 
+    : `เดือน ${THAI_MONTHS[month - 1]} พ.ศ. ${year + 543}`
+
   return (
-    <div className="space-y-5">
-      {/* Header + Filters */}
-      <PressCard shadow="0 4px 0 0 #d1d5db" shadowHover="0 2px 0 0 #d1d5db" className="border-gray-200 p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">รายงาน</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">วิเคราะห์รายรับ-รายจ่ายของคุณ</p>
+    <div className="space-y-6 pb-28 text-slate-800 dark:text-slate-100">
+
+      {/* ── 1. HERO REPORT QUEST CARD ── */}
+      <PressCard
+        shadow="0 6px 0 0 #2b6c00"
+        shadowHover="0 3px 0 0 #2b6c00"
+        className="relative overflow-hidden border-2 border-[#2b6c00] bg-gradient-to-r from-[#58cc02] to-[#2b6c00] p-6 sm:p-8 text-white rounded-[32px]"
+      >
+        <div className="absolute -right-8 -bottom-8 w-48 h-48 opacity-25 animate-bounce pointer-events-none hidden md:block">
+          <Trophy className="w-full h-full text-white" />
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push('/reports/wrapped')}
-            className="gap-1.5 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-300 hover:from-violet-100 hover:to-indigo-100 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Year in Review
-          </Button>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h2 className="text-2xl sm:text-3xl font-black">รายงานสุขภาพการเงิน</h2>
+            <p className="text-xs sm:text-sm font-bold text-green-50 opacity-95">
+              วิเคราะห์ผลลัพธ์การใช้เงิน ออมเงิน และความก้าวหน้าภารกิจคุมงบของคุณ
+            </p>
+            <div className="inline-flex items-center gap-1.5 bg-black/15 px-4 py-1.5 rounded-full text-white/95 text-xs font-black mt-2 leading-none uppercase tracking-wider select-none">
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span>{periodText}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            {/* Year in Review Button */}
+            <button
+              onClick={() => router.push('/reports/wrapped')}
+              className="flex-grow md:flex-none font-black text-xs px-5 py-3.5 rounded-2xl bg-indigo-600 text-white border-2 border-indigo-800 border-b-4 shadow-[0_3px_0_0_#4338ca] transform transition-all active:translate-y-[2px] active:border-b-2 hover:bg-indigo-500 flex items-center justify-center gap-2 select-none"
+            >
+              <Sparkles className="w-4 h-4" /> สรุปปีของฉัน
+            </button>
+            {/* Print Button */}
+            <button
+              onClick={() => setPrintOpen(true)}
+              className="flex-grow md:flex-none font-black text-xs px-5 py-3.5 rounded-2xl bg-white text-slate-700 border-2 border-slate-250 border-b-4 shadow-[0_3px_0_0_#cbd5e1] transform transition-all active:translate-y-[2px] active:border-b-2 hover:bg-slate-50 flex items-center justify-center gap-2 select-none"
+            >
+              <Printer className="w-4 h-4" /> พิมพ์รายงาน
+            </button>
+          </div>
+        </div>
+      </PressCard>
+
+      {/* ── 2. FILTER PANEL (TACTILE SELECTORS) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Month Filter Selector */}
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-[0_4px_0_0_#e5e5e5] dark:shadow-[0_4px_0_0_#020617]">
+          <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">
+            เลือกเดือน
+          </label>
           <Select
             value={month === null ? 'ALL' : String(month)}
             onValueChange={(v) => setMonth(!v || v === 'ALL' ? null : Number(v))}
           >
-            <SelectTrigger className="w-28 sm:w-36 h-9 text-xs sm:text-sm bg-white dark:bg-white/[0.02] border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200">
+            <SelectTrigger className="w-full h-11 text-sm bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-750 font-bold rounded-xl focus:ring-0 text-slate-700 dark:text-white">
               <SelectValue placeholder="เลือกเดือน" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
               <SelectItem value="ALL">ทุกเดือน</SelectItem>
               {THAI_MONTHS.map((name, i) => (
                 <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
 
+        {/* Year Filter Selector */}
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-[0_4px_0_0_#e5e5e5] dark:shadow-[0_4px_0_0_#020617]">
+          <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">
+            เลือกปี
+          </label>
           <Select value={String(year)} onValueChange={(v) => setYear(Number(v ?? year))}>
-            <SelectTrigger className="w-24 sm:w-28 h-9 text-xs sm:text-sm bg-white dark:bg-white/[0.02] border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200">
+            <SelectTrigger className="w-full h-11 text-sm bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-750 font-bold rounded-xl focus:ring-0 text-slate-700 dark:text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
               {years.map((y) => (
                 <SelectItem key={y} value={String(y)}>{y + 543}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2 border-gray-200 dark:border-white/10 dark:bg-white/[0.04]"
-            onClick={() => setPrintOpen(true)}
-          >
-            <Printer className="w-4 h-4" />
-            พิมพ์รายงาน
-          </Button>
         </div>
       </div>
-      </PressCard>
 
+      {/* ── 3. FINANCE COACH ADVICE (SPENDING INSIGHTS) ── */}
+      <div className="space-y-2">
+        <div className="px-1 flex items-center gap-1.5">
+          <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            คำแนะนำจากโค้ชการเงิน
+          </h4>
+        </div>
+        <PressCard
+          shadow="0 6px 0 0 #e5e5e5"
+          shadowHover="0 3px 0 0 #e5e5e5"
+          className="border-slate-200 dark:border-slate-800 rounded-[32px] bg-white dark:bg-slate-900 p-5 flex flex-col md:flex-row items-center gap-5"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-900 flex items-center justify-center shrink-0 text-3xl select-none">
+            💡
+          </div>
+          <div className="flex-grow space-y-1 text-center md:text-left">
+            <h5 className="font-black text-sm text-slate-800 dark:text-slate-200">Financial Coach Insights</h5>
+            <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
+              <SpendingInsights />
+            </div>
+          </div>
+        </PressCard>
+      </div>
+
+      {/* ── 4. CHARTS GROUP 1: ภาพรวมรายรับ–รายจ่าย ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <BarChart3 className="w-4 h-4 text-[#2b6c00] dark:text-[#58cc02]" />
+          <div>
+            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              ภาพรวมรายรับ–รายจ่าย
+            </h3>
+            <p className="text-[11px] text-slate-400/80 mt-0.5">
+              ติดตามกระแสเงินเข้า-ออก และประเมินความสอดคล้องทางการเงิน
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-1">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+              <MonthlyBarChart year={year} />
+            </PressCard>
+          </div>
+          <div className="space-y-1">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+              <IncomeBreakdown year={year} month={month} />
+            </PressCard>
+          </div>
+        </div>
+        
+        <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] w-full">
+          <SpendingTrend />
+        </PressCard>
+      </div>
+
+      {/* ── 5. CHARTS GROUP 2: เส้นทางการออม ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <TrendingUp className="w-4 h-4 text-sky-500" />
+          <div>
+            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              เส้นทางการออมเงิน
+            </h3>
+            <p className="text-[11px] text-slate-400/80 mt-0.5">
+              ตรวจสอบอัตราผลตอบแทนความก้าวหน้าการเก็บหอมรอมริบ
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+            <YearlyLineChart year={year} />
+          </PressCard>
+          <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+            <SavingsRateTracker year={year} month={month} />
+          </PressCard>
+        </div>
+      </div>
+
+      {/* ── 6. CHARTS GROUP 3: งบประมาณและพฤติกรรมใช้จ่าย ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <Target className="w-4 h-4 text-violet-500" />
+          <div>
+            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              งบประมาณและพฤติกรรมใช้จ่าย
+            </h3>
+            <p className="text-[11px] text-slate-400/80 mt-0.5">
+              ประเมินระเบียบวินัยการออมและหมวดหมู่การใช้งานเงินเปรียบเทียบงบ
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+              <BudgetVsActual year={year} month={month} />
+            </PressCard>
+          </div>
+          <div className="space-y-1">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+              <SpendingIntensity year={year} month={month} />
+            </PressCard>
+          </div>
+          <div className="space-y-1">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px]">
+              <CategoryBreakdown year={year} month={month} />
+            </PressCard>
+          </div>
+        </div>
+      </div>
+
+      {/* PrintableReport dialog component */}
       <PrintableReport open={printOpen} onOpenChange={setPrintOpen} year={year} month={month} />
-
-      <SpendingInsights />
-      <MonthlyBarChart year={year} />
-      <IncomeBreakdown year={year} month={month} />
-      <SpendingTrend />
-      <YearlyLineChart year={year} />
-      <SavingsRateTracker year={year} month={month} />
-      <BudgetVsActual year={year} month={month} />
-      <SpendingIntensity year={year} month={month} />
-      <CategoryBreakdown year={year} month={month} />
     </div>
   )
 }
