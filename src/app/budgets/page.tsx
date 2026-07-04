@@ -76,160 +76,333 @@ export default function BudgetsPage() {
   const totalSpent = budgetsWithSpent.reduce((sum, b) => sum + b.spent, 0)
   const remaining = totalBudget - totalSpent
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">งบประมาณ</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{budgets.length} หมวดหมู่</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* View toggle */}
-          <div className="flex items-center gap-0.5 p-1 rounded-xl bg-gray-100 dark:bg-white/[0.05]">
-              {([
-                { key: 'grid',  label: 'งบรายเดือน', Icon: LayoutGrid  },
-                { key: 'daily', label: 'แผนรายวัน',  Icon: CalendarDays },
-                { key: 'log',   label: 'บันทึกรายจ่าย', Icon: History   },
-              ] as const).map(({ key, label, Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => setView(key)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2 py-1.5 sm:px-3 rounded-lg text-xs font-medium transition-all',
-                    view === key
-                      ? 'bg-violet-600 text-white shadow-[0_2px_0_0_#4c1d95]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-white dark:hover:bg-white/[0.04]'
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
-            </div>
-          {view !== 'log' && (
-            <Button onClick={handleOpenAdd} className="bg-primary hover:bg-primary/90 shrink-0 text-xs px-2.5 py-1.5 sm:text-sm sm:px-3 sm:py-2">
-              <Plus className="w-3.5 h-3.5 mr-1" />
-              ตั้งงบประมาณ
-            </Button>
-          )}
-        </div>
-      </div>
+  // Calculate percentage of budget used
+  const usagePercent = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0
 
-      {/* Month navigator */}
-      <PressCard shadow="0 4px 0 0 #d1d5db" shadowHover="0 2px 0 0 #d1d5db" className="border-gray-200 bg-white">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-black text-gray-800 dark:text-gray-100">
-            {THAI_MONTHS[month - 1]} {year + 543}
-          </span>
-          <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+  // Calculate Rollover Total
+  const totalRollover = budgetsWithSpent.reduce((sum, b) => sum + (b.rollover ?? 0), 0)
+  const rolloverCount = budgetsWithSpent.filter(b => (b.rollover ?? 0) > 0).length
+
+  // Calculate status insights
+  let statusMessage = 'เริ่มจากตั้งงบ 3 หมวดหลัก เช่น อาหาร เดินทาง ของใช้'
+  let statusColorClass = 'bg-sky-100 border-sky-400 text-sky-700 dark:bg-sky-950/40 dark:border-sky-900 dark:text-sky-300 shadow-[0_4px_0_0_#0284c7]'
+  let statusEmoji = '🐣'
+
+  if (totalBudget > 0) {
+    if (remaining < 0) {
+      statusMessage = 'เกินงบแล้ว! ลองดูบันทึกรายจ่ายเพื่อปรับแผนและควบคุมค่าใช้จ่ายด่วน!'
+      statusColorClass = 'bg-rose-100 border-rose-400 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 shadow-[0_4px_0_0_#e11d48]'
+      statusEmoji = '⚠️'
+    } else if (usagePercent > 80) {
+      statusMessage = 'ใกล้ถึงเพดานงบแล้ว! ระมัดระวังหมวดหมู่ที่ใช้บ่อยในช่วงนี้เป็นพิเศษนะ'
+      statusColorClass = 'bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300 shadow-[0_4px_0_0_#d97706]'
+      statusEmoji = '🚨'
+    } else {
+      statusMessage = 'ยอดเยี่ยมมาก! เดือนนี้คุณประหยัดเงินและทำภารกิจคุมงบได้ดี รักษาวินัยนี้ไว้!'
+      statusColorClass = 'bg-emerald-100 border-emerald-400 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 shadow-[0_4px_0_0_#16a34a]'
+      statusEmoji = '🛡️'
+    }
+  }
+
+  return (
+    <div className="space-y-6 pb-28 text-slate-800 dark:text-slate-100">
+
+      {/* ── 1. HERO BUDGET QUEST CARD ── */}
+      <PressCard
+        shadow="0 6px 0 0 #2b6c00"
+        shadowHover="0 3px 0 0 #2b6c00"
+        className="relative overflow-hidden border-2 border-[#2b6c00] bg-gradient-to-r from-[#58cc02] to-[#2b6c00] p-6 sm:p-8 text-white rounded-[32px]"
+      >
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 space-y-6">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black">ภารกิจคุมงบเดือนนี้</h2>
+              <p className="text-xs text-green-100 font-bold uppercase tracking-widest mt-1 opacity-90">
+                {THAI_MONTHS[month - 1]} {year + 543}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border-2 border-white/30 text-2xl shrink-0">
+              {remaining >= 0 ? '🛡️' : '🚨'}
+            </div>
+          </div>
+
+          {/* Quick numbers */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white/10 p-3.5 rounded-2xl border border-white/20">
+              <p className="text-[10px] font-black text-green-100 uppercase tracking-wider">งบประมาณทั้งหมด</p>
+              <p className="text-lg font-black num mt-0.5">{formatCurrency(totalBudget)}</p>
+            </div>
+            <div className="bg-white/10 p-3.5 rounded-2xl border border-white/20">
+              <p className="text-[10px] font-black text-green-100 uppercase tracking-wider">ใช้ไปแล้ว</p>
+              <p className="text-lg font-black num mt-0.5">{formatCurrency(totalSpent)}</p>
+            </div>
+            <div className="bg-white/20 p-3.5 rounded-2xl border-2 border-white/40">
+              <p className="text-[10px] font-black text-green-100 uppercase tracking-wider">คงเหลือ</p>
+              <p className="text-lg font-black num mt-0.5">
+                {remaining >= 0 ? formatCurrency(remaining) : `เกินงบ ${formatCurrency(Math.abs(remaining))}`}
+              </p>
+            </div>
+          </div>
+
+          {/* XP Progress bar */}
+          {totalBudget > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-black text-green-50 uppercase tracking-wide">
+                <span>ความคืบหน้าการใช้จ่าย</span>
+                <span>{usagePercent}%</span>
+              </div>
+              <div className="h-5 w-full bg-black/15 rounded-full overflow-hidden p-1 border-2 border-white/10">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    remaining < 0 ? "bg-rose-400" : usagePercent > 80 ? "bg-amber-400" : "bg-white"
+                  )}
+                  style={{ width: `${usagePercent}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
       </PressCard>
 
-      {/* Rollover summary */}
-      {(() => {
-        const totalRollover = budgetsWithSpent.reduce((sum, b) => sum + (b.rollover ?? 0), 0)
-        const rolloverCount = budgetsWithSpent.filter(b => (b.rollover ?? 0) > 0).length
-        if (totalRollover <= 0) return null
-        return (
-          <PressCard shadow="0 4px 0 0 #1d4ed8" shadowHover="0 2px 0 0 #1d4ed8" className="border-blue-400 bg-blue-500 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">
-                  ทบยอดจากเดือนที่แล้ว +{formatCurrency(totalRollover)}
-                </p>
-                <p className="text-xs text-white/70 mt-0.5">
-                  {rolloverCount} หมวดหมู่มียอดทบ · งบรวมเดือนนี้ {formatCurrency(budgetsWithSpent.reduce((s, b) => s + b.amount + (b.rollover ?? 0), 0))}
-                </p>
-              </div>
-            </div>
-          </PressCard>
-        )
-      })()}
+      {/* ── 2. MONTH NAVIGATOR ── */}
+      <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-900 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-[0_4px_0_0_#e5e5e5] dark:shadow-[0_4px_0_0_#020617]">
+        <button
+          onClick={prevMonth}
+          aria-label="เดือนก่อนหน้า"
+          className="w-11 h-11 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-250 dark:border-slate-700 shadow-[0_3px_0_0_#e5e5e5] dark:shadow-[0_3px_0_0_#020617] hover:translate-y-[1px] active:translate-y-[3px] active:shadow-none transition-all"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+        </button>
+        <div className="text-center">
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">เลือกด่านงบประมาณ</p>
+          <h3 className="text-base font-black text-slate-850 dark:text-slate-100 mt-0.5">
+            {THAI_MONTHS[month - 1]} {year + 543}
+          </h3>
+        </div>
+        <button
+          onClick={nextMonth}
+          aria-label="เดือนถัดไป"
+          className="w-11 h-11 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-250 dark:border-slate-700 shadow-[0_3px_0_0_#e5e5e5] dark:shadow-[0_3px_0_0_#020617] hover:translate-y-[1px] active:translate-y-[3px] active:shadow-none transition-all"
+        >
+          <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+        </button>
+      </div>
 
-      {/* Summary stats */}
+      {/* ── 3. INSIGHT ALERT STRIP ── */}
+      <div className={cn("p-4.5 rounded-2xl border-2 flex items-start gap-3.5 transition-all", statusColorClass)}>
+        <span className="text-2.5xl shrink-0 mt-0.5 select-none">{statusEmoji}</span>
+        <p className="font-bold text-sm leading-relaxed">{statusMessage}</p>
+      </div>
+
+      {/* ── 4. ROLLOVER CARD IF APPLICABLE ── */}
+      {totalRollover > 0 && (
+        <PressCard
+          shadow="0 5px 0 0 #1d4ed8"
+          shadowHover="0 2px 0 0 #1d4ed8"
+          className="border-blue-400 bg-blue-500 text-white p-4.5 rounded-2xl"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-xl">
+              💸
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-black">
+                ทบยอดจากเดือนที่แล้ว +{formatCurrency(totalRollover)}
+              </p>
+              <p className="text-xs text-blue-100 mt-0.5 opacity-90 font-medium">
+                {rolloverCount} หมวดหมู่มียอดทบสะสม · รวมเป็นงบเดือนนี้ทั้งสิ้น {formatCurrency(totalBudget)}
+              </p>
+            </div>
+          </div>
+        </PressCard>
+      )}
+
+      {/* ── 5. MINI STAT CARDS FOR GRID VIEW ── */}
       {budgetsWithSpent.length > 0 && view === 'grid' && (
         <div className="grid grid-cols-3 gap-3">
-          <PressCard shadow="0 5px 0 0 #4c1d95" className="border-violet-400 bg-violet-500 p-4">
-            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-              <PiggyBank className="w-5 h-5 text-white" />
+          {/* Total Budget Card */}
+          <PressCard
+            shadow="0 5px 0 0 #4c1d95"
+            shadowHover="0 3px 0 0 #4c1d95"
+            className="border-violet-400 bg-violet-500 text-white p-3.5 flex flex-col justify-between h-28 rounded-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-violet-100">งบทั้งหมด</span>
+              <PiggyBank className="w-4 h-4 text-violet-100" />
             </div>
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">งบทั้งหมด</p>
-            <p className="text-white font-black text-xl leading-none num">{formatCurrency(totalBudget)}</p>
+            <p className="font-black text-sm sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalBudget)}>
+              {formatCurrency(totalBudget)}
+            </p>
           </PressCard>
 
-          <PressCard shadow="0 5px 0 0 #9f1239" className="border-rose-400 bg-rose-500 p-4">
-            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-              <TrendingDown className="w-5 h-5 text-white" />
+          {/* Spent Card */}
+          <PressCard
+            shadow="0 5px 0 0 #9f1239"
+            shadowHover="0 3px 0 0 #9f1239"
+            className="border-rose-400 bg-rose-500 text-white p-3.5 flex flex-col justify-between h-28 rounded-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-100">ใช้ไปแล้ว</span>
+              <TrendingDown className="w-4 h-4 text-rose-100" />
             </div>
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">ใช้ไปแล้ว</p>
-            <p className="text-white font-black text-xl leading-none num">{formatCurrency(totalSpent)}</p>
+            <p className="font-black text-sm sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalSpent)}>
+              {formatCurrency(totalSpent)}
+            </p>
           </PressCard>
 
-          {remaining >= 0 ? (
-            <PressCard shadow="0 5px 0 0 #4c1d95" className="border-violet-400 bg-violet-500 p-4">
-              <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">คงเหลือ</p>
-              <p className="text-white font-black text-xl leading-none num">{formatCurrency(remaining)}</p>
-            </PressCard>
-          ) : (
-            <PressCard shadow="0 5px 0 0 #9f1239" className="border-rose-400 bg-rose-500 p-4">
-              <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">เกินงบ</p>
-              <p className="text-white font-black text-xl leading-none num">{formatCurrency(Math.abs(remaining))}</p>
-            </PressCard>
-          )}
+          {/* Remaining/Overspent Card */}
+          <PressCard
+            shadow={remaining >= 0 ? '0 5px 0 0 #065f46' : '0 5px 0 0 #9f1239'}
+            shadowHover={remaining >= 0 ? '0 3px 0 0 #065f46' : '0 3px 0 0 #9f1239'}
+            className={cn(
+              'text-white p-3.5 flex flex-col justify-between h-28 rounded-2xl border-2',
+              remaining >= 0 ? 'border-emerald-400 bg-emerald-500' : 'border-rose-400 bg-rose-500'
+            )}
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-wider text-white/80">
+                {remaining >= 0 ? 'คงเหลือ' : 'เกินงบ'}
+              </span>
+              <Zap className="w-4 h-4 text-white/85" />
+            </div>
+            <p className="font-black text-sm sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(remaining)}>
+              {formatCurrency(Math.abs(remaining))}
+            </p>
+          </PressCard>
         </div>
       )}
 
-      {/* Content */}
+      {/* ── 6. CONTROLS, VIEW TOGGLE & PRIMARY ACTION ── */}
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        {/* Segmented control view toggle */}
+        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700/80 gap-1 overflow-x-auto no-scrollbar">
+          {([
+            { key: 'grid',  label: 'งบรายเดือน', Icon: LayoutGrid  },
+            { key: 'daily', label: 'แผนรายวัน',  Icon: CalendarDays },
+            { key: 'log',   label: 'บันทึกรายจ่าย', Icon: History   },
+          ] as const).map(({ key, label, Icon }) => {
+            const active = view === key
+            return (
+              <button
+                key={key}
+                onClick={() => setView(key)}
+                className={cn(
+                  'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black transition-all border-b-2 whitespace-nowrap select-none',
+                  active
+                    ? 'bg-[#58cc02] text-white border-[#2b6c00] shadow-[0_2px_0_0_#2b6c00]'
+                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-700'
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Primary Action Button */}
+        {view !== 'log' && (
+          <button
+            onClick={handleOpenAdd}
+            className="font-black text-sm px-6 py-3.5 rounded-2xl bg-[#58cc02] text-white border-2 border-[#2b6c00] border-b-4 shadow-[0_3px_0_0_#2b6c00] transform transition-all active:translate-y-[2px] active:border-b-2 hover:bg-[#58cc02] flex items-center justify-center gap-2 select-none"
+          >
+            <Plus className="w-4 h-4 stroke-[3px]" /> ตั้งงบประมาณ
+          </button>
+        )}
+      </div>
+
+      {/* ── 7. MAIN VIEW CONTENT ── */}
       {view === 'log' ? (
-        <MonthlyExpenseLogView month={month} year={year} />
+        <div className="space-y-2">
+          <div className="px-1">
+            <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              บันทึกรายจ่ายเดือนนี้
+            </h4>
+            <p className="text-[11px] text-slate-400/80 mt-0.5">
+              ประเมินธุรกรรมทั้งหมดที่เกิดขึ้นและกระทบต่องบประมาณ
+            </p>
+          </div>
+          <PressCard
+            shadow="0 6px 0 0 #e5e5e5"
+            shadowHover="0 3px 0 0 #e5e5e5"
+            className="border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900 p-0 overflow-hidden"
+          >
+            <MonthlyExpenseLogView month={month} year={year} />
+          </PressCard>
+        </div>
       ) : budgetsWithSpent.length === 0 ? (
-        <EmptyState
-          icon={PiggyBank}
-          title="ยังไม่มีงบประมาณ"
-          description="ตั้งงบประมาณรายหมวดหมู่เพื่อควบคุมค่าใช้จ่ายของคุณ"
-          action={
-            <Button onClick={handleOpenAdd} className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-1" />
-              ตั้งงบประมาณแรก
-            </Button>
-          }
-        />
+        <div className="p-4">
+          <EmptyState
+            icon={PiggyBank}
+            title="ยังไม่มีงบประมาณตั้งไว้"
+            description="เริ่มตั้งเป้าหมายการเงินรายเดือนในหมวดหมู่สำคัญต่างๆ เช่น อาหาร หรือการเดินทาง"
+            action={
+              <button
+                onClick={handleOpenAdd}
+                className="font-black text-xs px-5 py-3 rounded-2xl bg-[#58cc02] text-white border-2 border-[#2b6c00] border-b-4 shadow-[0_2px_0_0_#2b6c00] active:translate-y-[2px] active:border-b-2 hover:bg-[#58cc02] flex items-center gap-1.5 transition-all select-none"
+              >
+                <Plus className="w-4 h-4 stroke-[3px]" /> เริ่มตั้งงบประมาณแรก
+              </button>
+            }
+          />
+        </div>
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {budgetsWithSpent.map((b) => (
-            <BudgetCard
-              key={b.id}
-              budget={b}
-              spent={b.spent}
-              rollover={b.rollover}
-              onEdit={handleEdit}
-              onDelete={setDeletingId}
-            />
-          ))}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <div>
+              <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                ด่านงบประมาณย่อย
+              </h4>
+              <p className="text-[11px] text-slate-400/80 mt-0.5">
+                ติดตามด่านการเก็บออมและสเปกเตอร์การใช้เงินแต่ละหมวด
+              </p>
+            </div>
+            <span className="text-[10px] font-black text-[#2b6c00] dark:text-[#58cc02] px-3 py-1 bg-[#58cc02]/10 rounded-full border border-[#58cc02]/20">
+              {budgets.length} ภารกิจเปิดอยู่
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {budgetsWithSpent.map((b) => (
+              <BudgetCard
+                key={b.id}
+                budget={b}
+                spent={b.spent}
+                rollover={b.rollover}
+                onEdit={handleEdit}
+                onDelete={setDeletingId}
+              />
+            ))}
+          </div>
         </div>
       ) : (
-        <DailyBudgetPlanner
-          budgets={budgetsWithSpent}
-          month={month}
-          year={year}
-        />
+        <div className="space-y-2">
+          <div className="px-1">
+            <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              แผนการจัดสรรเงินรายวัน
+            </h4>
+            <p className="text-[11px] text-slate-400/80 mt-0.5">
+              เช็คโควต้าเงินทีกำหนดให้ใช้รายวันเพื่อการวางแผนระยะยาว
+            </p>
+          </div>
+          <PressCard
+            shadow="0 6px 0 0 #e5e5e5"
+            shadowHover="0 3px 0 0 #e5e5e5"
+            className="border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-900 p-5"
+          >
+            <DailyBudgetPlanner
+              budgets={budgetsWithSpent}
+              month={month}
+              year={year}
+            />
+          </PressCard>
+        </div>
       )}
 
+      {/* ── DIALOGS & FORMS ── */}
       <BudgetForm
         open={formOpen}
         onOpenChange={setFormOpen}
