@@ -21,19 +21,39 @@ import { cn } from '@/lib/utils'
 import { DataManager } from '@/components/shared/DataManager'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
-const navItems = [
-  { href: '/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
-  { href: '/transactions', label: 'ธุรกรรม', icon: ArrowLeftRight },
-  { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
-  { href: '/reports', label: 'รายงาน', icon: BarChart3 },
-  { href: '/workouts', label: 'ออกกำลังกาย', icon: Dumbbell },
-  { href: '/routines', label: 'แผนออกกำลังกาย', icon: Flame },
-  { href: '/categories', label: 'หมวดหมู่', icon: Tags },
-  { href: '/goals', label: 'เป้าหมาย', icon: Target },
-  { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp },
-  { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal },
-  { href: '/import', label: 'นำเข้าข้อมูล', icon: FileUp },
-  { href: '/settings', label: 'ตั้งค่า', icon: Settings },
+const groupedNav = [
+  {
+    title: 'Finance',
+    items: [
+      { href: '/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
+      { href: '/transactions', label: 'ธุรกรรม', icon: ArrowLeftRight },
+      { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
+      { href: '/reports', label: 'รายงาน', icon: BarChart3 },
+      { href: '/goals', label: 'เป้าหมาย', icon: Target },
+    ]
+  },
+  {
+    title: 'Investments',
+    items: [
+      { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp },
+      { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal },
+    ]
+  },
+  {
+    title: 'Health & Workout',
+    items: [
+      { href: '/workouts', label: 'ออกกำลังกาย', icon: Dumbbell },
+      { href: '/routines', label: 'แผนออกกำลังกาย', icon: Flame },
+    ]
+  },
+  {
+    title: 'System',
+    items: [
+      { href: '/categories', label: 'หมวดหมู่', icon: Tags },
+      { href: '/import', label: 'นำเข้าข้อมูล', icon: FileUp },
+      { href: '/settings', label: 'ตั้งค่า', icon: Settings },
+    ]
+  }
 ]
 
 export function Sidebar() {
@@ -42,63 +62,79 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex h-screen w-56 flex-col overflow-y-auto',
-        'bg-white border-r border-[oklch(0.905_0.010_270)]',
-        'dark:bg-[rgba(8,5,18,0.88)] dark:backdrop-blur-2xl dark:border-r dark:border-white/[0.05]'
+        'flex h-full w-64 flex-col overflow-hidden',
+        'bg-white border-2 border-slate-200 rounded-3xl',
+        'dark:bg-slate-900/90 dark:border-slate-800',
+        'shadow-[0_8px_0_0_#e5e5e5] dark:shadow-[0_8px_0_0_#020617]'
       )}
     >
-      <div className="px-4 py-5">
+      {/* Sidebar Header */}
+      <div className="p-5 flex flex-col gap-1 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className={cn('relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary shadow-lg')}>
-            <Wallet className="h-4 w-4 text-white" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#58cc02] border-2 border-[#2b6c00] shadow-[0_3px_0_0_#2b6c00] text-white">
+            <span className="text-xl">🦉</span>
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-bold tracking-tight text-gray-900 dark:text-white">FinanceMe</p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="live-dot h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-              <p className="truncate text-[10px] text-gray-400 dark:text-white/35">การเงินส่วนตัว</p>
-            </div>
+            <h1 className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none">FinanceMe</h1>
+            <p className="text-[10px] font-black text-[#58cc02] dark:text-[#58cc02] uppercase tracking-wider mt-1">Money & Health Quest</p>
           </div>
         </div>
       </div>
 
-      <div className="mx-4 h-px bg-gray-100 dark:bg-white/[0.05]" />
+      <div className="mx-5 h-0.5 bg-slate-100 dark:bg-slate-800/80" />
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2.5 py-3">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150',
-                isActive
-                  ? ['bg-primary/10 text-primary', 'dark:nav-active dark:text-primary']
-                  : ['text-gray-500 hover:bg-gray-50 hover:text-gray-800', 'dark:text-white/45 dark:hover:bg-white/[0.04] dark:hover:text-white/75']
-              )}
-            >
-              {isActive && <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />}
-
-              <Icon
-                className={cn(
-                  'h-[15px] w-[15px] flex-shrink-0 transition-colors',
-                  isActive ? 'text-primary' : 'text-gray-400 dark:text-white/30 group-hover:text-gray-600 dark:group-hover:text-white/55'
-                )}
-              />
-              <span className="truncate">{label}</span>
-            </Link>
-          )
-        })}
+      {/* Navigation Scroll Area */}
+      <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-5 custom-scrollbar">
+        {groupedNav.map((group) => (
+          <div key={group.title} className="space-y-1.5">
+            <p className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest opacity-80">{group.title}</p>
+            <div className="space-y-1">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href || pathname.startsWith(href + '/')
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-bold transition-all duration-100 select-none border-2',
+                      isActive
+                        ? 'bg-[#58cc02] text-white border-[#2b6c00] border-b-4 shadow-[0_3px_0_0_#2b6c00] transform active:translate-y-[2px] active:border-b-2 hover:bg-[#58cc02]'
+                        : 'text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200'
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        'h-[18px] w-[18px] flex-shrink-0 transition-colors',
+                        isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                      )}
+                    />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      <div className="border-t border-gray-100 px-2.5 pb-4 pt-2 dark:border-white/[0.05]">
-        <div className="flex items-center gap-2 px-1 py-1">
+      {/* Profile / System Control Panel at the bottom */}
+      <div className="p-4 border-t-2 border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/50 flex-shrink-0 space-y-3">
+        {/* User Badge */}
+        <div className="flex items-center gap-3 p-1.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700/80">
+          <div className="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-300 dark:bg-slate-700 dark:border-slate-600 flex items-center justify-center shrink-0 text-base">
+            👤
+          </div>
+          <div className="overflow-hidden">
+            <p className="font-bold text-xs text-slate-800 dark:text-white truncate">Quest Explorer</p>
+            <p className="text-[9px] text-[#58cc02] dark:text-[#58cc02] uppercase font-black tracking-wide leading-none mt-0.5">Lv. 5 Pioneer</p>
+          </div>
+        </div>
+
+        {/* System Settings & Actions */}
+        <div className="flex items-center justify-between gap-2 px-1">
           <DataManager />
-          <div className="flex-1" />
           <ThemeToggle />
         </div>
-        <p className="mt-1.5 text-center text-[10px] text-gray-300 dark:text-white/20">v2.0 Violet Pro</p>
       </div>
     </aside>
   )

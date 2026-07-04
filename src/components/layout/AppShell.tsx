@@ -40,28 +40,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[oklch(0.972_0.007_275)] dark:bg-[oklch(0.065_0.028_272)] app-bg">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-b from-green-50/30 via-slate-50/50 to-white dark:bg-slate-950 dark:from-slate-950 dark:via-slate-900/40 dark:to-slate-950/70 app-bg">
       <div className="hidden dark:block grid-overlay" />
 
-      <div className="hidden md:flex md:shrink-0">
+      {/* Desktop Sidebar Panel */}
+      <div className="hidden lg:flex lg:shrink-0 p-4 xl:p-6 pr-0 xl:pr-0">
         <Sidebar />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden app-content">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
-          {hydrated ? children : (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-8 w-48 rounded-lg bg-gray-100 dark:bg-white/[0.04]" />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {[1, 2, 3].map((key) => (
-                  <div key={key} className="h-28 rounded-xl bg-gray-100 dark:bg-white/[0.04]" />
-                ))}
+        <main className="flex-1 overflow-y-auto px-4 py-6 pb-28 lg:px-8 lg:py-8 lg:pb-8">
+          <div className="mx-auto max-w-5xl w-full">
+            {hydrated ? children : (
+              <div className="space-y-6 animate-pulse">
+                <div className="h-8 w-48 rounded-xl bg-gray-200 dark:bg-white/[0.04]" />
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                  {[1, 2, 3].map((key) => (
+                    <div key={key} className="h-28 rounded-2xl bg-gray-200 dark:bg-white/[0.04]" />
+                  ))}
+                </div>
+                <div className="h-56 rounded-2xl bg-gray-200 dark:bg-white/[0.04]" />
+                <div className="h-56 rounded-2xl bg-gray-200 dark:bg-white/[0.04]" />
               </div>
-              <div className="h-56 rounded-xl bg-gray-100 dark:bg-white/[0.04]" />
-              <div className="h-56 rounded-xl bg-gray-100 dark:bg-white/[0.04]" />
-            </div>
-          )}
+            )}
+          </div>
         </main>
       </div>
 

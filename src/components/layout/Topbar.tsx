@@ -29,44 +29,48 @@ export function Topbar() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-10 flex h-13 items-center gap-3 px-4',
-        'bg-white/80 border-b border-[oklch(0.905_0.010_270)] backdrop-blur-lg',
-        'dark:bg-[rgba(8,5,18,0.70)] dark:backdrop-blur-2xl dark:border-b dark:border-white/[0.05]'
+        'sticky top-0 z-10 flex h-14 items-center gap-3 px-4 md:px-6',
+        'bg-white/80 border-b-2 border-slate-200 backdrop-blur-md',
+        'dark:bg-slate-950/80 dark:border-b-2 dark:border-slate-800/80'
       )}
     >
-      <div className="flex items-center gap-2 md:hidden">
-        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-indigo-600">
-          <Wallet className="h-3 w-3 text-white" />
-        </div>
-        <span className="text-sm font-semibold text-gray-900 dark:text-white">FinanceMe</span>
+      {/* Mobile Mascot & App Name */}
+      <div className="flex items-center gap-1.5 lg:hidden">
+        <span className="text-xl">🦉</span>
+        <span className="text-[11px] font-black tracking-wider text-[#58cc02] dark:text-[#58cc02] uppercase leading-none">
+          FinanceMe
+        </span>
       </div>
 
-      <div className="hidden items-center gap-2.5 md:flex">
-        <h1 className="text-[15px] font-semibold tracking-tight text-gray-900 dark:text-white/90">{title}</h1>
+      {/* Screen Title (Desktop & Safe center on Mobile) */}
+      <div className="hidden lg:flex items-center gap-2.5">
+        <h1 className="text-sm font-black tracking-tight text-slate-800 dark:text-white uppercase">
+          {title}
+        </h1>
         {pathname === '/dashboard' && (
-          <span className="flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 dark:border-violet-500/20 dark:bg-violet-500/10">
-            <span className="live-dot h-1.5 w-1.5 rounded-full bg-violet-500" />
-            <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400">Live</span>
+          <span className="flex items-center gap-1.5 rounded-full border border-[#58cc02]/20 bg-[#58cc02]/10 px-2 py-0.5 dark:border-[#58cc02]/10 dark:bg-[#58cc02]/15">
+            <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#58cc02]" />
+            <span className="text-[9px] font-black uppercase text-[#58cc02] tracking-wider">Live Quest</span>
           </span>
         )}
       </div>
 
-      <div className="flex-1 text-center md:hidden">
-        <h1 className="text-[14px] font-semibold text-gray-900 dark:text-white/90">{title}</h1>
+      <div className="flex-1 text-center lg:hidden">
+        <h1 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">{title}</h1>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      {/* Action Area */}
+      <div className="ml-auto flex items-center gap-1.5 md:gap-2">
         <button
           onClick={() => setOpen(true)}
+          aria-label="ค้นหาข้อมูล"
           className={cn(
-            'flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors',
-            'text-gray-400 hover:bg-gray-100 hover:text-gray-600',
-            'dark:text-white/30 dark:hover:bg-white/[0.05] dark:hover:text-white/60'
+            'flex items-center gap-2 rounded-xl px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all'
           )}
         >
-          <Search className="h-4 w-4" />
-          <span className="hidden items-center gap-1 text-[11px] md:flex">
-            <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-mono text-[10px] dark:border-white/10 dark:bg-white/[0.03]">
+          <Search className="h-4 w-4 stroke-[2.5px]" />
+          <span className="hidden items-center gap-1 text-[10px] font-black md:flex text-slate-400">
+            <kbd className="rounded bg-slate-100 border border-slate-200 px-1 py-0.5 font-mono text-[9px] dark:border-slate-700 dark:bg-slate-850">
               ⌘K
             </kbd>
           </span>

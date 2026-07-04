@@ -26,9 +26,9 @@ export function PressCard({ children, className, style, shadow, shadowHover, onC
     <div
       onClick={onClick}
       className={cn(
-        'rounded-2xl border-2 transition-all duration-100 ease-out select-none',
+        'rounded-2xl border-2 border-slate-200 dark:border-slate-800 transition-all duration-100 ease-out select-none bg-white dark:bg-slate-900',
         onClick && 'cursor-pointer',
-        'hover:[transform:translateY(2px)] active:[transform:translateY(4px)]',
+        'hover:-translate-y-0.5 active:translate-y-1',
         className,
       )}
       style={{ boxShadow: shadow, ...style }}
