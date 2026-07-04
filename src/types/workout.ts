@@ -20,8 +20,8 @@ export interface ExerciseData {
   muscle_group: string    // e.g. "hip flexors"
   secondary_muscles: string[]
   target: string          // e.g. "abs"
-  image: string           // e.g. "images/0001-2gPfomN.jpg"
-  gif_url: string         // e.g. "videos/0001-2gPfomN.gif"
+  image: string           // reference path only; media is resolved from the ExerciseDB CDN token
+  gif_url: string         // reference path only; media is resolved from the ExerciseDB CDN token
   created_at: string
 }
 

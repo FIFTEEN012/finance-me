@@ -2,8 +2,7 @@
 
 import { create } from 'zustand'
 import type { ExerciseData } from '@/types/workout'
-
-const GITHUB_RAW = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main'
+import { resolveExerciseMediaUrl } from '@/lib/exerciseMedia'
 
 interface ExerciseStore {
   exercises: ExerciseData[]
@@ -51,26 +50,8 @@ export const useExerciseStore = create<ExerciseStore>((set, get) => ({
 
   getExerciseById: (id) => get().exercises.find((e) => e.id === id),
 
-  getImageUrl: (imagePath) => {
-    if (!imagePath) return ''
-    const filename = imagePath.split('/').pop() || ''
-    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
-    const mediaId = filenameNoExt.split('-')[0] // extract 4-digit numeric ID (e.g. "0001")
-    if (mediaId && /^\d+$/.test(mediaId)) {
-      return `https://static.exercisedb.dev/media/${mediaId}.gif`
-    }
-    return `${GITHUB_RAW}/${imagePath}`
-  },
-  getGifUrl: (gifPath) => {
-    if (!gifPath) return ''
-    const filename = gifPath.split('/').pop() || ''
-    const filenameNoExt = filename.substring(0, filename.lastIndexOf('.'))
-    const mediaId = filenameNoExt.split('-')[0]
-    if (mediaId && /^\d+$/.test(mediaId)) {
-      return `https://static.exercisedb.dev/media/${mediaId}.gif`
-    }
-    return `${GITHUB_RAW}/${gifPath}`
-  },
+  getImageUrl: (imagePath) => resolveExerciseMediaUrl(imagePath),
+  getGifUrl: (gifPath) => resolveExerciseMediaUrl(gifPath),
 
   getBodyParts: () => {
     const parts = new Set(get().exercises.map((e) => e.body_part))

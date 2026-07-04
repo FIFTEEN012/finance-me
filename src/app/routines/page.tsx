@@ -11,6 +11,7 @@ import { useWorkoutStore } from '@/store/useWorkoutStore'
 import { PressCard } from '@/components/ui/PressCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ExerciseMediaImage } from '@/components/shared/ExerciseMediaImage'
 import { cn } from '@/lib/utils'
 import type { ExerciseData, Routine, RoutineExercise } from '@/types/workout'
 import { WorkoutGeneratorWizard } from '@/components/shared/WorkoutGeneratorWizard'
@@ -56,8 +57,7 @@ function AddExercisesSheet({
               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors text-left"
               onClick={() => onAdd(ex)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ExerciseMediaImage
                 src={getImageUrl(ex.image)}
                 alt={ex.name}
                 className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-white/[0.06] object-contain"
@@ -437,4 +437,3 @@ export default function RoutinesPage() {
     </div>
   )
 }
-

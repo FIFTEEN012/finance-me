@@ -10,6 +10,7 @@ import { useWorkoutStore } from '@/store/useWorkoutStore'
 import { PressCard } from '@/components/ui/PressCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ExerciseMediaImage } from '@/components/shared/ExerciseMediaImage'
 import { cn } from '@/lib/utils'
 import type { ExerciseData } from '@/types/workout'
 
@@ -45,9 +46,8 @@ function ExerciseDetailSheet({
       <div className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-2xl shadow-2xl">
         {/* Header Image / GIF */}
         <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-800 overflow-hidden rounded-t-3xl sm:rounded-t-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={showGif ? getGifUrl(exercise.gif_url) : getImageUrl(exercise.image)}
+          <ExerciseMediaImage
+            src={getGifUrl(exercise.gif_url || exercise.image)}
             alt={exercise.name}
             className="w-full h-full object-contain"
             loading="lazy"
@@ -480,8 +480,7 @@ export default function WorkoutsPage() {
                     onClick={() => setSelectedExercise(ex)}
                   >
                     <div className="aspect-square bg-gray-50 dark:bg-white/[0.04] overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <ExerciseMediaImage
                         src={getImageUrl(ex.image)}
                         alt={ex.name}
                         className="w-full h-full object-contain"
