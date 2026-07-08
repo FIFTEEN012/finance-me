@@ -218,3 +218,12 @@ export interface InvestmentHolding {
   lastPriceUpdate: string  // ISO date
   createdAt: string
 }
+
+export type {
+  HealthAchievement,
+  HealthExercise,
+  HealthMode,
+  HealthMood,
+  HealthQuest,
+  HealthSession,
+} from './health'

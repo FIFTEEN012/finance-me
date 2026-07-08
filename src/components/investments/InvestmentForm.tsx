@@ -119,15 +119,20 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editingHolding ? 'แก้ไขหลักทรัพย์' : 'เพิ่มหลักทรัพย์'}</DialogTitle>
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c]">
+        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-5 dark:border-[#3b4630]">
+          <DialogTitle className="font-quest-heading text-2xl font-black text-[#2b6c00] dark:text-[#87fe45]">
+            {editingHolding ? 'แก้ไขหลักทรัพย์' : 'เพิ่มหลักทรัพย์'}
+          </DialogTitle>
+          <p className="font-quest-body text-sm font-bold text-[var(--quest-muted)]">
+            ปรับรายละเอียดสินทรัพย์ให้ตรงกับ Mission Board และเก็บข้อมูลพอร์ตแบบเรียลไทม์
+          </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6 font-quest-body">
           {/* Asset class */}
           <div>
-            <Label className="text-sm mb-2 block">ประเภทสินทรัพย์</Label>
+            <Label className="mb-2 block text-sm font-bold text-[var(--quest-muted)]">ประเภทสินทรัพย์</Label>
             <div className="grid grid-cols-3 gap-1.5">
               {(Object.entries(ASSET_CLASS_META) as [AssetClass, typeof ASSET_CLASS_META[AssetClass]][]).map(([key, meta]) => (
                 <button
@@ -135,10 +140,10 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
                   type="button"
                   onClick={() => setValue('assetClass', key)}
                   className={cn(
-                    'flex flex-col items-center gap-1 py-2 px-1 rounded-xl border text-xs font-medium transition-all',
+                    'flex flex-col items-center gap-1 rounded-xl border px-1 py-2 text-xs font-bold transition-all',
                     assetClass === key
-                      ? 'border-2 text-white'
-                      : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/40 hover:border-gray-300 bg-white dark:bg-white/[0.02]'
+                      ? 'border-2 text-white shadow-[0_4px_0_0_rgba(0,0,0,0.15)]'
+                      : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] hover:border-[#6f7b64] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)]'
                   )}
                   style={assetClass === key ? { backgroundColor: meta.color, borderColor: meta.color } : {}}
                 >
@@ -151,7 +156,7 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
 
           {/* Currency selector */}
           <div>
-            <Label className="text-sm mb-2 block">สกุลเงิน</Label>
+            <Label className="mb-2 block text-sm font-bold text-[var(--quest-muted)]">สกุลเงิน</Label>
             <div className="flex gap-1.5 flex-wrap">
               {SUPPORTED_CURRENCIES.map((cur) => (
                 <button
@@ -159,10 +164,10 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
                   type="button"
                   onClick={() => setCurrency(cur)}
                   className={cn(
-                    'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
+                    'flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all',
                     currency === cur
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/50 hover:border-gray-300 bg-white dark:bg-white/[0.02]'
+                      ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_3px_0_0_#1e5000]'
+                      : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] hover:border-[#6f7b64] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)]'
                   )}
                 >
                   <span>{CURRENCY_FLAGS[cur]}</span>
@@ -180,27 +185,37 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
           {/* Name + Ticker */}
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
-              <Label className="text-sm mb-1.5 block">ชื่อหลักทรัพย์</Label>
+              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ชื่อหลักทรัพย์</Label>
               <Input
                 {...register('name')}
                 placeholder={currency === 'USD' ? 'เช่น Apple, Tesla' : 'เช่น ปตท., Bitcoin'}
-                className={errors.name ? 'border-red-400' : ''}
+                className={cn(
+                  'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                  errors.name && 'border-red-400'
+                )}
               />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
             <div>
-              <Label className="text-sm mb-1.5 block">Ticker</Label>
-              <Input {...register('ticker')} placeholder={currency === 'USD' ? 'AAPL' : 'PTT'} />
+              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">Ticker</Label>
+              <Input
+                {...register('ticker')}
+                placeholder={currency === 'USD' ? 'AAPL' : 'PTT'}
+                className="rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
+              />
             </div>
           </div>
 
           {/* Units */}
           <div>
-            <Label className="text-sm mb-1.5 block">จำนวนหน่วย / หุ้น</Label>
+            <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">จำนวนหน่วย / หุ้น</Label>
             <Input
               {...register('units', { valueAsNumber: true })}
               type="number" step="any" placeholder="0"
-              className={errors.units ? 'border-red-400' : ''}
+              className={cn(
+                'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                errors.units && 'border-red-400'
+              )}
             />
             {errors.units && <p className="text-xs text-red-500 mt-1">{errors.units.message}</p>}
           </div>
@@ -208,20 +223,26 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
           {/* Avg cost + Current price */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-sm mb-1.5 block">ต้นทุนเฉลี่ย/หน่วย ({sym})</Label>
+              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ต้นทุนเฉลี่ย/หน่วย ({sym})</Label>
               <Input
                 {...register('avgCostPerUnit', { valueAsNumber: true })}
                 type="number" step="any" placeholder="0.00"
-                className={errors.avgCostPerUnit ? 'border-red-400' : ''}
+                className={cn(
+                  'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                  errors.avgCostPerUnit && 'border-red-400'
+                )}
               />
               {errors.avgCostPerUnit && <p className="text-xs text-red-500 mt-1">{errors.avgCostPerUnit.message}</p>}
             </div>
             <div>
-              <Label className="text-sm mb-1.5 block">ราคาปัจจุบัน/หน่วย ({sym})</Label>
+              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ราคาปัจจุบัน/หน่วย ({sym})</Label>
               <Input
                 {...register('currentPricePerUnit', { valueAsNumber: true })}
                 type="number" step="any" placeholder="0.00"
-                className={errors.currentPricePerUnit ? 'border-red-400' : ''}
+                className={cn(
+                  'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                  errors.currentPricePerUnit && 'border-red-400'
+                )}
               />
               {errors.currentPricePerUnit && <p className="text-xs text-red-500 mt-1">{errors.currentPricePerUnit.message}</p>}
             </div>
@@ -230,10 +251,10 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
           {/* Live preview */}
           {units > 0 && (avgCost > 0 || currentPrice > 0) && (
             <div className={cn(
-              'p-3 rounded-xl border text-sm space-y-1.5',
+              'space-y-1.5 rounded-xl border p-3 text-sm',
               gainLossNative >= 0
-                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20'
-                : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20'
+                ? 'border-[#58cc02] bg-[#efffe4] dark:border-[#2b6c00] dark:bg-[#1b2614]'
+                : 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/20'
             )}>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-white/40 text-xs">มูลค่าปัจจุบัน</span>
@@ -262,15 +283,29 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
 
           {/* Note */}
           <div>
-            <Label className="text-sm mb-1.5 block">หมายเหตุ (ไม่บังคับ)</Label>
-            <Input {...register('note')} placeholder="เช่น ซื้อปีนี้" />
+            <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">หมายเหตุ (ไม่บังคับ)</Label>
+            <Input
+              {...register('note')}
+              placeholder="เช่น ซื้อปีนี้"
+              className="rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
+            />
           </div>
 
-          <Separator />
+          <Separator className="bg-[#becbb1] dark:bg-[#3b4630]" />
 
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>ยกเลิก</Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90">
+          <DialogFooter className="-mx-6 -mb-6 gap-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="h-11 rounded-2xl border-2 border-[#6f7b64] bg-[var(--quest-surface)] font-bold text-[var(--quest-muted)] shadow-[0_4px_0_0_#6f7b64] hover:bg-[var(--quest-surface)] dark:border-[#5f6e52] dark:bg-[var(--quest-surface)]"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="submit"
+              className="h-11 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] font-bold text-[#1e5000] shadow-[0_4px_0_0_#1e5000] hover:bg-[#58cc02]/95"
+            >
               {editingHolding ? 'บันทึกการแก้ไข' : 'เพิ่มหลักทรัพย์'}
             </Button>
           </DialogFooter>

@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Plus, Trash2, Equal, Sliders, Percent, UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import { Equal, Percent, Plus, SlidersHorizontal, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import { useBillSplitStore } from '@/store/useBillSplitStore'
-import { BillSplitMode, BillParticipant } from '@/types'
+import { BillParticipant, BillSplitMode } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -17,8 +18,8 @@ interface Props {
 }
 
 const MODE_OPTIONS: { value: BillSplitMode; label: string; icon: React.ElementType; desc: string }[] = [
-  { value: 'equal',      label: 'เท่ากัน',     icon: Equal,   desc: 'หารเท่าๆ กันทุกคน' },
-  { value: 'custom',     label: 'กำหนดเอง',   icon: Sliders,  desc: 'ใส่ยอดแต่ละคนเอง' },
+  { value: 'equal', label: 'เท่ากัน', icon: Equal, desc: 'หารเท่ากันทุกคน' },
+  { value: 'custom', label: 'กำหนดเอง', icon: SlidersHorizontal, desc: 'ใส่ยอดแต่ละคนเอง' },
   { value: 'percentage', label: 'เปอร์เซ็นต์', icon: Percent, desc: 'แบ่งตาม %' },
 ]
 
@@ -27,15 +28,15 @@ function newParticipant(name = ''): BillParticipant {
 }
 
 export function BillSplitForm({ open, onClose }: Props) {
-  const addSplit = useBillSplitStore((s) => s.addSplit)
+  const addSplit = useBillSplitStore((state) => state.addSplit)
 
-  const [title,       setTitle]       = useState('')
+  const [title, setTitle] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
-  const [currency,    setCurrency]    = useState('THB')
-  const [date,        setDate]        = useState(new Date().toISOString().slice(0, 10))
-  const [paidBy,      setPaidBy]      = useState('ฉัน')
-  const [mode,        setMode]        = useState<BillSplitMode>('equal')
-  const [note,        setNote]        = useState('')
+  const [currency, setCurrency] = useState('THB')
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [paidBy, setPaidBy] = useState('ฉัน')
+  const [mode, setMode] = useState<BillSplitMode>('equal')
+  const [note, setNote] = useState('')
   const [participants, setParticipants] = useState<BillParticipant[]>([
     newParticipant('ฉัน'),
     newParticipant(''),
@@ -43,255 +44,322 @@ export function BillSplitForm({ open, onClose }: Props) {
 
   const total = parseFloat(totalAmount) || 0
 
-  /* ── participant helpers ── */
-  const addPerson = () =>
-    setParticipants((p) => [...p, newParticipant('')])
-
-  const removePerson = (id: string) =>
-    setParticipants((p) => p.filter((x) => x.id !== id))
-
-  const updateName = (id: string, name: string) =>
-    setParticipants((p) => p.map((x) => (x.id === id ? { ...x, name } : x)))
-
-  const updateShare = (id: string, val: string) =>
-    setParticipants((p) =>
-      p.map((x) => (x.id === id ? { ...x, share: parseFloat(val) || 0 } : x))
-    )
-
-  /* ── computed shares ── */
-  const computedParticipants = useCallback((): BillParticipant[] => {
-    if (mode === 'equal') {
-      const each = participants.length > 0 ? total / participants.length : 0
-      return participants.map((p) => ({ ...p, share: Math.round(each * 100) / 100 }))
-    }
-    if (mode === 'percentage') {
-      return participants.map((p) => ({
-        ...p,
-        share: Math.round(total * (p.share / 100) * 100) / 100,
-      }))
-    }
-    return participants // custom
-  }, [mode, participants, total])
-
-  const shareTotal =
-    mode === 'percentage'
-      ? participants.reduce((s, p) => s + p.share, 0)
-      : computedParticipants().reduce((s, p) => s + p.share, 0)
-
-  const isPercentageValid = mode === 'percentage' ? Math.abs(shareTotal - 100) < 0.01 : true
-  const isCustomValid     = mode === 'custom'     ? Math.abs(shareTotal - total) < 0.01 : true
-
-  /* ── submit ── */
-  const handleSubmit = () => {
-    if (!title.trim())            return toast.error('ใส่ชื่อบิลด้วย')
-    if (total <= 0)               return toast.error('ใส่ยอดรวมด้วย')
-    if (participants.length < 2)  return toast.error('ต้องมีอย่างน้อย 2 คน')
-    if (participants.some((p) => !p.name.trim())) return toast.error('ใส่ชื่อทุกคนด้วย')
-    if (!isPercentageValid)       return toast.error('เปอร์เซ็นต์รวมต้องเท่ากับ 100%')
-    if (!isCustomValid)           return toast.error(`ยอดรวมต้องเท่ากับ ${total.toLocaleString()} บาท`)
-
-    addSplit({
-      title:        title.trim(),
-      totalAmount:  total,
-      currency,
-      date,
-      paidBy,
-      splitMode:    mode,
-      participants: computedParticipants(),
-      note:         note.trim() || undefined,
-    })
-
-    toast.success('บันทึกการแบ่งบิลเรียบร้อย 🎉')
-    handleClose()
+  function addPerson() {
+    setParticipants((current) => [...current, newParticipant('')])
   }
 
-  const handleClose = () => {
-    setTitle(''); setTotalAmount(''); setCurrency('THB')
+  function removePerson(id: string) {
+    setParticipants((current) => current.filter((participant) => participant.id !== id))
+  }
+
+  function updateName(id: string, name: string) {
+    setParticipants((current) =>
+      current.map((participant) => (participant.id === id ? { ...participant, name } : participant))
+    )
+  }
+
+  function updateShare(id: string, value: string) {
+    setParticipants((current) =>
+      current.map((participant) =>
+        participant.id === id ? { ...participant, share: parseFloat(value) || 0 } : participant
+      )
+    )
+  }
+
+  function getComputedParticipants() {
+    if (mode === 'equal') {
+      const each = participants.length > 0 ? total / participants.length : 0
+      return participants.map((participant) => ({
+        ...participant,
+        share: Math.round(each * 100) / 100,
+      }))
+    }
+
+    if (mode === 'percentage') {
+      return participants.map((participant) => ({
+        ...participant,
+        share: Math.round(total * (participant.share / 100) * 100) / 100,
+      }))
+    }
+
+    return participants
+  }
+
+  const computedParticipants = getComputedParticipants()
+  const shareTotal = mode === 'percentage'
+    ? participants.reduce((sum, participant) => sum + participant.share, 0)
+    : computedParticipants.reduce((sum, participant) => sum + participant.share, 0)
+
+  const isPercentageValid = mode === 'percentage' ? Math.abs(shareTotal - 100) < 0.01 : true
+  const isCustomValid = mode === 'custom' ? Math.abs(shareTotal - total) < 0.01 : true
+
+  function resetForm() {
+    setTitle('')
+    setTotalAmount('')
+    setCurrency('THB')
     setDate(new Date().toISOString().slice(0, 10))
-    setPaidBy('ฉัน'); setMode('equal'); setNote('')
+    setPaidBy('ฉัน')
+    setMode('equal')
+    setNote('')
     setParticipants([newParticipant('ฉัน'), newParticipant('')])
+  }
+
+  function handleClose() {
+    resetForm()
     onClose()
   }
 
+  function handleSubmit() {
+    if (!title.trim()) return toast.error('ใส่ชื่อบิลด้วย')
+    if (total <= 0) return toast.error('ใส่ยอดรวมด้วย')
+    if (participants.length < 2) return toast.error('ต้องมีอย่างน้อย 2 คน')
+    if (participants.some((participant) => !participant.name.trim())) return toast.error('ใส่ชื่อทุกคนด้วย')
+    if (!isPercentageValid) return toast.error('เปอร์เซ็นต์รวมต้องเท่ากับ 100%')
+    if (!isCustomValid) {
+      return toast.error(`ยอดรวมต้องเท่ากับ ${total.toLocaleString('th-TH', { maximumFractionDigits: 2 })} ${currency}`)
+    }
+
+    addSplit({
+      title: title.trim(),
+      totalAmount: total,
+      currency,
+      date,
+      paidBy,
+      splitMode: mode,
+      participants: computedParticipants,
+      note: note.trim() || undefined,
+    })
+
+    toast.success('บันทึกการแบ่งบิลเรียบร้อย')
+    handleClose()
+  }
+
+  const totalPerHead = participants.length > 0 ? total / participants.length : 0
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <span className="text-xl">🧾</span>
-            แบ่งบิลใหม่
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && handleClose()}>
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c]">
+        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-5 dark:border-[#3b4630]">
+          <DialogTitle className="font-quest-heading text-2xl font-black text-[#2b6c00] dark:text-[#87fe45]">
+            สร้างบิลใหม่
           </DialogTitle>
+          <p className="font-quest-body text-sm font-bold text-[var(--quest-muted)]">
+            เพิ่มบิลสำหรับภารกิจเคลียร์ยอด แชร์กับเพื่อนได้ง่าย และติดตามสถานะการเคลียร์ได้ทันที
+          </p>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Title + date */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-xs text-gray-500 dark:text-white/40">ชื่อบิล</Label>
+        <div className="space-y-5 p-6 font-quest-body">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_0.75fr_0.75fr]">
+            <div>
+              <Label className="quest-field-label">ชื่อบิล</Label>
               <Input
-                placeholder="เช่น อาหารเย็น, ทริปเชียงใหม่"
+                placeholder="เช่น ค่าชาบูมื้อดึก"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(event) => setTitle(event.target.value)}
+                className="quest-input"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500 dark:text-white/40">วันที่</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <div>
+              <Label className="quest-field-label">วันที่</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                className="quest-input"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500 dark:text-white/40">สกุลเงิน</Label>
+            <div>
+              <Label className="quest-field-label">สกุลเงิน</Label>
               <Input
                 placeholder="THB"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
                 maxLength={4}
+                className="quest-input"
               />
             </div>
           </div>
 
-          {/* Total + paidBy */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500 dark:text-white/40">ยอดรวม</Label>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label className="quest-field-label">ยอดรวม</Label>
               <Input
                 type="number"
                 inputMode="decimal"
                 placeholder="0.00"
                 value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
+                onChange={(event) => setTotalAmount(event.target.value)}
+                className="quest-input"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500 dark:text-white/40">ใครจ่าย?</Label>
+            <div>
+              <Label className="quest-field-label">ใครจ่ายก่อน?</Label>
               <Input
                 placeholder="ฉัน"
                 value={paidBy}
-                onChange={(e) => setPaidBy(e.target.value)}
+                onChange={(event) => setPaidBy(event.target.value)}
+                className="quest-input"
               />
             </div>
           </div>
 
-          {/* Split mode */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-gray-500 dark:text-white/40">วิธีแบ่ง</Label>
-            <div className="grid grid-cols-3 gap-1.5">
+          <div>
+            <Label className="quest-field-label">วิธีแบ่ง</Label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {MODE_OPTIONS.map(({ value, label, icon: Icon, desc }) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setMode(value)}
                   className={cn(
-                    'flex flex-col items-center gap-1 p-2.5 rounded-xl border text-xs font-medium transition-all',
+                    'rounded-[1.25rem] border-2 px-4 py-3 text-left transition-all',
                     mode === value
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400'
-                      : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/40 hover:border-gray-300 dark:hover:border-white/20'
+                      ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
+                      : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] shadow-[0_4px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)] dark:shadow-[0_4px_0_0_#0f130c]'
                   )}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{label}</span>
-                  <span className="text-[9px] font-normal text-gray-400 dark:text-white/30 leading-tight text-center">
-                    {desc}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-xl border-2',
+                        mode === value
+                          ? 'border-[#1e5000] bg-white/25 text-[#1e5000]'
+                          : 'border-[#becbb1] bg-[var(--quest-surface-soft)] text-[var(--quest-muted)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-soft)]'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black">{label}</p>
+                      <p className={cn('text-xs font-medium', mode === value ? 'text-[#1f5100]' : 'text-[var(--quest-muted)]')}>
+                        {desc}
+                      </p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Participants */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-gray-500 dark:text-white/40">
-                ผู้ร่วมจ่าย ({participants.length} คน)
-              </Label>
+          <section className="quest-soft-card space-y-4 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label className="quest-field-label mb-0">ผู้ร่วมจ่าย</Label>
+                <p className="text-sm font-medium text-[var(--quest-muted)]">{participants.length} คนในภารกิจนี้</p>
+              </div>
+
               <button
                 type="button"
                 onClick={addPerson}
-                className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-[#2b6c00] bg-[#58cc02] px-3 py-1.5 text-sm font-bold text-[#1e5000] shadow-[0_3px_0_0_#1e5000] transition-all hover:-translate-y-0.5"
               >
-                <UserPlus className="w-3.5 h-3.5" />
+                <UserPlus className="h-4 w-4" />
                 เพิ่มคน
               </button>
             </div>
 
-            <div className="space-y-1.5">
-              {participants.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-2">
+            <div className="space-y-2.5">
+              {participants.map((participant, index) => (
+                <div
+                  key={participant.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-[1.25rem] border border-[#becbb1] bg-[var(--quest-surface)] p-3 dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
+                >
                   <Input
-                    placeholder={`ชื่อคนที่ ${i + 1}`}
-                    value={p.name}
-                    onChange={(e) => updateName(p.id, e.target.value)}
-                    className="flex-1"
+                    placeholder={`ชื่อคนที่ ${index + 1}`}
+                    value={participant.name}
+                    onChange={(event) => updateName(participant.id, event.target.value)}
+                    className="quest-input h-11 border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
                   />
-                  {mode !== 'equal' && (
-                    <div className="relative w-24">
+
+                  {mode !== 'equal' ? (
+                    <div className="relative w-28">
                       <Input
                         type="number"
                         inputMode="decimal"
                         placeholder="0"
-                        value={p.share || ''}
-                        onChange={(e) => updateShare(p.id, e.target.value)}
-                        className="pr-8 text-right"
+                        value={participant.share || ''}
+                        onChange={(event) => updateShare(participant.id, event.target.value)}
+                        className="quest-input h-11 pr-10 text-right"
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-[var(--quest-muted)]">
                         {mode === 'percentage' ? '%' : currency}
                       </span>
                     </div>
+                  ) : (
+                    <div className="min-w-20 rounded-full bg-[var(--quest-surface-soft)] px-3 py-2 text-right text-sm font-black text-[var(--quest-muted)] dark:bg-[var(--quest-surface-soft)]">
+                      {total > 0 ? totalPerHead.toLocaleString('th-TH', { maximumFractionDigits: 2 }) : '0'}
+                    </div>
                   )}
-                  {mode === 'equal' && total > 0 && (
-                    <span className="w-24 text-right text-xs font-medium text-gray-500 dark:text-white/40 tabular-nums">
-                      {(total / participants.length).toLocaleString('th-TH', { maximumFractionDigits: 2 })}
-                    </span>
-                  )}
+
                   <button
                     type="button"
-                    onClick={() => removePerson(p.id)}
+                    onClick={() => removePerson(participant.id)}
                     disabled={participants.length <= 2}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-rose-700 bg-rose-100 text-rose-700 shadow-[0_4px_0_0_#7f1d1d] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35 dark:bg-rose-900/30 dark:text-rose-200"
+                    title="ลบผู้ร่วมจ่าย"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
 
-            {/* Sum check */}
             {mode === 'custom' && total > 0 && (
-              <div className={cn(
-                'flex justify-between text-xs px-1',
-                isCustomValid ? 'text-green-600 dark:text-green-400' : 'text-red-500'
-              )}>
-                <span>รวม</span>
-                <span className="tabular-nums font-medium">
-                  {shareTotal.toLocaleString('th-TH', { maximumFractionDigits: 2 })} / {total.toLocaleString('th-TH', { maximumFractionDigits: 2 })} {currency}
-                </span>
+              <div
+                className={cn(
+                  'rounded-2xl border px-3 py-2 text-sm font-bold',
+                  isCustomValid
+                    ? 'border-[#2b6c00] bg-[#efffe4] text-[#1e5000] dark:bg-[#1b2614]'
+                    : 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-200'
+                )}
+              >
+                รวม {shareTotal.toLocaleString('th-TH', { maximumFractionDigits: 2 })} / {total.toLocaleString('th-TH', { maximumFractionDigits: 2 })} {currency}
               </div>
             )}
-            {mode === 'percentage' && (
-              <div className={cn(
-                'flex justify-between text-xs px-1',
-                isPercentageValid ? 'text-green-600 dark:text-green-400' : 'text-red-500'
-              )}>
-                <span>รวม %</span>
-                <span className="tabular-nums font-medium">{shareTotal.toFixed(1)}%</span>
-              </div>
-            )}
-          </div>
 
-          {/* Note */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-gray-500 dark:text-white/40">โน้ต (ไม่บังคับ)</Label>
+            {mode === 'percentage' && (
+              <div
+                className={cn(
+                  'rounded-2xl border px-3 py-2 text-sm font-bold',
+                  isPercentageValid
+                    ? 'border-[#2b6c00] bg-[#efffe4] text-[#1e5000] dark:bg-[#1b2614]'
+                    : 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-200'
+                )}
+              >
+                รวมเปอร์เซ็นต์ {shareTotal.toFixed(1)}%
+              </div>
+            )}
+          </section>
+
+          <div>
+            <Label className="quest-field-label">หมายเหตุ (ไม่บังคับ)</Label>
             <Input
-              placeholder="เช่น ร้านอาหาร XYZ"
+              placeholder="เช่น ร้านอาหาร ชั้น 2 หรือทวงหลังเลิกงาน"
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(event) => setNote(event.target.value)}
+              className="quest-input"
             />
           </div>
         </div>
 
-        <DialogFooter className="gap-2 mt-2">
-          <Button variant="outline" onClick={handleClose}>ยกเลิก</Button>
-          <Button onClick={handleSubmit} className="bg-violet-600 hover:bg-violet-700 text-white">
-            บันทึก
+        <Separator className="bg-[#becbb1] dark:bg-[#3b4630]" />
+
+        <DialogFooter className="-mx-0 -mb-0 gap-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            className="quest-secondary-button"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            className="quest-action-button px-5"
+          >
+            <Plus className="h-4 w-4" />
+            บันทึกบิล
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -14,11 +14,23 @@ export const SYNC_STORE_KEYS = [
   'finance-dashboard-layout',
   'finance-onboarding',
   'finance-bill-splits',
+] as const
+
+const REMOVED_SYNC_STORE_KEYS = [
   'finance-workouts',
   'finance-routines',
 ] as const
 
 export type SyncResult = { ok: true } | { ok: false; error: string }
+
+function clearStoreKey(key: string) {
+  localStorage.removeItem(key)
+  localStorage.removeItem(`${key}__synced_at`)
+}
+
+export function clearRemovedFeatureStorage() {
+  REMOVED_SYNC_STORE_KEYS.forEach(clearStoreKey)
+}
 
 /**
  * Push all local store data to Supabase.
@@ -27,6 +39,8 @@ export type SyncResult = { ok: true } | { ok: false; error: string }
  */
 export async function pushToCloud(userId: string): Promise<SyncResult> {
   if (!supabase) return { ok: false, error: 'Cloud sync not configured' }
+
+  clearRemovedFeatureStorage()
 
   const now = new Date().toISOString()
   const rows = SYNC_STORE_KEYS.map((key) => {
@@ -45,6 +59,14 @@ export async function pushToCloud(userId: string): Promise<SyncResult> {
 
   if (error) return { ok: false, error: error.message }
 
+  const { error: deleteError } = await supabase
+    .from('user_store_data')
+    .delete()
+    .eq('user_id', userId)
+    .in('store_name', [...REMOVED_SYNC_STORE_KEYS])
+
+  if (deleteError) return { ok: false, error: deleteError.message }
+
   // Record what we just synced so future pulls don't overwrite newer local edits
   const nowMs = new Date(now).getTime()
   for (const key of SYNC_STORE_KEYS) {
@@ -62,6 +84,8 @@ export async function pushToCloud(userId: string): Promise<SyncResult> {
  */
 export async function pullFromCloud(userId: string): Promise<SyncResult> {
   if (!supabase) return { ok: false, error: 'Cloud sync not configured' }
+
+  clearRemovedFeatureStorage()
 
   const { data, error } = await supabase
     .from('user_store_data')
@@ -105,8 +129,6 @@ export async function rehydrateAllStores() {
     { useDashboardStore },
     { useOnboardingStore },
     { useBillSplitStore },
-    { useWorkoutStore },
-    { useRoutineStore },
   ] = await Promise.all([
     import('@/store/useTransactionStore'),
     import('@/store/useBudgetStore'),
@@ -118,8 +140,6 @@ export async function rehydrateAllStores() {
     import('@/store/useDashboardStore'),
     import('@/store/useOnboardingStore'),
     import('@/store/useBillSplitStore'),
-    import('@/store/useWorkoutStore'),
-    import('@/store/useRoutineStore'),
   ])
 
   type WithPersist = { persist?: { rehydrate?: () => void | Promise<void> } }
@@ -135,8 +155,6 @@ export async function rehydrateAllStores() {
     useDashboardStore,
     useOnboardingStore,
     useBillSplitStore,
-    useWorkoutStore,
-    useRoutineStore,
   ]
 
   stores.forEach((store) => {

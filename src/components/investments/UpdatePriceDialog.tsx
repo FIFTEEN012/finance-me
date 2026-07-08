@@ -46,29 +46,34 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-xs">
-        <DialogHeader>
-          <DialogTitle>อัปเดตราคา</DialogTitle>
+      <DialogContent className="max-w-md rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c]">
+        <DialogHeader className="border-b-2 border-[#becbb1] px-5 py-4 dark:border-[#3b4630]">
+          <DialogTitle className="font-quest-heading text-xl font-black text-[#2b6c00] dark:text-[#87fe45]">
+            อัปเดตราคา
+          </DialogTitle>
+          <p className="font-quest-body text-sm font-bold text-[var(--quest-muted)]">
+            ปรับราคาปัจจุบันของสินทรัพย์นี้แบบรวดเร็ว
+          </p>
         </DialogHeader>
-        <div className="space-y-3 py-1">
+        <div className="space-y-4 px-5 py-5 font-quest-body">
           {/* Holding name + currency badge */}
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-700 dark:text-white/70">
+            <p className="text-sm font-bold text-[var(--quest-foreground)]">
               {holding?.name}{holding?.ticker ? ` (${holding.ticker})` : ''}
             </p>
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
               isForeign
-                ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                : 'bg-gray-100 dark:bg-white/[0.07] text-gray-500 dark:text-white/40'
+                ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300'
+                : 'bg-[var(--quest-surface-soft)] text-[var(--quest-muted)] dark:bg-[var(--quest-surface-soft)] dark:text-[var(--quest-muted)]'
             }`}>
               {currency}
             </span>
           </div>
 
           <div>
-            <Label className="text-sm mb-1.5 block">ราคาปัจจุบัน/หน่วย ({sym})</Label>
+            <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ราคาปัจจุบัน/หน่วย ({sym})</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400 dark:text-white/30">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--quest-muted)]">
                 {sym}
               </span>
               <Input
@@ -77,7 +82,7 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
-                className="pl-7"
+                className="rounded-xl border-[#becbb1] bg-[var(--quest-surface)] pl-7 shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               />
@@ -86,17 +91,17 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
 
           {/* Value preview */}
           {holding && price && !isNaN(parsedPrice) && (
-            <div className="space-y-1 text-xs text-gray-400 dark:text-white/30 bg-gray-50 dark:bg-white/[0.03] rounded-lg px-3 py-2">
+            <div className="space-y-1 rounded-xl border border-[#becbb1] bg-[var(--quest-surface-low)] px-3 py-3 text-xs text-[var(--quest-muted)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
               <div className="flex justify-between">
                 <span>มูลค่ารวม</span>
-                <span className="font-semibold text-gray-600 dark:text-white/50">
+                <span className="font-bold text-[var(--quest-foreground)]">
                   {sym}{totalNative.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               {isForeign && (
                 <div className="flex justify-between">
                   <span>เทียบเท่า (THB)</span>
-                  <span className="font-semibold text-gray-600 dark:text-white/50">
+                  <span className="font-bold text-[var(--quest-foreground)]">
                     ฿{totalTHB.toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                   </span>
                 </div>
@@ -104,9 +109,20 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
             </div>
           )}
         </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>ยกเลิก</Button>
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90">บันทึก</Button>
+        <DialogFooter className="-mx-0 -mb-0 gap-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-5 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="h-11 rounded-2xl border-2 border-[#6f7b64] bg-[var(--quest-surface)] font-bold text-[var(--quest-muted)] shadow-[0_4px_0_0_#6f7b64] hover:bg-[var(--quest-surface)] dark:border-[#5f6e52] dark:bg-[var(--quest-surface)]"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={handleSave}
+            className="h-11 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] font-bold text-[#1e5000] shadow-[0_4px_0_0_#1e5000] hover:bg-[#58cc02]/95"
+          >
+            บันทึก
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

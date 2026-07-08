@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono, Anuphan } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono, Anuphan, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AppShell } from "@/components/layout/AppShell";
@@ -25,6 +25,13 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
+const beVietnam = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam",
+  subsets: ["latin", "vietnamese"],
+  weight: ["500", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "FinanceMe — บริหารการเงินส่วนตัว",
   description: "ระบบบริหารจัดการการเงินส่วนบุคคล",
@@ -45,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${jakarta.variable} ${geistMono.variable} ${anuphan.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="th" className={`${jakarta.variable} ${geistMono.variable} ${anuphan.variable} ${beVietnam.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#7c3aed" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

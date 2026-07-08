@@ -46,6 +46,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --font-quest-body: var(--font-be-vietnam), var(--font-anuphan), sans-serif;
+  --font-quest-heading: var(--font-jakarta), var(--font-anuphan), sans-serif;
 }
 
 /* ── Violet Pro — Light ── */
@@ -323,6 +325,244 @@
 .app-content {
   position: relative;
   z-index: 1;
+}
+
+/* Finance Quest route */
+.quest-shell,
+.quest-page {
+  --quest-background: #faf9f9;
+  --quest-surface: #ffffff;
+  --quest-surface-low: #f4f3f3;
+  --quest-surface-soft: #eeeeed;
+  --quest-outline: #6f7b64;
+  --quest-outline-variant: #becbb1;
+  --quest-primary: #2b6c00;
+  --quest-primary-container: #58cc02;
+  --quest-on-primary-container: #1e5000;
+  --quest-secondary: #006590;
+  --quest-secondary-container: #2fb8ff;
+  --quest-secondary-ink: #004666;
+  --quest-tertiary: #8c5000;
+  --quest-tertiary-container: #ff9c27;
+  --quest-tertiary-ink: #683a00;
+  --quest-foreground: #1a1c1c;
+  --quest-muted: #3f4a36;
+}
+
+.dark .quest-shell,
+.dark .quest-page {
+  --quest-background: #161b11;
+  --quest-surface: #1c2117;
+  --quest-surface-low: #22281c;
+  --quest-surface-soft: #272e21;
+  --quest-outline: #5f6e52;
+  --quest-outline-variant: #3b4630;
+  --quest-foreground: #eff5e8;
+  --quest-muted: #c2cfb4;
+}
+
+.quest-shell {
+  background: linear-gradient(180deg, #ffffff 0%, #faf9f9 52%, #f4f3f3 100%);
+}
+
+.dark .quest-shell {
+  background: linear-gradient(180deg, #10140b 0%, #161b11 52%, #12170d 100%);
+}
+
+.quest-shell::before,
+.quest-shell::after,
+.quest-shell .grid-overlay {
+  display: none;
+}
+
+.quest-page {
+  color: var(--quest-foreground);
+}
+
+.quest-topbar {
+  border-bottom-color: var(--quest-outline-variant);
+  background: color-mix(in srgb, var(--quest-background) 92%, white 8%);
+  box-shadow: 0 4px 0 0 rgb(111 123 100 / 0.12);
+}
+
+.dark .quest-topbar {
+  background: color-mix(in srgb, var(--quest-background) 94%, black 6%);
+  box-shadow: 0 4px 0 0 rgb(0 0 0 / 0.2);
+}
+
+.quest-progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.quest-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.22);
+}
+
+.quest-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.quest-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--quest-outline-variant);
+  border-radius: 999px;
+}
+
+.quest-hero-card {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid #6be026;
+  border-radius: 1.5rem;
+  background: #58cc02;
+  color: #1e5000;
+  padding: 1.5rem;
+  box-shadow: 0 8px 0 0 #1e5000;
+}
+
+.quest-hero-card::before,
+.quest-hero-card::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.quest-hero-card::before {
+  top: -4rem;
+  right: -2rem;
+  width: 11rem;
+  height: 11rem;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.quest-hero-card::after {
+  bottom: -3rem;
+  left: -2rem;
+  width: 8rem;
+  height: 8rem;
+  background: rgb(30 80 0 / 0.1);
+}
+
+.quest-soft-card {
+  border: 2px solid var(--quest-outline-variant);
+  border-radius: 1.5rem;
+  background: var(--quest-surface-low);
+  box-shadow: 0 4px 0 0 rgb(0 0 0 / 0.05);
+}
+
+.quest-action-button {
+  min-height: 3rem;
+  border: 2px solid #1f5100;
+  border-radius: 1rem;
+  background: #58cc02;
+  color: #1e5000;
+  font-family: var(--font-quest-heading);
+  font-weight: 800;
+  box-shadow: 0 6px 0 0 #1e5000;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.quest-action-button:hover {
+  transform: translateY(-2px);
+}
+
+.quest-action-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 0 #1e5000;
+}
+
+.quest-secondary-button {
+  min-height: 3rem;
+  border: 2px solid #6f7b64;
+  border-radius: 1rem;
+  background: var(--quest-surface);
+  color: var(--quest-muted);
+  font-family: var(--font-quest-body);
+  font-weight: 700;
+  box-shadow: 0 4px 0 0 #6f7b64;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.quest-secondary-button:hover {
+  transform: translateY(-2px);
+  background: var(--quest-surface-low);
+}
+
+.quest-secondary-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 #6f7b64;
+}
+
+.quest-field-label {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--quest-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.quest-input {
+  min-height: 3rem;
+  border: 2px solid var(--quest-outline-variant);
+  border-radius: 1rem;
+  background: var(--quest-surface);
+  color: var(--quest-foreground);
+  box-shadow: none;
+}
+
+.quest-input::placeholder {
+  color: color-mix(in srgb, var(--quest-muted) 70%, transparent);
+}
+
+.quest-input:focus-visible {
+  border-color: #2b6c00;
+}
+
+.quest-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.7rem;
+  border: 2px solid var(--quest-outline-variant);
+  border-radius: 999px;
+  background: var(--quest-surface);
+  color: var(--quest-muted);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 4px 0 0 var(--quest-outline-variant);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.quest-filter-pill:hover {
+  transform: translateY(-1px);
+}
+
+.quest-filter-pill:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 var(--quest-outline-variant);
+}
+
+.quest-filter-pill-active {
+  border-color: #2b6c00;
+  background: #58cc02;
+  color: #1e5000;
+  box-shadow: 0 4px 0 0 #1e5000;
+}
+
+.dark .quest-soft-card {
+  box-shadow: 0 4px 0 0 rgb(0 0 0 / 0.18);
+}
+
+.dark .quest-secondary-button {
+  border-color: #5f6e52;
+  box-shadow: 0 4px 0 0 #5f6e52;
 }
 
 /* Active nav — dark mode (uses CSS variable so accent color works) */
