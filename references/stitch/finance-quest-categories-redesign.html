@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Finance Quest - คลังหมวดหมู่การเงิน</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        .duo-button-primary {
+            @apply transition-all active:translate-y-[4px];
+            box-shadow: 0 4px 0 0 #1f5100;
+        }
+        .duo-button-primary:active {
+            box-shadow: 0 0px 0 0 #1f5100;
+        }
+
+        .duo-card-shadow {
+            box-shadow: 0 8px 0 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .item-card-shadow {
+            box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-high": "#e9e8e8",
+                      "surface-variant": "#e3e2e2",
+                      "primary-fixed-dim": "#6be026",
+                      "on-tertiary-fixed-variant": "#6a3b00",
+                      "outline": "#6f7b64",
+                      "on-error-container": "#93000a",
+                      "background": "#faf9f9",
+                      "tertiary": "#8c5000",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#683a00",
+                      "inverse-surface": "#2f3131",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#f4f3f3",
+                      "surface-dim": "#dadada",
+                      "surface": "#faf9f9",
+                      "on-surface-variant": "#3f4a36",
+                      "tertiary-fixed-dim": "#ffb872",
+                      "secondary-container": "#2fb8ff",
+                      "on-secondary-fixed-variant": "#004c6e",
+                      "error": "#ba1a1a",
+                      "primary": "#2b6c00",
+                      "on-background": "#1a1c1c",
+                      "tertiary-fixed": "#ffdcbf",
+                      "on-error": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#2b6c00",
+                      "on-primary-container": "#1e5000",
+                      "outline-variant": "#becbb1",
+                      "surface-container": "#eeeeed",
+                      "surface-container-highest": "#e3e2e2",
+                      "surface-bright": "#faf9f9",
+                      "on-secondary-fixed": "#001e2e",
+                      "on-surface": "#1a1c1c",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#ff9c27",
+                      "inverse-primary": "#6be026",
+                      "on-primary-fixed-variant": "#1f5100",
+                      "secondary-fixed-dim": "#88ceff",
+                      "on-tertiary-fixed": "#2d1600",
+                      "inverse-on-surface": "#f1f0f0",
+                      "on-primary-fixed": "#082100",
+                      "secondary-fixed": "#c8e6ff",
+                      "secondary": "#006590",
+                      "on-secondary-container": "#004666",
+                      "primary-fixed": "#87fe45",
+                      "primary-container": "#58cc02"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "2xl": "1rem",
+                      "3xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "section-gap": "32px",
+                      "margin-desktop": "40px",
+                      "gutter": "16px",
+                      "margin-mobile": "20px",
+                      "stack-gap": "12px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Plus Jakarta Sans"],
+                      "body-md": ["Be Vietnam Pro"],
+                      "body-lg": ["Be Vietnam Pro"],
+                      "label-bold": ["Be Vietnam Pro"],
+                      "headline-xl": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "headline-md": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "800"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "500"}],
+                      "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                      "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "800"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface-container-low dark:bg-inverse-surface text-on-surface dark:text-inverse-on-surface font-body-md min-h-screen pb-24">
+<!-- Top Navigation Bar -->
+<nav class="bg-surface dark:bg-background border-b-2 border-outline-variant dark:border-outline shadow-sm sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="text-headline-lg font-black text-primary tracking-tight">
+                Finance Quest
+            </div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary p-2">notifications</button>
+<div class="w-10 h-10 rounded-full border-2 border-outline-variant overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRUNIYjApLn5_gkyl316LTR_CLqAt0behjs1HhqNt_dIV2h_uPC4V5Vs0SAG_jIpbiFzbc_EXZ5y8pN17gDdy34dKic70Uck4zHH0NmY7d28cQdMOjmIbOo8orqnFyHU5gjG9nxvCD-xwbj_sCEGA9d_D8jH1qEIghrMkPaZf_fqenetETaHqUikhNWgzS--njEW3WT2gVDIewmg2tAn8TVb8WZto687f1F_R2PAXM9Biel9SoBZ53_-Pb0V0MxYG1vPVEm7HIIZY"/>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop mt-8 space-y-section-gap pb-24">
+<!-- Hero Inventory Card -->
+<div class="bg-primary-container dark:bg-on-primary-fixed-variant rounded-3xl border-[3px] border-on-primary-fixed-variant dark:border-primary-fixed p-8 flex flex-col md:flex-row justify-between items-center gap-6 duo-card-shadow">
+<div class="space-y-3 text-center md:text-left">
+<div class="flex items-center justify-center md:justify-start gap-3">
+<div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-container shadow-sm">
+<span class="material-symbols-outlined text-3xl font-bold" data-icon="inventory_2">inventory_2</span>
+</div>
+<h1 class="text-headline-xl font-headline-xl text-on-primary-container dark:text-primary-fixed">คลังหมวดหมู่การเงิน</h1>
+</div>
+<p class="text-on-primary-container/80 dark:text-primary-fixed/80 font-medium">จัดการคลังประเภทธุรกรรมของคุณ เพื่อการเก็บข้อมูลที่แม่นยำ</p>
+<div class="flex gap-4 justify-center md:justify-start">
+<div class="flex items-center gap-1.5 text-on-primary-container/90 dark:text-primary-fixed/90 bg-white/20 px-3 py-1 rounded-full text-sm font-label-bold">
+<span>รายรับ: 5</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-primary-container/90 dark:text-primary-fixed/90 bg-white/20 px-3 py-1 rounded-full text-sm font-label-bold">
+<span>รายจ่าย: 12</span>
+</div>
+</div>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-label-bold text-lg flex items-center gap-2 w-full md:w-auto justify-center duo-button-primary">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                เพิ่มหมวดหมู่
+            </button>
+</div>
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="bg-surface dark:bg-inverse-surface rounded-2xl border-2 border-outline-variant dark:border-outline border-b-4 p-5 flex items-center gap-4 item-card-shadow">
+<div class="w-14 h-14 rounded-2xl bg-[#8c5000]/10 flex items-center justify-center text-[#8c5000]">
+<span class="material-symbols-outlined text-3xl" data-icon="category">category</span>
+</div>
+<div>
+<p class="text-xs font-label-bold text-outline dark:text-outline-variant uppercase tracking-wider">หมวดหมู่ทั้งหมด</p>
+<p class="text-headline-md text-on-surface dark:text-inverse-on-surface">17 รายการ</p>
+</div>
+</div>
+<div class="bg-surface dark:bg-inverse-surface rounded-2xl border-2 border-outline-variant dark:border-outline border-b-4 p-5 flex items-center gap-4 item-card-shadow">
+<div class="w-14 h-14 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="arrow_downward">arrow_downward</span>
+</div>
+<div>
+<p class="text-xs font-label-bold text-outline dark:text-outline-variant uppercase tracking-wider">รายรับ (Income)</p>
+<p class="text-headline-md text-primary">5 หมวดหมู่</p>
+</div>
+</div>
+<div class="bg-surface dark:bg-inverse-surface rounded-2xl border-2 border-outline-variant dark:border-outline border-b-4 p-5 flex items-center gap-4 item-card-shadow">
+<div class="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-3xl" data-icon="arrow_upward">arrow_upward</span>
+</div>
+<div>
+<p class="text-xs font-label-bold text-outline dark:text-outline-variant uppercase tracking-wider">รายจ่าย (Expense)</p>
+<p class="text-headline-md text-error">12 หมวดหมู่</p>
+</div>
+</div>
+</div>
+<!-- Category Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-gutter">
+<!-- Example Item 1: Locked/In Use -->
+<div class="bg-surface dark:bg-background rounded-3xl border-2 border-outline-variant dark:border-outline border-b-8 p-6 flex flex-col justify-between group transition-all hover:translate-y-[-2px]">
+<div class="flex justify-between items-start mb-4">
+<div class="w-16 h-16 rounded-2xl bg-tertiary-container/20 flex items-center justify-center text-tertiary shadow-[0_4px_0_0_#ffdcbf]">
+<span class="material-symbols-outlined text-4xl" data-icon="restaurant">restaurant</span>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="bg-error/10 text-error px-3 py-1 rounded-full text-xs font-label-bold border border-error/20 uppercase">รายจ่าย</span>
+<div class="flex items-center gap-1 text-outline dark:text-outline-variant font-label-bold text-[10px] bg-surface-container px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span>
+                            กำลังใช้งาน
+                        </div>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<h3 class="text-headline-md text-on-surface dark:text-inverse-on-surface">อาหารและเครื่องดื่ม</h3>
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="receipt_long">receipt_long</span>
+                                ใช้ใน 24 ธุรกรรม
+                            </div>
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="account_balance_wallet">account_balance_wallet</span>
+                                ผูกกับ 1 งบประมาณ
+                            </div>
+</div>
+</div>
+<div class="flex gap-2 pt-2">
+<button class="flex-1 bg-surface border-2 border-outline-variant border-b-4 py-3 rounded-xl font-label-bold text-outline hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+                            แก้ไข
+                        </button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface border-2 border-outline-variant border-b-4 text-outline/30 cursor-not-allowed" title="หมวดหมู่นี้ถูกใช้งานอยู่ ไม่สามารถลบได้">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Example Item 2: Active/Income -->
+<div class="bg-surface dark:bg-background rounded-3xl border-2 border-outline-variant dark:border-outline border-b-8 p-6 flex flex-col justify-between group transition-all hover:translate-y-[-2px]">
+<div class="flex justify-between items-start mb-4">
+<div class="w-16 h-16 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary shadow-[0_4px_0_0_#87fe45]">
+<span class="material-symbols-outlined text-4xl" data-icon="payments">payments</span>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="bg-primary-container/20 text-primary px-3 py-1 rounded-full text-xs font-label-bold border border-primary/20 uppercase">รายรับ</span>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<h3 class="text-headline-md text-on-surface dark:text-inverse-on-surface">เงินเดือน</h3>
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="receipt_long">receipt_long</span>
+                                ใช้ใน 1 ธุรกรรม
+                            </div>
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="account_balance_wallet">account_balance_wallet</span>
+                                ผูกกับ 0 งบประมาณ
+                            </div>
+</div>
+</div>
+<div class="flex gap-2 pt-2">
+<button class="flex-1 bg-surface border-2 border-outline-variant border-b-4 py-3 rounded-xl font-label-bold text-outline hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+                            แก้ไข
+                        </button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface border-2 border-outline-variant border-b-4 text-error hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Example Item 3: New/Unused -->
+<div class="bg-surface dark:bg-background rounded-3xl border-2 border-outline-variant dark:border-outline border-b-8 p-6 flex flex-col justify-between group transition-all hover:translate-y-[-2px]">
+<div class="flex justify-between items-start mb-4">
+<div class="w-16 h-16 rounded-2xl bg-secondary-container/20 flex items-center justify-center text-secondary shadow-[0_4px_0_0_#c8e6ff]">
+<span class="material-symbols-outlined text-4xl" data-icon="sports_esports">sports_esports</span>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="bg-error/10 text-error px-3 py-1 rounded-full text-xs font-label-bold border border-error/20 uppercase">รายจ่าย</span>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<h3 class="text-headline-md text-on-surface dark:text-inverse-on-surface">เกมและสันทนาการ</h3>
+<div class="flex flex-col gap-1 mt-2">
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="receipt_long">receipt_long</span>
+                                ใช้ใน 0 ธุรกรรม
+                            </div>
+<div class="flex items-center gap-2 text-sm text-outline font-medium">
+<span class="material-symbols-outlined text-base" data-icon="account_balance_wallet">account_balance_wallet</span>
+                                ผูกกับ 0 งบประมาณ
+                            </div>
+</div>
+</div>
+<div class="flex gap-2 pt-2">
+<button class="flex-1 bg-surface border-2 border-outline-variant border-b-4 py-3 rounded-xl font-label-bold text-outline hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+                            แก้ไข
+                        </button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface border-2 border-outline-variant border-b-4 text-error hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Empty State Placeholder (Normally hidden) -->
+<div class="hidden col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white dark:bg-background rounded-3xl border-2 border-dashed border-outline-variant">
+<div class="text-6xl">🧩 🐣</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">คลังยังว่างเปล่า</h3>
+<p class="text-outline">เริ่มสร้างหมวดหมู่แรกของคุณเพื่อเริ่มการผจญภัย</p>
+</div>
+<button class="mt-4 bg-primary text-white px-6 py-3 rounded-2xl font-label-bold duo-button-primary">
+                    สร้างหมวดหมู่แรก
+                </button>
+</div>
+</div>
+</main>
+<!-- Mobile Floating Action Button -->
+<button class="md:hidden fixed bottom-24 right-6 w-16 h-16 bg-primary text-white rounded-full duo-button-primary flex items-center justify-center z-40 border-2 border-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-3xl font-bold" data-icon="add">add</span>
+</button>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface dark:bg-background h-20 border-t-2 border-outline-variant">
+<div class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="home_app_logo">home_app_logo</span>
+<span class="text-label-bold font-label-bold">Quests</span>
+</div>
+<div class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="text-label-bold font-label-bold">เงิน</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed rounded-xl px-4 py-2 border-2 border-primary shadow-[0_4px_0_0_#1e5000] scale-95">
+<span class="material-symbols-outlined" data-icon="category" style="font-variation-settings: 'FILL' 1;">category</span>
+<span class="text-label-bold font-label-bold">คลัง</span>
+</div>
+<div class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-label-bold font-label-bold">Profile</span>
+</div>
+</nav>
+<!-- Script Preservation Area (Placeholders for real logic) -->
+<script>
+        // Store Simulation & Logic Preservation
+        const useCategoryStore = () => ({});
+        const useTransactionStore = () => ({});
+        const useBudgetStore = () => ({});
+
+        const handleEdit = (category) => {
+            console.log("Editing category:", category);
+            // Logic to open CategoryForm with category data
+        };
+
+        const handleDeleteClick = (category) => {
+            // Safety logic: check if in use
+            const isInUse = true; // Simulated check
+            if (isInUse) {
+                // Show toast error
+                alert("ไม่สามารถลบได้: หมวดหมู่นี้กำลังถูกใช้งานในธุรกรรมหรืองบประมาณ");
+            } else {
+                // Open ConfirmDialog
+            }
+        };
+
+        const handleConfirmDelete = () => {
+            console.log("Deleting...");
+        };
+
+        // Dark mode simulation
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+</body></html>

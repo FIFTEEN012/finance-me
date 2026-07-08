@@ -227,3 +227,13 @@ export type {
   HealthQuest,
   HealthSession,
 } from './health'
+
+export type {
+  ReadingAchievement,
+  ReadingBook,
+  ReadingCategory,
+  ReadingGoal,
+  ReadingGoalType,
+  ReadingSession,
+  ReadingStatus,
+} from './reading'

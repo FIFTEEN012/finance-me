@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceMe - Money Quest Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&amp;family=Plus+Jakarta+Sans:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#87fe45",
+                    "tertiary": "#8c5000",
+                    "secondary": "#006590",
+                    "on-tertiary-fixed-variant": "#6a3b00",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#001e2e",
+                    "primary": "#1b4300", // Shifted to deeper forest green
+                    "on-primary": "#ffffff",
+                    "inverse-on-surface": "#f1f0f0",
+                    "outline-variant": "#becbb1",
+                    "on-primary-fixed": "#082100",
+                    "background": "#f0f4f0", // Soft, cool-toned gray-green
+                    "error-container": "#ffdad6",
+                    "on-primary-container": "#1e5000",
+                    "surface-tint": "#2b6c00",
+                    "surface-container-highest": "#e3e5e3",
+                    "on-primary-fixed-variant": "#1f5100",
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "surface-container-high": "#e8eae8",
+                    "tertiary-fixed": "#ffdcbf",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#6be026",
+                    "surface-container": "#eceeec",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#004666",
+                    "surface-variant": "#e1e4e1",
+                    "secondary-container": "#2fb8ff",
+                    "primary-fixed-dim": "#6be026",
+                    "surface": "#f7f9f7",
+                    "on-tertiary-container": "#683a00",
+                    "surface-dim": "#d9dbd9",
+                    "tertiary-container": "#ff9c27",
+                    "on-surface-variant": "#3f4a36",
+                    "primary-container": "#58cc02",
+                    "secondary-fixed-dim": "#88ceff",
+                    "surface-bright": "#f7f9f7",
+                    "surface-container-low": "#f2f4f2",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#2d1600",
+                    "secondary-fixed": "#c8e6ff",
+                    "outline": "#6f7b64",
+                    "tertiary-fixed-dim": "#ffb872",
+                    "on-surface": "#1a1c1c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-background": "#1a1c1c",
+                    "inverse-surface": "#2f3131"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "3xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "unit": "4px",
+                    "margin-mobile": "20px",
+                    "margin-desktop": "40px",
+                    "section-gap": "24px", // Reduced from 32px for density
+                    "stack-gap": "10px"    // Reduced from 12px
+            },
+            "fontFamily": {
+                    "label-bold": ["Be Vietnam Pro"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "label-bold": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "700"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-xl": ["34px", {"lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+                    "headline-md": ["20px", {"lineHeight": "26px", "fontWeight": "800", "letterSpacing": "-0.01em"}],
+                    "headline-lg-mobile": ["22px", {"lineHeight": "30px", "fontWeight": "800"}],
+                    "headline-lg": ["26px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .tactile-card {
+            @apply bg-surface-container-lowest border-2 border-outline-variant rounded-2xl transition-all duration-100 relative overflow-hidden;
+            box-shadow: 0 4px 0 0 #becbb1;
+        }
+        .tactile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 0 #becbb1;
+        }
+        .btn-primary {
+            @apply bg-primary-container text-on-primary-container font-label-bold text-label-bold border-2 border-primary rounded-xl py-2.5 px-5 transition-all duration-75 relative active:translate-y-[4px] active:shadow-none;
+            box-shadow: 0 4px 0 0 #1b4300;
+        }
+        .btn-outline {
+            @apply bg-surface text-on-surface-variant font-label-bold text-label-bold border-2 border-outline-variant rounded-xl py-2.5 px-5 transition-all duration-75 active:translate-y-[2px];
+            box-shadow: 0 2px 0 0 #becbb1;
+        }
+        .progress-bar-fill {
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.3);
+        }
+        .streak-dot {
+            @apply w-2.5 h-2.5 rounded-full border border-outline-variant/30;
+        }
+        .streak-dot.active {
+            @apply bg-primary-container;
+            box-shadow: 0 1.5px 0 #1b4300;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .num-bold {
+            @apply font-extrabold tracking-tight;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            @apply bg-outline-variant/30 rounded-full;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-56 border-r-2 border-outline-variant bg-surface flex flex-col p-3 z-50">
+<div class="flex items-center gap-2.5 px-3 py-4">
+<div class="w-9 h-9 bg-primary-container rounded-lg flex items-center justify-center border-2 border-primary shadow-[0_2px_0_0_#1b4300]">
+<span class="material-symbols-outlined text-on-primary-container text-[20px]" style="font-variation-settings: 'FILL' 1">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="font-headline-md text-[18px] font-extrabold text-primary leading-tight">FinanceMe</h1>
+<p class="text-[9px] uppercase tracking-widest font-bold text-on-surface-variant/70">Money Quest</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 mt-4 overflow-y-auto pr-1 custom-scrollbar">
+<!-- Active: Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-on-primary border-b-4 border-[#0a1b00] shadow-none" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-label-bold text-[13px]">แดชบอร์ด</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span class="font-label-bold text-[13px]">ธุรกรรม</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">savings</span>
+<span class="font-label-bold text-[13px]">งบประมาณ</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">leaderboard</span>
+<span class="font-label-bold text-[13px]">รายงาน</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">flag</span>
+<span class="font-label-bold text-[13px]">เป้าหมาย</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">show_chart</span>
+<span class="font-label-bold text-[13px]">พอร์ตลงทุน</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span class="font-label-bold text-[13px]">แบ่งบิล</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all mt-6" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-bold text-[13px]">ตั้งค่า</span>
+</a>
+</nav>
+<div class="mt-auto p-1">
+<button class="btn-primary w-full flex items-center justify-center gap-2 !py-2 !text-[12px]">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>เพิ่มธุรกรรม</span>
+</button>
+</div>
+</aside>
+<!-- Top AppBar -->
+<header class="fixed top-0 right-0 left-56 h-14 bg-background/90 backdrop-blur-md border-b-2 border-outline-variant flex items-center justify-between px-6 z-40">
+<div class="flex items-center gap-4">
+<div class="relative group">
+<input class="bg-surface-container-low border-2 border-outline-variant rounded-xl px-9 py-1.5 focus:ring-2 focus:ring-primary focus:outline-none transition-all w-60 text-sm" placeholder="ค้นหาธุรกรรม..." type="text"/>
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-on-surface-variant/60 text-[20px]">search</span>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-background"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l-2 border-outline-variant/20">
+<div class="text-right">
+<p class="font-label-bold text-[13px] leading-tight">คุณสมชาย</p>
+<p class="text-[9px] text-on-surface-variant/70 font-bold">Pro Member</p>
+</div>
+<div class="w-9 h-9 rounded-full border-2 border-outline-variant overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBa7T-ICdK1l8xeTu1FN-NXMsrXExFD0zx8NeqLhSzmlYVtSIhB_1ikPJtT9cIr8NrEkjfBez4FF2MO3doeN7Y8CjTFLeusPmthoNRn5cs6Qqs77jkaHJr3OMN5QD177aBjyWtr_TpT_F7vxY6OJI7g2Xbysy1gu94qFeKvQ49g9sOD0yEu68IrEIRKnycINCV3qk4TXkGMVca9ghH7RmOUst-a62tcfCPWjOWn8fX0HeCtmNstFgXSvHrwY9Y16c3xbY2B-sGViAY"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-56 mt-14 p-6 grid grid-cols-12 gap-6 max-w-[1400px] mx-auto">
+<!-- Left + Center Column -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<!-- Hero Mission Card -->
+<div class="relative p-6 rounded-3xl bg-gradient-to-br from-primary-container via-primary-container to-primary flex items-center justify-between overflow-hidden shadow-[0_6px_0_0_#1b4300] border-2 border-primary">
+<div class="absolute -right-8 -bottom-8 opacity-10">
+<span class="material-symbols-outlined text-[200px]">savings</span>
+</div>
+<div class="relative z-10 space-y-3">
+<div>
+<span class="bg-white/20 text-white font-label-bold text-[10px] px-2.5 py-0.5 rounded-full border border-white/30 uppercase tracking-widest">Daily Quest</span>
+<h2 class="font-headline-xl text-headline-lg text-white mt-1">ภารกิจการเงินวันนี้</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 min-w-[100px]">
+<p class="text-white/80 text-[11px] font-bold">XP รวม</p>
+<div class="flex items-baseline gap-1 text-white">
+<span class="text-2xl num-bold">2,450</span>
+<span class="text-[12px] font-bold">XP</span>
+</div>
+</div>
+<div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 min-w-[100px]">
+<p class="text-white/80 text-[11px] font-bold">การบันทึก</p>
+<div class="flex items-center gap-1.5 text-white">
+<span class="text-2xl num-bold">12</span>
+<span class="material-symbols-outlined text-[20px] text-yellow-300" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Minimalist Mascot Placeholder -->
+<div class="relative z-10 w-36 h-36 flex items-center justify-center">
+<div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/40 shadow-xl">
+<span class="material-symbols-outlined text-white text-[80px]" style="font-variation-settings: 'FILL' 1">face_retouching_natural</span>
+</div>
+</div>
+</div>
+<!-- Summary Row -->
+<div class="grid grid-cols-3 gap-5">
+<div class="tactile-card p-4 border-primary-container" style="box-shadow: 0 4px 0 0 #58cc02">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 bg-primary-container/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[20px]">arrow_upward</span>
+</div>
+<span class="text-[11px] font-bold text-primary">+15%</span>
+</div>
+<p class="text-on-surface-variant font-label-bold text-[12px]">รายรับ</p>
+<p class="font-headline-lg text-[22px] text-primary num-bold">฿45,200</p>
+</div>
+<div class="tactile-card p-4 border-error/30" style="box-shadow: 0 4px 0 0 #ba1a1a">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[20px]">arrow_downward</span>
+</div>
+<span class="text-[11px] font-bold text-error">-2%</span>
+</div>
+<p class="text-on-surface-variant font-label-bold text-[12px]">รายจ่าย</p>
+<p class="font-headline-lg text-[22px] text-error num-bold">฿18,450</p>
+</div>
+<div class="tactile-card p-4 border-secondary-container/50" style="box-shadow: 0 4px 0 0 #2fb8ff">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 bg-secondary-container/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_balance</span>
+</div>
+</div>
+<p class="text-on-surface-variant font-label-bold text-[12px]">คงเหลือ</p>
+<p class="font-headline-lg text-[22px] text-secondary num-bold">฿26,750</p>
+</div>
+</div>
+<!-- Charts & Budget Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="tactile-card p-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md">ภาพรวมประจำสัปดาห์</h3>
+<select class="bg-surface-container border-2 border-outline-variant rounded-lg text-[11px] font-bold px-2 py-1">
+<option>สัปดาห์นี้</option>
+<option>เดือนนี้</option>
+</select>
+</div>
+<div class="h-48 flex items-end justify-between gap-1.5 px-1">
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md transition-all" style="height: 60%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 30%"></div>
+<span class="text-[9px] font-bold">จ</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 85%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 40%"></div>
+<span class="text-[9px] font-bold">อ</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 45%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 20%"></div>
+<span class="text-[9px] font-bold">พ</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 70%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 50%"></div>
+<span class="text-[9px] font-bold">พฤ</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 95%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 25%"></div>
+<span class="text-[9px] font-bold">ศ</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 30%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 60%"></div>
+<span class="text-[9px] font-bold">ส</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1.5">
+<div class="w-full bg-primary-container rounded-t-md" style="height: 40%"></div>
+<div class="w-full bg-error/30 rounded-t-md" style="height: 15%"></div>
+<span class="text-[9px] font-bold">อา</span>
+</div>
+</div>
+</div>
+<div class="tactile-card p-5">
+<h3 class="font-headline-md mb-4">งบประมาณเดือนนี้</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between mb-1.5">
+<span class="font-label-bold text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-tertiary text-[18px]">restaurant</span>อาหาร
+                            </span>
+<span class="text-[11px] num-bold">฿4,200 / ฿6,000</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden border border-outline-variant/20">
+<div class="progress-bar-fill h-full bg-tertiary-container rounded-full w-[70%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-1.5">
+<span class="font-label-bold text-[12px] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">commute</span>เดินทาง
+                            </span>
+<span class="text-[11px] num-bold">฿1,500 / ฿3,000</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden border border-outline-variant/20">
+<div class="progress-bar-fill h-full bg-secondary-container rounded-full w-[50%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-1.5">
+<span class="font-label-bold text-[12px] flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>ของใช้
+                            </span>
+<span class="text-[11px] num-bold text-error">฿2,400 / ฿2,500</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden border border-outline-variant/20">
+<div class="progress-bar-fill h-full bg-error rounded-full w-[96%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tactile-card p-5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md">ธุรกรรมล่าสุด</h3>
+<button class="text-primary font-bold text-[12px] hover:underline">ดูทั้งหมด</button>
+</div>
+<div class="space-y-2.5">
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 hover:border-outline-variant transition-all cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-tertiary-container/20 rounded-xl flex items-center justify-center text-tertiary border border-tertiary-container/30">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</div>
+<div>
+<p class="font-label-bold text-[13px]">ข้าวมันไก่ตอนประตูน้ำ</p>
+<p class="text-[11px] text-on-surface-variant/70">วันนี้ • 12:30 • อาหาร</p>
+</div>
+</div>
+<p class="font-headline-md text-error num-bold text-[18px]">-฿65.00</p>
+</div>
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 hover:border-outline-variant transition-all cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-secondary-container/20 rounded-xl flex items-center justify-center text-secondary border border-secondary-container/30">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</div>
+<div>
+<p class="font-label-bold text-[13px]">เงินเดือน ตุลาคม</p>
+<p class="text-[11px] text-on-surface-variant/70">เมื่อวาน • 08:00 • รายได้หลัก</p>
+</div>
+</div>
+<p class="font-headline-md text-primary num-bold text-[18px]">+฿42,000.00</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column -->
+<aside class="col-span-12 lg:col-span-4 space-y-6">
+<div class="tactile-card p-5 bg-surface-container-highest/30">
+<div class="flex items-center gap-3 mb-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full border-4 border-primary-container flex items-center justify-center bg-white shadow-inner">
+<span class="text-xl num-bold text-primary">12</span>
+</div>
+<div class="absolute -bottom-0.5 -right-0.5 bg-tertiary-container w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-white" style="font-variation-settings: 'FILL' 1">stars</span>
+</div>
+</div>
+<div>
+<h3 class="font-headline-md leading-tight text-[18px]">เลเวลการเงิน</h3>
+<p class="text-[11px] font-bold text-on-surface-variant">นักออมระดับฝึกหัด II</p>
+</div>
+</div>
+<div class="space-y-1.5 mb-4">
+<div class="flex justify-between text-[10px] font-extrabold uppercase tracking-tight">
+<span>Progress</span>
+<span>450 / 1000 XP</span>
+</div>
+<div class="w-full h-2.5 bg-surface-container rounded-full border border-outline-variant/20 overflow-hidden">
+<div class="progress-bar-fill h-full bg-primary-container w-[45%]"></div>
+</div>
+</div>
+<div class="pt-4 border-t-2 border-outline-variant/10">
+<p class="font-label-bold text-[12px] mb-3">กิจกรรมสัปดาห์นี้</p>
+<div class="flex justify-between px-1">
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot active"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">จ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot active"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">อ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot active"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">พ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot active"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">พฤ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot active"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">ศ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">ส</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="streak-dot"></div>
+<span class="text-[9px] font-bold text-on-surface-variant">อา</span>
+</div>
+</div>
+</div>
+</div>
+<div class="tactile-card p-5 bg-secondary-container/5 border-secondary-container" style="box-shadow: 0 4px 0 0 #2fb8ff">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center border-2 border-secondary-container shrink-0">
+<span class="material-symbols-outlined text-secondary text-[24px]">emoji_events</span>
+</div>
+<div class="space-y-3 w-full">
+<h4 class="font-headline-md text-[18px] leading-none">ภารกิจวันนี้</h4>
+<p class="text-[12px] text-on-surface-variant leading-tight">บันทึกอาหารครบ 3 มื้อ รับโบนัส 50 XP</p>
+<button class="w-full btn-primary bg-secondary-container text-white border-secondary !py-2 !text-[12px]" style="box-shadow: 0 4px 0 0 #006590">
+                        ทำภารกิจ
+                    </button>
+</div>
+</div>
+</div>
+<div class="tactile-card p-4 flex items-center justify-between">
+<div>
+<h4 class="font-label-bold text-[11px] text-on-surface-variant/70">วันเงินเดือนออก</h4>
+<p class="text-2xl num-bold text-primary">เหลือ 12 วัน</p>
+</div>
+<div class="w-11 h-11 bg-surface-container rounded-full flex items-center justify-center border-2 border-outline-variant/30">
+<span class="material-symbols-outlined text-primary-container text-[24px]" style="font-variation-settings: 'FILL' 1">calendar_today</span>
+</div>
+</div>
+<div class="tactile-card p-5">
+<h4 class="font-headline-md text-[16px] mb-3">เหรียญรางวัล</h4>
+<div class="grid grid-cols-4 gap-3">
+<div class="flex flex-col items-center gap-1.5 group">
+<div class="w-10 h-10 bg-tertiary-container rounded-full border-2 border-white shadow-sm flex items-center justify-center cursor-help">
+<span class="material-symbols-outlined text-white text-[18px]" style="font-variation-settings: 'FILL' 1">rocket_launch</span>
+</div>
+<span class="text-[8px] font-bold text-center">เริ่มต้นดี</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 opacity-30 grayscale group">
+<div class="w-10 h-10 bg-primary-container rounded-full border-2 border-white shadow-sm flex items-center justify-center cursor-help">
+<span class="material-symbols-outlined text-white text-[18px]" style="font-variation-settings: 'FILL' 1">menu_book</span>
+</div>
+<span class="text-[8px] font-bold text-center">บันทึก3วัน</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 group">
+<div class="w-10 h-10 bg-secondary-container rounded-full border-2 border-white shadow-sm flex items-center justify-center cursor-help">
+<span class="material-symbols-outlined text-white text-[18px]" style="font-variation-settings: 'FILL' 1">savings</span>
+</div>
+<span class="text-[8px] font-bold text-center">นักออม</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 group">
+<div class="w-10 h-10 bg-error-container rounded-full border-2 border-white shadow-sm flex items-center justify-center cursor-help text-error">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1">volunteer_activism</span>
+</div>
+<span class="text-[8px] font-bold text-center">แบ่งปัน</span>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<button class="w-full btn-primary flex items-center justify-center gap-2 !py-3">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>เพิ่มธุรกรรมด่วน</span>
+</button>
+<button class="w-full btn-outline flex items-center justify-center gap-2 !py-2.5 !text-[12px]">
+<span class="material-symbols-outlined text-[18px]">track_changes</span>
+<span>ปรับแต่งงบประมาณ</span>
+</button>
+</div>
+</aside>
+</main>
+<script>
+    // Ripple and press effects
+    document.querySelectorAll('.btn-primary, .btn-outline, .tactile-card').forEach(el => {
+        el.addEventListener('mousedown', () => { el.style.transform = 'translateY(2px)'; });
+        el.addEventListener('mouseup', () => { el.style.transform = ''; });
+        el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+    });
+
+    // Animate progress bars
+    window.addEventListener('DOMContentLoaded', () => {
+        const bars = document.querySelectorAll('.progress-bar-fill');
+        bars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                bar.style.width = width;
+            }, 200);
+        });
+    });
+</script>
+</body></html>

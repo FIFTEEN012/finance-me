@@ -43,3 +43,10 @@ next-env.d.ts
 .codex/
 
 .vercel
+
+# python cache
+__pycache__/
+*.pyc
+
+# temporary design files
+/stitch_downloads/

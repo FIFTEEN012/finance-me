@@ -18,6 +18,7 @@ import {
   SplitSquareHorizontal,
   FileUp,
   HeartPulse,
+  BookOpen,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -35,6 +36,7 @@ const PRIMARY = [
 
 const SECONDARY = [
   { href: '/health', label: 'สุขภาพ', icon: HeartPulse },
+  { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen },
   { href: '/categories', label: 'หมวดหมู่', icon: Tags },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp },
@@ -45,103 +47,141 @@ const SECONDARY = [
 
 export function BottomNav() {
   const pathname = usePathname() ?? ''
-  const { setOpen } = useQuickAddStore()
-  const [moreOpen, setMoreOpen] = useState(false)
+  const isForestDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/')
   const isQuestPage =
+    isForestDashboard ||
+    pathname === '/categories' ||
+    pathname.startsWith('/categories/') ||
     pathname === '/investments' ||
     pathname.startsWith('/investments/') ||
     pathname === '/bill-split' ||
     pathname.startsWith('/bill-split/')
 
+  const { setOpen } = useQuickAddStore()
+  const [moreOpen, setMoreOpen] = useState(false)
+
   const isSecondaryActive = SECONDARY.some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + '/')
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   )
 
   return (
     <>
       <nav
         className={cn(
-          'fixed inset-x-0 z-40 flex h-18 items-center px-2 lg:hidden',
-          isQuestPage
-            ? 'bottom-0 mx-0 h-20 w-full max-w-none rounded-none border-x-0 border-b-0 border-t-2 border-[#becbb1] bg-[#faf9f9] shadow-none dark:border-[#3b4630] dark:bg-[#161b11]'
-            : 'bottom-4 mx-auto w-[92%] max-w-lg rounded-3xl border-2 border-slate-200 bg-white/95 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.15),0_6px_0_0_#e5e5e5] dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.4),0_6px_0_0_#020617]'
+          'fixed inset-x-0 z-40 flex h-18 items-center px-2',
+          isForestDashboard ? 'bottom-0 md:hidden' : 'lg:hidden',
+          isForestDashboard
+            ? 'h-20 border-x-0 border-b-0 border-t-2 border-[var(--forest-outline-variant)] bg-[var(--forest-surface)] shadow-[0_-2px_0_0_#becbb1]'
+            : isQuestPage
+              ? 'bottom-0 mx-0 h-20 w-full max-w-none rounded-none border-x-0 border-b-0 border-t-2 border-[#becbb1] bg-[#faf9f9] shadow-none dark:border-[#3b4630] dark:bg-[#161b11]'
+              : 'bottom-4 mx-auto w-[92%] max-w-lg rounded-3xl border-2 border-slate-200 bg-white/95 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.15),0_6px_0_0_#e5e5e5] dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.4),0_6px_0_0_#020617]'
         )}
       >
         <div className="flex w-full items-center justify-around">
-          {PRIMARY.filter(Boolean).slice(0, 2).map((item) => {
-            const it = item!
-            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
-            return (
-              <Link key={it.href} href={it.href} className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95">
-                <it.icon
-                  className={cn(
-                    'h-[22px] w-[22px] transition-colors',
-                    isActive
-                      ? 'scale-110 text-[#58cc02]'
-                      : isQuestPage
-                        ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                        : 'text-slate-400 dark:text-slate-500'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'mt-1 truncate text-[10px] font-black tracking-wide',
-                    isActive
-                      ? 'text-[#58cc02]'
-                      : isQuestPage
-                        ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                        : 'text-slate-400 dark:text-slate-500'
-                  )}
+          {PRIMARY.filter(Boolean)
+            .slice(0, 2)
+            .map((item) => {
+              const navItem = item!
+              const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
+              return (
+                <Link
+                  key={navItem.href}
+                  href={navItem.href}
+                  className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95"
                 >
-                  {it.label}
-                </span>
-              </Link>
-            )
-          })}
+                  <navItem.icon
+                    className={cn(
+                      'h-[22px] w-[22px] transition-colors',
+                      isActive
+                        ? isForestDashboard
+                          ? 'scale-110 text-[var(--forest-primary)]'
+                          : 'scale-110 text-[#58cc02]'
+                        : isForestDashboard
+                          ? 'text-[var(--forest-muted)]'
+                          : isQuestPage
+                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                            : 'text-slate-400 dark:text-slate-500'
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'mt-1 truncate text-[10px] font-black tracking-wide',
+                      isActive
+                        ? isForestDashboard
+                          ? 'text-[var(--forest-primary)]'
+                          : 'text-[#58cc02]'
+                        : isForestDashboard
+                          ? 'text-[var(--forest-muted)]'
+                          : isQuestPage
+                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                            : 'text-slate-400 dark:text-slate-500'
+                    )}
+                  >
+                    {navItem.label}
+                  </span>
+                </Link>
+              )
+            })}
 
           <button
             onClick={() => setOpen(true)}
             aria-label="บันทึกด่วน"
             className={cn(
-              'relative flex flex-shrink-0 items-center justify-center border-2 border-[#2b6c00] bg-[#58cc02] text-[#1e5000] select-none transition-all duration-100 active:translate-y-[2px]',
-              isQuestPage
-                ? 'top-0 h-11 w-11 rounded-xl shadow-[0_4px_0_0_#1e5000]'
-                : '-top-4 h-12 w-12 rounded-2xl border-b-4 text-white shadow-[0_3px_0_0_#2b6c00] active:border-b-2'
+              'relative flex flex-shrink-0 items-center justify-center select-none transition-all duration-100 active:translate-y-[2px]',
+              isForestDashboard
+                ? 'top-0 h-11 w-11 rounded-xl border-2 border-[var(--forest-primary)] bg-[var(--forest-primary-container)] text-[var(--forest-primary)] shadow-[0_4px_0_0_#1b4300]'
+                : isQuestPage
+                  ? 'top-0 h-11 w-11 rounded-xl border-2 border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
+                  : '-top-4 h-12 w-12 rounded-2xl border-2 border-b-4 border-[#2b6c00] bg-[#58cc02] text-white shadow-[0_3px_0_0_#2b6c00] active:border-b-2'
             )}
           >
             <Plus className="h-6 w-6 stroke-[3px]" />
           </button>
 
-          {PRIMARY.filter(Boolean).slice(2).map((item) => {
-            const it = item!
-            const isActive = pathname === it.href || pathname.startsWith(it.href + '/')
-            return (
-              <Link key={it.href} href={it.href} className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95">
-                <it.icon
-                  className={cn(
-                    'h-[22px] w-[22px] transition-colors',
-                    isActive
-                      ? 'scale-110 text-[#58cc02]'
-                      : isQuestPage
-                        ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                        : 'text-slate-400 dark:text-slate-500'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'mt-1 truncate text-[10px] font-black tracking-wide',
-                    isActive
-                      ? 'text-[#58cc02]'
-                      : isQuestPage
-                        ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                        : 'text-slate-400 dark:text-slate-500'
-                  )}
+          {PRIMARY.filter(Boolean)
+            .slice(2)
+            .map((item) => {
+              const navItem = item!
+              const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
+              return (
+                <Link
+                  key={navItem.href}
+                  href={navItem.href}
+                  className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95"
                 >
-                  {it.label}
-                </span>
-              </Link>
-            )
-          })}
+                  <navItem.icon
+                    className={cn(
+                      'h-[22px] w-[22px] transition-colors',
+                      isActive
+                        ? isForestDashboard
+                          ? 'scale-110 text-[var(--forest-primary)]'
+                          : 'scale-110 text-[#58cc02]'
+                        : isForestDashboard
+                          ? 'text-[var(--forest-muted)]'
+                          : isQuestPage
+                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                            : 'text-slate-400 dark:text-slate-500'
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'mt-1 truncate text-[10px] font-black tracking-wide',
+                      isActive
+                        ? isForestDashboard
+                          ? 'text-[var(--forest-primary)]'
+                          : 'text-[#58cc02]'
+                        : isForestDashboard
+                          ? 'text-[var(--forest-muted)]'
+                          : isQuestPage
+                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                            : 'text-slate-400 dark:text-slate-500'
+                    )}
+                  >
+                    {navItem.label}
+                  </span>
+                </Link>
+              )
+            })}
 
           <button
             onClick={() => setMoreOpen(true)}
@@ -152,20 +192,28 @@ export function BottomNav() {
               className={cn(
                 'h-[22px] w-[22px] transition-colors',
                 isSecondaryActive
-                  ? 'scale-110 text-[#58cc02]'
-                  : isQuestPage
-                    ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                    : 'text-slate-400 dark:text-slate-500'
+                  ? isForestDashboard
+                    ? 'scale-110 text-[var(--forest-primary)]'
+                    : 'scale-110 text-[#58cc02]'
+                  : isForestDashboard
+                    ? 'text-[var(--forest-muted)]'
+                    : isQuestPage
+                      ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                      : 'text-slate-400 dark:text-slate-500'
               )}
             />
             <span
               className={cn(
                 'mt-1 text-[10px] font-black tracking-wide',
                 isSecondaryActive
-                  ? 'text-[#58cc02]'
-                  : isQuestPage
-                    ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                    : 'text-slate-400 dark:text-slate-500'
+                  ? isForestDashboard
+                    ? 'text-[var(--forest-primary)]'
+                    : 'text-[#58cc02]'
+                  : isForestDashboard
+                    ? 'text-[var(--forest-muted)]'
+                    : isQuestPage
+                      ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
+                      : 'text-slate-400 dark:text-slate-500'
               )}
             >
               เพิ่มเติม
@@ -181,7 +229,11 @@ export function BottomNav() {
             'rounded-t-[32px] border-x-2 border-t-2 border-slate-200 bg-white px-0 pb-safe',
             'shadow-[0_-8px_24px_rgba(0,0,0,0.08),0_-6px_0_0_#e5e5e5]',
             'dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_-8px_24px_rgba(0,0,0,0.3),0_-6px_0_0_#020617]',
-            isQuestPage && 'border-[#becbb1] bg-[#faf9f9] shadow-[0_-6px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[#161b11] dark:shadow-[0_-6px_0_0_#0f130c]'
+            isForestDashboard &&
+              'border-[var(--forest-outline-variant)] bg-[var(--forest-surface)] shadow-[0_-6px_0_0_#becbb1]',
+            !isForestDashboard &&
+              isQuestPage &&
+              'border-[#becbb1] bg-[#faf9f9] shadow-[0_-6px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[#161b11] dark:shadow-[0_-6px_0_0_#0f130c]'
           )}
         >
           <SheetHeader className="border-b-2 border-slate-100 px-5 pb-3 pt-1 dark:border-slate-800">
@@ -192,7 +244,7 @@ export function BottomNav() {
 
           <nav className="custom-scrollbar grid max-h-[60vh] grid-cols-2 gap-2.5 overflow-y-auto px-4 py-4">
             {SECONDARY.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href || pathname.startsWith(href + '/')
+              const isActive = pathname === href || pathname.startsWith(`${href}/`)
               return (
                 <Link
                   key={href}
@@ -201,11 +253,18 @@ export function BottomNav() {
                   className={cn(
                     'flex select-none items-center gap-3 rounded-2xl border-2 px-4 py-3 text-[13px] font-bold transition-all',
                     isActive
-                      ? 'border-[#2b6c00] border-b-4 bg-[#58cc02] text-white shadow-[0_2px_0_0_#2b6c00]'
+                      ? isForestDashboard
+                        ? 'border-[var(--forest-primary)] border-b-4 bg-[var(--forest-primary)] text-white shadow-[0_2px_0_0_#0a1b00]'
+                        : 'border-[#2b6c00] border-b-4 bg-[#58cc02] text-white shadow-[0_2px_0_0_#2b6c00]'
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200'
                   )}
                 >
-                  <Icon className={cn('h-4.5 w-4.5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500')} />
+                  <Icon
+                    className={cn(
+                      'h-4.5 w-4.5 flex-shrink-0',
+                      isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'
+                    )}
+                  />
                   <span>{label}</span>
                 </Link>
               )

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="th"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bill Quest - Finance Quest</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&amp;family=Be+Vietnam+Pro:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#f4f3f3",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#dadada",
+                        "on-secondary-fixed-variant": "#004c6e",
+                        "on-secondary-fixed": "#001e2e",
+                        "primary-fixed-dim": "#6be026",
+                        "on-tertiary-fixed-variant": "#6a3b00",
+                        "on-surface-variant": "#3f4a36",
+                        "outline": "#6f7b64",
+                        "inverse-on-surface": "#f1f0f0",
+                        "inverse-primary": "#6be026",
+                        "primary-container": "#58cc02",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#2b6c00",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffdcbf",
+                        "surface": "#faf9f9",
+                        "primary-fixed": "#87fe45",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#88ceff",
+                        "on-tertiary-container": "#683a00",
+                        "on-primary-container": "#1e5000",
+                        "secondary-container": "#2fb8ff",
+                        "on-primary-fixed": "#082100",
+                        "on-secondary-container": "#004666",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#eeeeed",
+                        "background": "#faf9f9",
+                        "tertiary": "#8c5000",
+                        "on-primary-fixed-variant": "#1f5100",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#c8e6ff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb872",
+                        "outline-variant": "#becbb1",
+                        "secondary": "#006590",
+                        "on-tertiary-fixed": "#2d1600",
+                        "surface-container-high": "#e9e8e8",
+                        "surface-variant": "#e3e2e2",
+                        "surface-bright": "#faf9f9",
+                        "tertiary-container": "#ff9c27",
+                        "surface-container-highest": "#e3e2e2",
+                        "inverse-surface": "#2f3131",
+                        "primary": "#2b6c00",
+                        "on-background": "#1a1c1c"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-desktop": "40px",
+                        "section-gap": "32px",
+                        "margin-mobile": "20px",
+                        "gutter": "16px",
+                        "stack-gap": "12px",
+                        "unit": "4px"
+                    },
+                    fontFamily: {
+                        "label-bold": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    fontSize: {
+                        "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "800"}],
+                        "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "800"}],
+                        "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                        "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tactile-button {
+            transition: all 0.1s ease;
+        }
+        .tactile-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 0 rgba(0,0,0,0.2) !important;
+        }
+        .progress-bar-inner {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- Top Navigation -->
+<header class="bg-surface border-b-2 border-outline-variant shadow-[0_4px_0_0_rgba(0,0,0,0.1)] sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-7xl mx-auto">
+<h1 class="text-headline-md font-black text-primary">Finance Quest</h1>
+<div class="flex gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:translate-y-[2px] transition-transform">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:translate-y-[2px] transition-transform">settings</button>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop py-section-gap space-y-section-gap">
+<!-- Hero Bill Quest Card -->
+<section class="bg-primary-container text-on-primary-container rounded-3xl border-[3px] border-primary-fixed-dim shadow-[0_8px_0_0_#1e5000] p-6 relative overflow-hidden">
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="space-y-stack-gap flex-1">
+<h2 class="text-headline-lg font-black tracking-tight">ภารกิจเคลียร์บิล</h2>
+<p class="text-body-lg font-bold opacity-90">คุณจัดการบิลไปแล้ว 3 จาก 5 บิลในสัปดาห์นี้!</p>
+<!-- Duolingo-style Progress Bar -->
+<div class="w-full h-5 bg-on-primary-fixed-variant/20 rounded-full border-2 border-on-primary-fixed-variant/30 overflow-hidden relative mt-4">
+<div class="h-full bg-white rounded-full transition-all duration-1000 progress-bar-inner" style="width: 60%"></div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-white/20 p-4 rounded-2xl backdrop-blur-sm border-2 border-white/30 text-center min-w-[80px]">
+<span class="block text-headline-md font-black">60%</span>
+<span class="text-label-bold">สำเร็จ</span>
+</div>
+<span class="material-symbols-outlined text-[64px] text-white opacity-40 select-none">emoji_events</span>
+</div>
+</div>
+</section>
+<!-- Summary Mini Cards -->
+<section class="grid grid-cols-3 gap-4">
+<div class="bg-secondary-container text-on-secondary-container p-4 rounded-2xl border-2 border-secondary shadow-[0_4px_0_0_#004666] text-center">
+<p class="text-label-bold mb-1">บิลทั้งหมด</p>
+<p class="text-headline-md font-black">5</p>
+</div>
+<div class="bg-primary-container text-on-primary-container p-4 rounded-2xl border-2 border-primary shadow-[0_4px_0_0_#1e5000] text-center">
+<p class="text-label-bold mb-1">เคลียร์แล้ว</p>
+<p class="text-headline-md font-black">3</p>
+</div>
+<div class="bg-tertiary-container text-on-tertiary-container p-4 rounded-2xl border-2 border-tertiary shadow-[0_4px_0_0_#683a00] text-center">
+<p class="text-label-bold mb-1">ยังรอจ่าย</p>
+<p class="text-headline-md font-black">2</p>
+</div>
+</section>
+<!-- Primary Action -->
+<button class="w-full bg-primary-container text-on-primary-container py-4 rounded-2xl border-b-[6px] border-2 border-on-primary-fixed-variant text-headline-md font-black shadow-lg tactile-button flex items-center justify-center gap-2">
+<span class="material-symbols-outlined font-black">add</span>
+            สร้างบิลใหม่
+        </button>
+<!-- AI Coach Tip -->
+<section class="bg-surface-container-low border-2 border-outline-variant p-4 rounded-2xl flex gap-4 items-start shadow-[0_4px_0_0_rgba(0,0,0,0.05)]">
+<div class="bg-primary-fixed-dim p-2 rounded-full border-2 border-primary">
+<span class="material-symbols-outlined text-on-primary-fixed">psychology</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">โค้ชการเงินบอกว่า:</h4>
+<p class="text-body-md text-on-surface-variant">คุณมีบิลที่ค้างชำระมานานกว่า 3 วันแล้วนะ รีบทวงเพื่อนเลยก่อนที่เพื่อนจะลืมมื้ออร่อยมื้อนั้น!</p>
+</div>
+</section>
+<!-- Bill List Section -->
+<section class="space-y-gutter">
+<div class="flex justify-between items-center px-2">
+<h2 class="text-headline-md font-black text-on-surface">บิลของฉัน</h2>
+<span class="text-label-bold text-outline uppercase">Quest Log</span>
+</div>
+<!-- Group: Pending -->
+<div class="space-y-4">
+<h3 class="text-label-bold text-tertiary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">hourglass_top</span>
+                    กำลังรอเคลียร์
+                </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Pending Card 1 -->
+<div class="bg-surface border-2 border-tertiary-container rounded-2xl shadow-[0_6px_0_0_#ff9c27] p-5 flex flex-col gap-stack-gap hover:translate-y-[-2px] transition-transform">
+<div class="flex justify-between items-start">
+<span class="bg-tertiary-container/20 text-tertiary text-label-bold px-3 py-1 rounded-full border border-tertiary-container/30">รอเคลียร์</span>
+<span class="text-label-bold text-outline-variant">24/05/2024</span>
+</div>
+<div>
+<h4 class="text-headline-md font-black text-on-surface">ค่าชาบูมื้อดึก</h4>
+<p class="text-headline-lg font-black text-primary mt-1">฿1,250.00</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container border-2 border-surface flex items-center justify-center text-[10px] font-black">JS</div>
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed-dim border-2 border-surface flex items-center justify-center text-[10px] font-black">PK</div>
+<div class="w-8 h-8 rounded-full bg-primary-fixed border-2 border-surface flex items-center justify-center text-[10px] font-black">AN</div>
+</div>
+<span class="text-label-bold text-on-surface-variant">และคนอื่นๆ</span>
+</div>
+<hr class="border-outline-variant/30"/>
+<div class="flex justify-between items-center text-label-bold">
+<span class="text-on-surface-variant">ผู้จ่ายก่อน: <span class="text-on-surface">คุณ</span></span>
+<button class="text-primary hover:underline">ดูรายละเอียด</button>
+</div>
+</div>
+<!-- Pending Card 2 -->
+<div class="bg-surface border-2 border-tertiary-container rounded-2xl shadow-[0_6px_0_0_#ff9c27] p-5 flex flex-col gap-stack-gap">
+<div class="flex justify-between items-start">
+<span class="bg-tertiary-container/20 text-tertiary text-label-bold px-3 py-1 rounded-full border border-tertiary-container/30">รอเคลียร์</span>
+<span class="text-label-bold text-outline-variant">22/05/2024</span>
+</div>
+<div>
+<h4 class="text-headline-md font-black text-on-surface">ตั๋วหนัง Avenger</h4>
+<p class="text-headline-lg font-black text-primary mt-1">฿560.00</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-3">
+<div class="w-8 h-8 rounded-full bg-on-tertiary-container border-2 border-surface flex items-center justify-center text-[10px] font-black text-white">MK</div>
+<div class="w-8 h-8 rounded-full bg-primary-container border-2 border-surface flex items-center justify-center text-[10px] font-black">คุณ</div>
+</div>
+<span class="text-label-bold text-on-surface-variant">2 คน</span>
+</div>
+<hr class="border-outline-variant/30"/>
+<div class="flex justify-between items-center text-label-bold">
+<span class="text-on-surface-variant">ผู้จ่ายก่อน: <span class="text-on-surface">มาร์ค</span></span>
+<button class="text-primary hover:underline">ดูรายละเอียด</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: Settled -->
+<div class="space-y-4 pt-4">
+<h3 class="text-label-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    เคลียร์แล้ว
+                </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter opacity-75">
+<!-- Settled Card 1 -->
+<div class="bg-surface-container border-2 border-outline-variant rounded-2xl shadow-[0_4px_0_0_#dadada] p-5 flex flex-col gap-stack-gap grayscale-[0.5]">
+<div class="flex justify-between items-start">
+<span class="bg-primary-container text-on-primary-container text-label-bold px-3 py-1 rounded-full border border-primary">สำเร็จ</span>
+<span class="text-label-bold text-outline-variant">15/05/2024</span>
+</div>
+<div>
+<h4 class="text-headline-md font-black text-on-surface">Coffee Time</h4>
+<p class="text-headline-lg font-black text-outline mt-1 line-through">฿345.00</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-label-bold text-primary">รับ 50 แต้ม Quest Exp!</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State Example (Hidden if there's data, but kept for UI demonstration) -->
+<div class="hidden flex flex-col items-center justify-center py-12 text-center">
+<div class="relative mb-6">
+<span class="text-6xl">🧾</span>
+<span class="text-6xl absolute -bottom-4 -right-4">🐣</span>
+</div>
+<h3 class="text-headline-md font-black text-on-surface">ยังไม่มีบิลเหรอ?</h3>
+<p class="text-body-md text-on-surface-variant max-w-xs mx-auto mt-2">เริ่มสร้างบิลใหม่เพื่อทำภารกิจแยกระบบการเงินของคุณให้เป็นระเบียบกันเถอะ!</p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface border-t-2 border-outline-variant h-20">
+<button class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">home_app_logo</span>
+<span class="text-label-bold">Quests</span>
+</button>
+<button class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-label-bold">Rank</span>
+</button>
+<div class="relative -top-6">
+<button class="bg-primary-container text-on-primary-container p-4 rounded-full border-2 border-primary shadow-[0_6px_0_0_#1e5000] tactile-button">
+<span class="material-symbols-outlined text-[32px] font-black">receipt_long</span>
+</button>
+</div>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-2 border-2 border-primary shadow-[0_4px_0_0_#1e5000] scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+<span class="text-label-bold">Shop</span>
+</button>
+<button class="flex flex-col items-center justify-center text-outline px-4 py-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-bold">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for active state simulation
+        document.querySelectorAll('.tactile-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                console.log('Button Pressed');
+            });
+        });
+
+        // Initialize progress bar width on load for animation effect
+        window.onload = () => {
+            const bar = document.querySelector('.progress-bar-inner');
+            if(bar) {
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = '60%';
+                }, 300);
+            }
+        };
+    </script>
+</body></html>

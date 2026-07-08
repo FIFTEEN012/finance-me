@@ -2,13 +2,23 @@
 
 import { useState } from 'react'
 import {
-  Cloud, CloudOff, CloudUpload, CheckCircle2, AlertCircle,
-  Loader2, LogOut, RefreshCw, User,
+  Cloud,
+  CloudOff,
+  CloudUpload,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  LogOut,
+  RefreshCw,
+  User,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -16,9 +26,14 @@ import { supabase, isCloudEnabled } from '@/lib/supabase'
 import { pushToCloud, pullFromCloud } from '@/lib/cloudSync'
 import { cn } from '@/lib/utils'
 
-export function SyncButton() {
+interface SyncButtonProps {
+  triggerClassName?: string
+  menuContentClassName?: string
+}
+
+export function SyncButton({ triggerClassName, menuContentClassName }: SyncButtonProps) {
   const { user, syncStatus, lastSyncAt } = useAuthStore()
-  const [authOpen, setAuthOpen]         = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const handleManualPush = async () => {
     if (!user) return
@@ -29,7 +44,7 @@ export function SyncButton() {
       toast.success('ซิงค์ข้อมูลสำเร็จ')
     } else {
       useAuthStore.getState().setSyncError(result.error)
-      toast.error('ซิงค์ไม่สำเร็จ: ' + result.error)
+      toast.error(`ซิงค์ไม่สำเร็จ: ${result.error}`)
     }
   }
 
@@ -42,7 +57,7 @@ export function SyncButton() {
       toast.success('โหลดข้อมูลจาก cloud สำเร็จ')
     } else {
       useAuthStore.getState().setSyncError(result.error)
-      toast.error('โหลดไม่สำเร็จ: ' + result.error)
+      toast.error(`โหลดไม่สำเร็จ: ${result.error}`)
     }
   }
 
@@ -56,7 +71,6 @@ export function SyncButton() {
     ? new Date(lastSyncAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
     : null
 
-  /* ── Icon + color per sync state ── */
   const icon = !isCloudEnabled || !user
     ? <CloudOff className="w-4 h-4" />
     : syncStatus === 'syncing'
@@ -75,7 +89,6 @@ export function SyncButton() {
         ? 'text-emerald-500 dark:text-emerald-400'
         : 'text-violet-500 dark:text-violet-400'
 
-  /* ── Not logged in: just show button to open login modal ── */
   if (!user) {
     return (
       <>
@@ -84,7 +97,8 @@ export function SyncButton() {
           title="เข้าสู่ระบบเพื่อ cloud sync"
           className={cn(
             'p-1.5 rounded-lg transition-colors',
-            'text-gray-400 dark:text-white/30 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10',
+            'text-gray-400 hover:bg-violet-50 hover:text-violet-500 dark:text-white/30 dark:hover:bg-violet-500/10 dark:hover:text-violet-400',
+            triggerClassName
           )}
         >
           <CloudOff className="w-4 h-4" />
@@ -94,7 +108,6 @@ export function SyncButton() {
     )
   }
 
-  /* ── Logged in: dropdown with status + actions ── */
   return (
     <>
       <DropdownMenu>
@@ -103,27 +116,26 @@ export function SyncButton() {
           className={cn(
             'p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.05]',
             color,
+            triggerClassName
           )}
         >
           {icon}
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-56">
-          {/* Status header */}
+        <DropdownMenuContent align="end" className={cn('w-56', menuContentClassName)}>
           <div className="px-3 py-2.5 border-b border-gray-100 dark:border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-0.5">
-              <User className="w-3.5 h-3.5 text-gray-400 dark:text-white/30 flex-shrink-0" />
-              <p className="text-xs font-medium text-gray-700 dark:text-white/70 truncate">{user.email}</p>
+            <div className="mb-0.5 flex items-center gap-2">
+              <User className="w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-white/30" />
+              <p className="truncate text-xs font-medium text-gray-700 dark:text-white/70">{user.email}</p>
             </div>
-            <p className="text-[10px] text-gray-400 dark:text-white/30 pl-5">
+            <p className="pl-5 text-[10px] text-gray-400 dark:text-white/30">
               {syncStatus === 'syncing'
                 ? 'กำลังซิงค์...'
                 : syncStatus === 'error'
-                  ? '⚠️ ซิงค์ไม่สำเร็จ'
+                  ? 'ซิงค์ไม่สำเร็จ'
                   : lastSyncLabel
-                    ? `✓ ซิงค์แล้ว ${lastSyncLabel}`
-                    : 'ยังไม่ได้ซิงค์'
-              }
+                    ? `ซิงค์แล้ว ${lastSyncLabel}`
+                    : 'ยังไม่ได้ซิงค์'}
             </p>
           </div>
 
@@ -140,7 +152,7 @@ export function SyncButton() {
 
           <DropdownMenuItem
             onClick={handleLogout}
-            className="gap-2 text-red-500 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
+            className="gap-2 text-red-500 focus:text-red-600 focus:bg-red-50 dark:text-red-400 dark:focus:bg-red-500/10"
           >
             <LogOut className="w-3.5 h-3.5" />
             ออกจากระบบ

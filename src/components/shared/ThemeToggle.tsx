@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 function getStoredTheme(): 'dark' | 'light' {
   if (typeof window === 'undefined') return 'light'
@@ -18,7 +19,7 @@ function applyTheme(theme: 'dark' | 'light') {
   localStorage.setItem('theme', theme)
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setThemeState] = useState<'dark' | 'light'>('light')
   const [mounted, setMounted] = useState(false)
 
@@ -40,7 +41,10 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+      className={cn(
+        'p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors',
+        className
+      )}
       title={theme === 'dark' ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'}
     >
       {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

@@ -565,6 +565,235 @@
   box-shadow: 0 4px 0 0 #5f6e52;
 }
 
+/* Forest Polish dashboard */
+.forest-shell,
+.forest-page {
+  --forest-background: #f0f4f0;
+  --forest-surface: #f7f9f7;
+  --forest-surface-low: #f2f4f2;
+  --forest-surface-soft: #eceeec;
+  --forest-surface-high: #e8eae8;
+  --forest-surface-highest: #e3e5e3;
+  --forest-outline: #6f7b64;
+  --forest-outline-variant: #becbb1;
+  --forest-primary: #1b4300;
+  --forest-primary-container: #58cc02;
+  --forest-secondary: #006590;
+  --forest-secondary-container: #2fb8ff;
+  --forest-tertiary: #8c5000;
+  --forest-tertiary-container: #ff9c27;
+  --forest-foreground: #1a1c1c;
+  --forest-muted: #3f4a36;
+}
+
+.dark .forest-shell,
+.dark .forest-page {
+  --forest-background: #13190f;
+  --forest-surface: #1a2116;
+  --forest-surface-low: #20281b;
+  --forest-surface-soft: #252e20;
+  --forest-surface-high: #2b3526;
+  --forest-surface-highest: #303b2a;
+  --forest-outline: #87947b;
+  --forest-outline-variant: #44523a;
+  --forest-foreground: #eff5e8;
+  --forest-muted: #c2cfb4;
+}
+
+.forest-shell {
+  background: linear-gradient(180deg, #f7f9f7 0%, #f0f4f0 45%, #edf1ed 100%);
+}
+
+.dark .forest-shell {
+  background: linear-gradient(180deg, #10140d 0%, #13190f 45%, #11150d 100%);
+}
+
+.forest-shell::before,
+.forest-shell::after,
+.forest-shell .grid-overlay {
+  display: none;
+}
+
+.forest-page {
+  color: var(--forest-foreground);
+}
+
+.forest-topbar {
+  border-bottom: 2px solid var(--forest-outline-variant);
+  background: color-mix(in srgb, var(--forest-background) 90%, white 10%);
+  box-shadow: 0 2px 0 0 rgb(190 203 177 / 0.65);
+}
+
+.dark .forest-topbar {
+  background: color-mix(in srgb, var(--forest-background) 92%, black 8%);
+  box-shadow: 0 2px 0 0 rgb(0 0 0 / 0.28);
+}
+
+.forest-sidebar-panel {
+  border: 2px solid var(--forest-outline-variant);
+  background: var(--forest-surface);
+  box-shadow: 0 4px 0 0 var(--forest-outline-variant);
+}
+
+.dark .forest-sidebar-panel {
+  box-shadow: 0 4px 0 0 #0f130c;
+}
+
+.forest-panel {
+  border: 2px solid var(--forest-outline-variant);
+  border-radius: 1.5rem;
+  background: var(--forest-surface);
+  box-shadow: 0 4px 0 0 var(--forest-outline-variant);
+  transition: transform 100ms ease;
+}
+
+.forest-panel:hover {
+  transform: translateY(-1px);
+}
+
+.dark .forest-panel {
+  box-shadow: 0 4px 0 0 #0f130c;
+}
+
+.forest-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 0.125rem 0.625rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.forest-button-primary {
+  border: 2px solid var(--forest-primary);
+  border-radius: 0.75rem;
+  background: var(--forest-primary-container);
+  color: var(--forest-primary);
+  font-weight: 800;
+  box-shadow: 0 4px 0 0 var(--forest-primary);
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.forest-button-primary:hover {
+  transform: translateY(-1px);
+}
+
+.forest-button-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 var(--forest-primary);
+}
+
+.forest-button-outline {
+  border: 2px solid var(--forest-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--forest-surface);
+  color: var(--forest-muted);
+  font-weight: 700;
+  box-shadow: 0 2px 0 0 var(--forest-outline-variant);
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.forest-button-outline:hover {
+  transform: translateY(-1px);
+}
+
+.forest-button-outline:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.forest-search-trigger {
+  min-height: 2.5rem;
+  border: 2px solid var(--forest-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--forest-surface-low);
+  padding: 0.5rem 0.75rem;
+  transition: border-color 100ms ease, transform 100ms ease;
+}
+
+.forest-search-trigger:hover {
+  transform: translateY(-1px);
+  border-color: var(--forest-outline);
+}
+
+.forest-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  color: var(--forest-muted);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+
+.forest-sidebar-link:hover {
+  transform: translateY(-1px);
+  background: var(--forest-surface-high);
+  color: var(--forest-foreground);
+}
+
+.forest-sidebar-link-active {
+  background: var(--forest-primary);
+  color: white;
+  border-bottom: 4px solid #0a1b00;
+}
+
+.forest-sidebar-link-active:hover {
+  background: var(--forest-primary);
+  color: white;
+}
+
+.forest-progress-track {
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgb(190 203 177 / 0.25);
+  background: var(--forest-surface-soft);
+}
+
+.forest-progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.forest-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.24);
+}
+
+.forest-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.forest-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(190 203 177 / 0.7);
+  border-radius: 999px;
+}
+
+.forest-utility-trigger {
+  border-radius: 0.75rem;
+  color: var(--forest-muted) !important;
+}
+
+.forest-utility-trigger:hover {
+  background: var(--forest-surface-low) !important;
+  color: var(--forest-primary) !important;
+}
+
+.forest-menu-surface {
+  border-color: var(--forest-outline-variant) !important;
+  background: var(--forest-surface) !important;
+}
+
 /* Active nav — dark mode (uses CSS variable so accent color works) */
 .dark .nav-active {
   background: linear-gradient(
