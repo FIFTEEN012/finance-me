@@ -328,6 +328,7 @@
 }
 
 /* Finance Quest route */
+:root,
 .quest-shell,
 .quest-page {
   --quest-background: #faf9f9;
@@ -349,6 +350,7 @@
   --quest-muted: #3f4a36;
 }
 
+.dark,
 .dark .quest-shell,
 .dark .quest-page {
   --quest-background: #161b11;
@@ -566,6 +568,7 @@
 }
 
 /* Forest Polish dashboard */
+:root,
 .forest-shell,
 .forest-page {
   --forest-background: #f0f4f0;
@@ -586,6 +589,7 @@
   --forest-muted: #3f4a36;
 }
 
+.dark,
 .dark .forest-shell,
 .dark .forest-page {
   --forest-background: #13190f;
