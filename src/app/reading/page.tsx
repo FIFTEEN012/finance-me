@@ -270,9 +270,14 @@ export default function ReadingPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-black text-slate-900 dark:text-white">
-                              {book?.coverEmoji} {book?.title ?? 'หนังสือที่ถูกลบแล้ว'}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-sm font-black text-slate-900 dark:text-white">
+                              {book?.coverImage ? (
+                                <img src={book.coverImage} className="w-5 h-5 rounded object-cover inline-block shrink-0" alt="" />
+                              ) : (
+                                <span>{book?.coverEmoji}</span>
+                              )}
+                              <span>{book?.title ?? 'หนังสือที่ถูกลบแล้ว'}</span>
+                            </div>
                             <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                               {session.durationMin} นาที • {session.pagesRead} หน้า
                             </p>
@@ -320,8 +325,13 @@ export default function ReadingPage() {
                             <p className="text-xs font-black text-slate-400">
                               {formatDateShort(session.date)}
                             </p>
-                            <h3 className="mt-1 truncate font-black text-slate-900 dark:text-white">
-                              {book?.coverEmoji} {book?.title ?? 'หนังสือที่ถูกลบแล้ว'}
+                            <h3 className="mt-1 flex items-center gap-1.5 truncate font-black text-slate-900 dark:text-white text-sm">
+                              {book?.coverImage ? (
+                                <img src={book.coverImage} className="w-5 h-5 rounded object-cover inline-block shrink-0" alt="" />
+                              ) : (
+                                <span>{book?.coverEmoji}</span>
+                              )}
+                              <span className="truncate">{book?.title ?? 'หนังสือที่ถูกลบแล้ว'}</span>
                             </h3>
                             <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                               {session.durationMin} นาที • {session.pagesRead} หน้า

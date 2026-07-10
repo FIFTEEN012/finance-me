@@ -446,6 +446,7 @@ function isReadingBook(value: unknown): value is StoredReadingBook {
     typeof value.currentPage === 'number' &&
     isReadingStatus(value.status) &&
     typeof value.coverEmoji === 'string' &&
+    (value.coverImage === undefined || typeof value.coverImage === 'string') &&
     typeof value.color === 'string' &&
     typeof value.createdAt === 'string' &&
     typeof value.updatedAt === 'string'

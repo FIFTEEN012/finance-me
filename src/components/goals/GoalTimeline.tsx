@@ -70,10 +70,13 @@ function TimelineRow({ row, todayPct }: { row: GoalRow; todayPct: number }) {
       <div className="w-36 flex-shrink-0 flex items-center gap-2 min-w-0">
         <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: goal.color + '22' }}>
-          {row.status === 'completed'
-            ? <CheckCircle2 className="w-3.5 h-3.5 text-violet-500" />
-            : <CategoryIcon name={goal.icon} className="w-3.5 h-3.5" style={{ color: goal.color }} />
-          }
+          {row.status === 'completed' ? (
+            <CheckCircle2 className="w-3.5 h-3.5 text-violet-500" />
+          ) : !/^[A-Za-z0-9]+$/.test(goal.icon) ? (
+            <span className="text-xs select-none leading-none">{goal.icon}</span>
+          ) : (
+            <CategoryIcon name={goal.icon} className="w-3.5 h-3.5" style={{ color: goal.color }} />
+          )}
         </div>
         <div className="min-w-0">
           <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{goal.name}</p>

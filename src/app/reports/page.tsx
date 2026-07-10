@@ -25,6 +25,7 @@ export default function ReportsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState<number | null>(null)
   const [printOpen, setPrintOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'coach' | 'overview' | 'savings' | 'budget-habits'>('coach')
 
   const years = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear()]
 
@@ -117,118 +118,167 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* ── 3. FINANCE COACH ADVICE (SPENDING INSIGHTS) ── */}
-      <div className="space-y-2">
-        <div className="px-1 flex items-center gap-1.5">
-          <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            คำแนะนำจากโค้ชการเงิน
-          </h4>
-        </div>
-        <PressCard
-          shadow="0 6px 0 0 #e5e5e5"
-          shadowHover="0 3px 0 0 #e5e5e5"
-          className="border-slate-200 dark:border-slate-800 rounded-[32px] bg-white dark:bg-slate-900 p-5 flex flex-col md:flex-row items-center gap-5"
+      {/* ── TABS CONTROLLER (DUOLINGO STYLE) ── */}
+      <div className="flex flex-wrap gap-2.5 pb-2">
+        <button
+          onClick={() => setActiveTab('coach')}
+          className={cn(
+            "quest-filter-pill cursor-pointer",
+            activeTab === 'coach' && "quest-filter-pill-active"
+          )}
         >
-          <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-900 flex items-center justify-center shrink-0 text-3xl select-none">
-            💡
+          <span>💡</span>
+          <span>คำแนะนำโค้ช</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={cn(
+            "quest-filter-pill cursor-pointer",
+            activeTab === 'overview' && "quest-filter-pill-active"
+          )}
+        >
+          <span>📊</span>
+          <span>รายรับ-รายจ่าย</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('savings')}
+          className={cn(
+            "quest-filter-pill cursor-pointer",
+            activeTab === 'savings' && "quest-filter-pill-active"
+          )}
+        >
+          <span>📈</span>
+          <span>เส้นทางการออม</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('budget-habits')}
+          className={cn(
+            "quest-filter-pill cursor-pointer",
+            activeTab === 'budget-habits' && "quest-filter-pill-active"
+          )}
+        >
+          <span>🎯</span>
+          <span>งบประมาณ & พฤติกรรม</span>
+        </button>
+      </div>
+
+      {/* ── TAB CONTENT AREAS ── */}
+      {activeTab === 'coach' && (
+        <div className="space-y-2 animate-in fade-in-50 duration-200">
+          <div className="px-1 flex items-center gap-1.5">
+            <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              คำแนะนำจากโค้ชการเงิน
+            </h4>
           </div>
-          <div className="flex-grow space-y-1 text-center md:text-left">
-            <h5 className="font-black text-sm text-slate-800 dark:text-slate-200">Financial Coach Insights</h5>
-            <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
-              <SpendingInsights />
+          <PressCard
+            shadow="0 6px 0 0 #e5e5e5"
+            shadowHover="0 3px 0 0 #e5e5e5"
+            className="border-slate-200 dark:border-slate-800 rounded-[32px] bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row items-center gap-6"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-900 flex items-center justify-center shrink-0 text-3xl select-none">
+              💡
+            </div>
+            <div className="flex-grow space-y-1 text-center md:text-left">
+              <h5 className="font-black text-base text-slate-800 dark:text-slate-200">Financial Coach Insights</h5>
+              <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
+                <SpendingInsights />
+              </div>
+            </div>
+          </PressCard>
+        </div>
+      )}
+
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="flex items-center gap-2 px-1">
+            <BarChart3 className="w-4 h-4 text-[#2b6c00] dark:text-[#58cc02]" />
+            <div>
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                ภาพรวมรายรับ–รายจ่าย
+              </h3>
+              <p className="text-[11px] text-slate-400/80 mt-0.5">
+                ติดตามกระแสเงินเข้า-ออก และประเมินความสอดคล้องทางการเงิน
+              </p>
             </div>
           </div>
-        </PressCard>
-      </div>
 
-      {/* ── 4. CHARTS GROUP 1: ภาพรวมรายรับ–รายจ่าย ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 px-1">
-          <BarChart3 className="w-4 h-4 text-[#2b6c00] dark:text-[#58cc02]" />
-          <div>
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              ภาพรวมรายรับ–รายจ่าย
-            </h3>
-            <p className="text-[11px] text-slate-400/80 mt-0.5">
-              ติดตามกระแสเงินเข้า-ออก และประเมินความสอดคล้องทางการเงิน
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-1">
+              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+                <MonthlyBarChart year={year} />
+              </PressCard>
+            </div>
+            <div className="space-y-1">
+              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+                <IncomeBreakdown year={year} month={month} />
+              </PressCard>
+            </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-1">
-            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-              <MonthlyBarChart year={year} />
-            </PressCard>
-          </div>
-          <div className="space-y-1">
-            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-              <IncomeBreakdown year={year} month={month} />
-            </PressCard>
-          </div>
-        </div>
-        
-        <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] w-full [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-          <SpendingTrend />
-        </PressCard>
-      </div>
-
-      {/* ── 5. CHARTS GROUP 2: เส้นทางการออม ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 px-1">
-          <TrendingUp className="w-4 h-4 text-sky-500" />
-          <div>
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              เส้นทางการออมเงิน
-            </h3>
-            <p className="text-[11px] text-slate-400/80 mt-0.5">
-              ตรวจสอบอัตราผลตอบแทนความก้าวหน้าการเก็บหอมรอมริบ
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-            <YearlyLineChart year={year} />
-          </PressCard>
-          <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-            <SavingsRateTracker year={year} month={month} />
+          
+          <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] w-full [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+            <SpendingTrend />
           </PressCard>
         </div>
-      </div>
+      )}
 
-      {/* ── 6. CHARTS GROUP 3: งบประมาณและพฤติกรรมใช้จ่าย ── */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 px-1">
-          <Target className="w-4 h-4 text-violet-500" />
-          <div>
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              งบประมาณและพฤติกรรมใช้จ่าย
-            </h3>
-            <p className="text-[11px] text-slate-400/80 mt-0.5">
-              ประเมินระเบียบวินัยการออมและหมวดหมู่การใช้งานเงินเปรียบเทียบงบ
-            </p>
+      {activeTab === 'savings' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="flex items-center gap-2 px-1">
+            <TrendingUp className="w-4 h-4 text-sky-500" />
+            <div>
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                เส้นทางการออมเงิน
+              </h3>
+              <p className="text-[11px] text-slate-400/80 mt-0.5">
+                ตรวจสอบอัตราผลตอบแทนความก้าวหน้าการเก็บหอมรอมริบ
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-              <BudgetVsActual year={year} month={month} />
+              <YearlyLineChart year={year} />
             </PressCard>
-          </div>
-          <div className="space-y-1">
             <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-              <SpendingIntensity year={year} month={month} />
-            </PressCard>
-          </div>
-          <div className="space-y-1">
-            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-              <CategoryBreakdown year={year} month={month} />
+              <SavingsRateTracker year={year} month={month} />
             </PressCard>
           </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === 'budget-habits' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="flex items-center gap-2 px-1">
+            <Target className="w-4 h-4 text-violet-500" />
+            <div>
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                งบประมาณและพฤติกรรมใช้จ่าย
+              </h3>
+              <p className="text-[11px] text-slate-400/80 mt-0.5">
+                ประเมินระเบียบวินัยการออมและหมวดหมู่การใช้งานเงินเปรียบเทียบงบ
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-1">
+              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+                <BudgetVsActual year={year} month={month} />
+              </PressCard>
+            </div>
+            <div className="space-y-1">
+              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+                <SpendingIntensity year={year} month={month} />
+              </PressCard>
+            </div>
+            <div className="space-y-1">
+              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+                <CategoryBreakdown year={year} month={month} />
+              </PressCard>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PrintableReport dialog component */}
       <PrintableReport open={printOpen} onOpenChange={setPrintOpen} year={year} month={month} />

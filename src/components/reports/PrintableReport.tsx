@@ -1,13 +1,15 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useTransactionStore } from '@/store/useTransactionStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useBudgetStore } from '@/store/useBudgetStore'
 import { useGoalStore } from '@/store/useGoalStore'
+import { useSettingsStore } from '@/store/useSettingsStore'
+import { toast } from 'sonner'
 import { formatCurrency, calcRollover, THAI_MONTHS, THAI_MONTHS_SHORT } from '@/lib/utils'
 
 interface PrintableReportProps {
@@ -19,10 +21,36 @@ interface PrintableReportProps {
 
 export function PrintableReport({ open, onOpenChange, year, month }: PrintableReportProps) {
   const contentRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { transactions, getSumByTypeAndMonth } = useTransactionStore()
   const { getCategoryById } = useCategoryStore()
   const { getBudgetsByMonth } = useBudgetStore()
   const { goals } = useGoalStore()
+  const { reportCoverImage, setReportCoverImage } = useSettingsStore()
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('กรุณาเลือกไฟล์รูปภาพเท่านั้น')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('รูปภาพมีขนาดใหญ่เกินไป (ไม่ควรเกิน 2MB เพื่อรักษาประสิทธิภาพ)')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setReportCoverImage(base64)
+      toast.success('อัปโหลดหน้าปกรายงานสำเร็จ')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const triggerUpload = () => {
+    fileInputRef.current?.click()
+  }
 
   const now = new Date()
   const generatedAt = now.toLocaleDateString('th-TH', {
@@ -144,6 +172,64 @@ export function PrintableReport({ open, onOpenChange, year, month }: PrintableRe
 
         {/* ── Report Content ────────────────────────────────── */}
         <div ref={contentRef} className="print-report-content bg-white text-gray-900 p-8 print:p-6">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            accept="image/*"
+            className="hidden"
+          />
+
+          {/* Screen Only: Upload Placeholder */}
+          {!reportCoverImage && (
+            <div
+              onClick={triggerUpload}
+              className="no-print mb-8 flex flex-col items-center justify-center gap-3 border-3 border-dashed border-[#becbb1] hover:border-[#2b6c00] bg-[#faf9f9] dark:bg-slate-900/50 hover:bg-[#58cc02]/5 rounded-3xl p-8 text-center cursor-pointer transition-all select-none"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#58cc02]/10 border-2 border-[#becbb1] text-[#2b6c00]">
+                <UploadCloud className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-quest-heading text-base font-black text-slate-800 dark:text-slate-100">
+                  อัปโหลดรูปภาพหน้าปกรายงาน
+                </p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1">
+                  💡 คลิกเพื่อเลือกรูปภาพ (รองรับ PNG, JPG ขนาดไม่เกิน 2MB) เพื่อพิมพ์เป็น A4 หน้าแรกสุด
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Screen Only: Cover Preview with Hover controls */}
+          {reportCoverImage && (
+            <div className="no-print relative group w-full aspect-[1.414/1] max-h-[380px] rounded-3xl overflow-hidden border-3 border-slate-200 dark:border-slate-800 mb-8 select-none shadow-[0_4px_0_0_#e5e5e5] dark:shadow-none">
+              <img src={reportCoverImage} className="w-full h-full object-cover" alt="Cover Preview" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <Button size="sm" variant="secondary" onClick={triggerUpload} className="font-bold gap-1.5 shadow-[0_2px_0_0_rgba(0,0,0,0.1)]">
+                  <UploadCloud className="w-4 h-4" />
+                  เปลี่ยนภาพ
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setReportCoverImage(null)} className="font-bold gap-1.5 shadow-[0_2px_0_0_rgba(0,0,0,0.1)]">
+                  <Trash2 className="w-4 h-4" />
+                  ลบหน้าปก
+                </Button>
+              </div>
+              <div className="absolute top-4 left-4 bg-black/60 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full select-none">
+                ภาพหน้าปกรายงาน
+              </div>
+            </div>
+          )}
+
+          {/* Print Only: Cover Page (Forces page break) */}
+          {reportCoverImage && (
+            <div
+              className="print-cover-page print:block hidden print:h-[297mm] print:w-[210mm] print:break-after-page overflow-hidden -mx-8 -mt-8 mb-8 print:-mx-6 print:-mt-6 print:mb-0"
+              style={{ breakAfter: 'page' }}
+            >
+              <img src={reportCoverImage} className="w-full h-full object-cover" alt="Print Cover Page" />
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8 pb-5 border-b-2 border-gray-900">
             <div className="flex items-start justify-between">

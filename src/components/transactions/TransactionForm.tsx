@@ -115,12 +115,13 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="border-b px-6 py-4 shrink-0">
           <DialogTitle>{editingTransaction ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Type toggle */}
           <div>
             <Label className="text-sm mb-2 block">ประเภท</Label>
@@ -233,9 +234,9 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
             <TagInput value={tags} onChange={setTags} suggestions={allTags} />
           </div>
 
-          <Separator />
+          </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 border-t px-6 py-4 bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               ยกเลิก
             </Button>

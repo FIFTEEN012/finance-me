@@ -93,7 +93,11 @@ export function GoalBehindAlert({ goals }: GoalBehindAlertProps) {
               {/* Goal name row */}
               <div className="flex items-center gap-2.5 mb-2.5">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: goal.color + '25' }}>
-                  <CategoryIcon name={goal.icon} className="w-4 h-4" style={{ color: goal.color }} />
+                  {!/^[A-Za-z0-9]+$/.test(goal.icon) ? (
+                    <span className="text-sm select-none leading-none">{goal.icon}</span>
+                  ) : (
+                    <CategoryIcon name={goal.icon} className="w-4 h-4" style={{ color: goal.color }} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{goal.name}</p>

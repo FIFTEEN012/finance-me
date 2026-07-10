@@ -156,14 +156,14 @@ export function QuickAddTransaction() {
           'hidden md:flex fixed bottom-6 right-6 z-50',
           'w-14 h-14 rounded-full items-center justify-center',
           'shadow-lg transition-all duration-200 group',
-          'bg-violet-600 hover:bg-violet-500 text-white',
-          'dark:bg-violet-500/20 dark:hover:bg-violet-500/30',
-          'dark:border dark:border-violet-500/40 dark:hover:border-violet-400/60',
+          'bg-[#58cc02] hover:bg-[#61e002] border-2 border-[#2b6c00] text-white',
+          'dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30',
+          'dark:border dark:border-emerald-500/40 dark:hover:border-emerald-400/60',
           'dark:shadow-[0_0_24px_rgba(16,185,129,0.25)] dark:hover:shadow-[0_0_32px_rgba(16,185,129,0.4)]',
           'active:scale-95 hover:scale-105',
         )}
       >
-        <Plus className="w-6 h-6 dark:text-violet-400 transition-transform group-hover:rotate-90 duration-200" />
+        <Plus className="w-6 h-6 dark:text-emerald-400 transition-transform group-hover:rotate-90 duration-200" />
         <span className="absolute -top-8 right-0 hidden group-hover:flex items-center gap-1 text-[10px] font-medium bg-gray-900/80 dark:bg-black/60 text-white/80 px-2 py-1 rounded-md whitespace-nowrap backdrop-blur-sm">
           กด <kbd className="font-mono bg-white/20 px-1 rounded">N</kbd>
         </span>
@@ -178,7 +178,7 @@ export function QuickAddTransaction() {
             'px-5 pt-5 pb-4',
             isExpense
               ? 'bg-gradient-to-br from-red-50 to-orange-50/50 dark:from-red-500/10 dark:to-orange-500/5'
-              : 'bg-gradient-to-br from-violet-50 to-teal-50/50 dark:from-violet-500/10 dark:to-teal-500/5'
+              : 'bg-gradient-to-br from-[#58cc02]/10 to-teal-50/50 dark:from-[#58cc02]/15 dark:to-teal-500/5'
           )}>
             <DialogHeader>
               <div className="flex items-center justify-between mb-3">
@@ -377,7 +377,7 @@ export function QuickAddTransaction() {
                 'w-full font-semibold transition-all',
                 isExpense
                   ? 'bg-red-500 hover:bg-red-600 text-white dark:bg-red-500/80 dark:hover:bg-red-500'
-                  : 'bg-violet-600 hover:bg-violet-500 text-white dark:bg-violet-500/80 dark:hover:bg-violet-500'
+                  : 'bg-[#58cc02] hover:bg-[#61e002] border-2 border-[#2b6c00] text-white dark:bg-emerald-600 dark:border-emerald-700 dark:hover:bg-emerald-500'
               )}
             >
               บันทึกรายการ

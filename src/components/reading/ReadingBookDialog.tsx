@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Image as ImageIcon, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 import {
   Dialog,
@@ -30,6 +32,7 @@ type ReadingBookDraft = {
   currentPage: number
   status: ReadingStatus
   coverEmoji: string
+  coverImage?: string
   color: string
   note: string
 }
@@ -65,6 +68,7 @@ function getDefaultDraft(): ReadingBookDraft {
     currentPage: 0,
     status: 'wishlist',
     coverEmoji: '',
+    coverImage: '',
     color: '',
     note: '',
   }
@@ -90,6 +94,7 @@ export function ReadingBookDialog({
         currentPage: editingBook.currentPage,
         status: editingBook.status,
         coverEmoji: editingBook.coverEmoji,
+        coverImage: editingBook.coverImage ?? '',
         color: editingBook.color,
         note: editingBook.note ?? '',
       })
@@ -112,6 +117,7 @@ export function ReadingBookDialog({
       totalPages: Math.max(1, Math.round(draft.totalPages)),
       currentPage: Math.max(0, Math.round(draft.currentPage)),
       coverEmoji: draft.coverEmoji.trim(),
+      coverImage: draft.coverImage ? draft.coverImage.trim() : undefined,
       color: draft.color.trim(),
     })
   }
@@ -120,8 +126,8 @@ export function ReadingBookDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-[1.75rem] border-2 border-[#6d28d9] bg-white p-0 text-slate-900 shadow-[0_10px_0_0_#4c1d95] dark:border-violet-900 dark:bg-slate-900 dark:text-white dark:shadow-[0_10px_0_0_#1e1b4b]">
-        <DialogHeader className="border-b-2 border-violet-100 px-5 py-5 dark:border-violet-950">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-[1.75rem] border-2 border-[#6d28d9] bg-white text-slate-900 shadow-[0_10px_0_0_#4c1d95] dark:border-violet-900 dark:bg-slate-900 dark:text-white dark:shadow-[0_10px_0_0_#1e1b4b]">
+        <DialogHeader className="border-b-2 border-violet-100 px-5 py-4 dark:border-violet-950 shrink-0">
           <DialogTitle className="text-2xl font-black">
             {editingBook ? 'แก้ไขหนังสือ' : 'เพิ่มหนังสือใหม่'}
           </DialogTitle>
@@ -130,7 +136,8 @@ export function ReadingBookDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="reading-title">ชื่อหนังสือ</Label>
             <Input
@@ -252,6 +259,83 @@ export function ReadingBookDialog({
           </div>
 
           <div className="space-y-2 sm:col-span-2">
+            <Label>รูปภาพปกหนังสือ (จะใช้แสดงแทนอีโมจิหากอัปโหลด)</Label>
+            <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl">
+              {draft.coverImage ? (
+                <div className="relative w-14 h-20 rounded-xl overflow-hidden border-2 border-slate-250 dark:border-slate-700 shrink-0">
+                  <img src={draft.coverImage} className="w-full h-full object-cover" alt="Cover Preview" />
+                  <button
+                    type="button"
+                    onClick={() => updateField('coverImage', '')}
+                    className="absolute -top-1 -right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 cursor-pointer shadow-md transition-colors"
+                    title="ลบรูปภาพ"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-14 h-20 rounded-xl border-2 border-dashed border-slate-350 dark:border-slate-800 flex items-center justify-center text-slate-400 shrink-0 bg-white dark:bg-slate-900/50">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+              )}
+
+              <div className="flex-1">
+                <input
+                  type="file"
+                  id="book-cover-upload"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (!file.type.startsWith('image/')) {
+                      toast.error('กรุณาเลือกไฟล์รูปภาพเท่านั้น')
+                      return
+                    }
+                    if (file.size > 1.5 * 1024 * 1024) {
+                      toast.error('รูปภาพมีขนาดใหญ่เกินไป (ไม่ควรเกิน 1.5MB)')
+                      return
+                    }
+                    const reader = new FileReader()
+                    reader.onload = (event) => {
+                      const base64 = event.target?.result as string
+                      updateField('coverImage', base64)
+                      toast.success('เลือกรูปปกหนังสือเรียบร้อย')
+                    }
+                    reader.readAsDataURL(file)
+                  }}
+                  className="hidden"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('book-cover-upload')?.click()}
+                    className="rounded-xl border-2 font-bold h-9 px-3 text-xs bg-white dark:bg-slate-850"
+                  >
+                    อัปโหลดไฟล์รูปภาพปก
+                  </Button>
+                </div>
+                <div className="mt-3 space-y-1.5 border-t border-slate-200/60 dark:border-slate-800 pt-2.5">
+                  <Label htmlFor="book-cover-url" className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    หรือใส่ลิงก์รูปภาพ (Image Address / URL)
+                  </Label>
+                  <Input
+                    id="book-cover-url"
+                    value={draft.coverImage?.startsWith('data:') ? '' : draft.coverImage}
+                    onChange={(event) => updateField('coverImage', event.target.value)}
+                    placeholder="เช่น https://example.com/cover.jpg"
+                    className="h-9 text-xs rounded-xl bg-white dark:bg-slate-950"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 leading-normal">
+                  แนะนำสัดส่วนรูปภาพ 2:3 หรือแนวตั้ง หากต้องการเคลียร์รูปภาพ ให้กดลบ (X) ที่รูปพรีวิว
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="reading-note">โน้ต</Label>
             <textarea
               id="reading-note"
@@ -263,8 +347,9 @@ export function ReadingBookDialog({
             />
           </div>
         </div>
+        </div>
 
-        <DialogFooter className="-mx-0 -mb-0 gap-2 border-violet-100 bg-violet-50 px-5 py-4 dark:border-violet-950 dark:bg-slate-950/60">
+        <DialogFooter className="gap-2 border-t-2 border-violet-100 bg-violet-50 px-5 py-4 dark:border-violet-950 dark:bg-slate-950/60 shrink-0">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

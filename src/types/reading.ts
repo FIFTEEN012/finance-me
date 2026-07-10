@@ -19,6 +19,7 @@ export type ReadingBook = {
   currentPage: number
   status: ReadingStatus
   coverEmoji: string
+  coverImage?: string
   color: string
   note?: string
   startedAt?: string

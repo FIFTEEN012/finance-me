@@ -33,8 +33,10 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 interface SettingsStore extends AppSettings {
   paydayDate:    number   // day of month 1–31 when salary arrives
+  reportCoverImage: string | null
   update:        (patch: Partial<AppSettings>) => void
   setPaydayDate: (day: number) => void
+  setReportCoverImage: (image: string | null) => void
   reset:         () => void
 }
 
@@ -43,9 +45,11 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       ...DEFAULT_SETTINGS,
       paydayDate:    25,
+      reportCoverImage: null,
       update:        (patch) => set((s) => ({ ...s, ...patch })),
       setPaydayDate: (day)   => set({ paydayDate: Math.max(1, Math.min(31, day)) }),
-      reset:         () => set({ ...DEFAULT_SETTINGS, paydayDate: 25 }),
+      setReportCoverImage: (image) => set({ reportCoverImage: image }),
+      reset:         () => set({ ...DEFAULT_SETTINGS, paydayDate: 25, reportCoverImage: null }),
     }),
     { name: 'finance-settings' }
   )

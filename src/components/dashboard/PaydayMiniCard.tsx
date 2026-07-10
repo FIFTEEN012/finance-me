@@ -18,7 +18,7 @@ export function PaydayMiniCard({ payday }: PaydayMiniCardProps) {
         <p className="mt-1 text-[12px] font-medium text-[var(--forest-muted)]">{payday.detail}</p>
       </div>
 
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[var(--forest-outline-variant)]/30 bg-[var(--forest-surface-low)] text-[var(--forest-primary-container)]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[var(--forest-outline-variant)]/30 bg-[var(--forest-surface-low)] text-[var(--forest-primary)]">
         <CalendarDays className="h-5 w-5" />
       </div>
     </section>

@@ -48,17 +48,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const hydrated = useHydrated()
   const onboardingCompleted = useOnboardingStore((state) => state.completed)
+  const pathname = usePathname()
+  const isDashboard = pathname === '/dashboard'
 
   return (
     <div
-      className="app-bg flex h-screen overflow-hidden bg-gradient-to-b from-green-50/30 via-slate-50/50 to-white dark:bg-slate-950 dark:from-slate-950 dark:via-slate-900/40 dark:to-slate-950/70 quest-shell"
+      className={cn(
+        "app-bg flex h-screen overflow-hidden bg-gradient-to-b from-green-50/30 via-slate-50/50 to-white dark:bg-slate-950 dark:from-slate-950 dark:via-slate-900/40 dark:to-slate-950/70",
+        isDashboard ? "forest-shell" : "quest-shell"
+      )}
     >
       <div className="hidden p-4 pr-0 lg:flex lg:shrink-0 xl:p-6 xl:pr-0">
         <Sidebar />
       </div>
 
       <div
-        className="app-content flex min-w-0 flex-1 flex-col overflow-hidden quest-page"
+        className={cn(
+          "app-content flex min-w-0 flex-1 flex-col overflow-hidden",
+          isDashboard ? "forest-page" : "quest-page"
+        )}
       >
         <Topbar />
         <main

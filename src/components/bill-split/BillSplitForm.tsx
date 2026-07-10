@@ -138,8 +138,8 @@ export function BillSplitForm({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && handleClose()}>
-      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c]">
-        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-5 dark:border-[#3b4630]">
+      <DialogContent className="max-h-[90vh] max-w-2xl flex flex-col rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c] overflow-hidden">
+        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-4 dark:border-[#3b4630] shrink-0">
           <DialogTitle className="font-quest-heading text-2xl font-black text-[#2b6c00] dark:text-[#87fe45]">
             สร้างบิลใหม่
           </DialogTitle>
@@ -148,7 +148,7 @@ export function BillSplitForm({ open, onClose }: Props) {
           </p>
         </DialogHeader>
 
-        <div className="space-y-5 p-6 font-quest-body">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 font-quest-body">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_0.75fr_0.75fr]">
             <div>
               <Label className="quest-field-label">ชื่อบิล</Label>
@@ -342,9 +342,7 @@ export function BillSplitForm({ open, onClose }: Props) {
           </div>
         </div>
 
-        <Separator className="bg-[#becbb1] dark:bg-[#3b4630]" />
-
-        <DialogFooter className="-mx-0 -mb-0 gap-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+        <DialogFooter className="gap-2 border-t-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)] shrink-0">
           <Button
             type="button"
             variant="outline"

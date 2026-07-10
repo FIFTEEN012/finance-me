@@ -41,15 +41,24 @@ export function ReadingBookCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-2xl"
-            style={{
-              backgroundColor: `${book.color}20`,
-              borderColor: `${book.color}55`,
-            }}
-          >
-            {book.coverEmoji}
-          </div>
+          {book.coverImage ? (
+            <img
+              src={book.coverImage}
+              className="h-14 w-14 rounded-2xl border-2 object-cover overflow-hidden shrink-0"
+              style={{ borderColor: `${book.color}55` }}
+              alt={book.title}
+            />
+          ) : (
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-2xl shrink-0"
+              style={{
+                backgroundColor: `${book.color}20`,
+                borderColor: `${book.color}55`,
+              }}
+            >
+              {book.coverEmoji}
+            </div>
+          )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-lg font-black text-slate-900 dark:text-white">

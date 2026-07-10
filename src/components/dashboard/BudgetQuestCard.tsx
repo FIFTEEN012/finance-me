@@ -14,7 +14,7 @@ const toneStyles = {
   },
   blue: {
     iconWrapClass: 'bg-[#2fb8ff]/15 text-[#006590]',
-    barClass: 'bg-[#2fb8ff]',
+    barClass: 'bg-[#58cc02]',
   },
   red: {
     iconWrapClass: 'bg-[#ba1a1a]/10 text-[#ba1a1a]',

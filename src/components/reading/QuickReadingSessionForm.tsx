@@ -113,7 +113,12 @@ export function QuickReadingSessionForm({
               {readingBooks.length > 0 ? (
                 readingBooks.map((book) => (
                   <SelectItem key={book.id} value={book.id}>
-                    {book.coverEmoji} {book.title}
+                    {book.coverImage ? (
+                      <img src={book.coverImage} className="w-4 h-4 rounded object-cover inline-block mr-1.5 align-middle" alt="" />
+                    ) : (
+                      <span className="mr-1.5">{book.coverEmoji}</span>
+                    )}
+                    <span>{book.title}</span>
                   </SelectItem>
                 ))
               ) : (

@@ -93,8 +93,8 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c]">
-        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-5 dark:border-[#3b4630]">
+      <DialogContent className="max-h-[90vh] max-w-2xl flex flex-col rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c] overflow-hidden">
+        <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-4 dark:border-[#3b4630] shrink-0">
           <DialogTitle className="font-quest-heading text-2xl font-black text-[#2b6c00] dark:text-[#87fe45]">
             {editingCategory ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
           </DialogTitle>
@@ -103,7 +103,8 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6 font-quest-body">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 font-quest-body">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
           <div className="quest-soft-card flex items-center gap-4 p-4">
             <div
               className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl"
@@ -223,9 +224,9 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
             {errors.color && <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">{errors.color.message}</p>}
           </div>
 
-          <Separator className="bg-[#becbb1] dark:bg-[#3b4630]" />
+          </div>
 
-          <DialogFooter className="-mx-6 -mb-6 gap-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+          <DialogFooter className="gap-2 border-t-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)] shrink-0">
             <Button
               type="button"
               variant="outline"
