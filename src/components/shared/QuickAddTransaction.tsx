@@ -153,7 +153,7 @@ export function QuickAddTransaction() {
         onClick={() => setOpen(true)}
         title="เพิ่มรายการด่วน (N)"
         className={cn(
-          'hidden md:flex fixed bottom-6 right-6 z-50',
+          'hidden lg:flex fixed bottom-6 right-6 z-50',
           'w-14 h-14 rounded-full items-center justify-center',
           'shadow-lg transition-all duration-200 group',
           'bg-[#58cc02] hover:bg-[#61e002] border-2 border-[#2b6c00] text-white',

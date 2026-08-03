@@ -202,17 +202,14 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-1">
-              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-                <MonthlyBarChart year={year} />
-              </PressCard>
-            </div>
-            <div className="space-y-1">
-              <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
-                <IncomeBreakdown year={year} month={month} />
-              </PressCard>
-            </div>
+          <div className="space-y-6">
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+              <MonthlyBarChart year={year} />
+            </PressCard>
+
+            <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">
+              <IncomeBreakdown year={year} month={month} />
+            </PressCard>
           </div>
           
           <PressCard shadow="0 6px 0 0 #e5e5e5" shadowHover="0 3px 0 0 #e5e5e5" className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-[28px] w-full [&>div]:border-0 [&>div]:bg-transparent [&>div]:shadow-none [&>div]:p-0">

@@ -93,10 +93,10 @@ export function CategoryVaultBoard({
         <button
           type="button"
           onClick={onAddCategory}
-          className="fixed bottom-24 right-5 z-30 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#1f5100] bg-[#58cc02] text-[#1e5000] shadow-[0_6px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_#1e5000] md:hidden"
+          className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#1f5100] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_0_#1e5000] md:hidden"
           aria-label="เพิ่มหมวดหมู่"
         >
-          <Plus className="h-8 w-8 stroke-[2.8px]" />
+          <Plus className="h-7 w-7 stroke-[2.8px]" />
         </button>
       </div>
     </div>

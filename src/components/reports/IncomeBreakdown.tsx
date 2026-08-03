@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import {
-  PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer,
+  ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
 import { TrendingUp, TrendingDown, Minus, Banknote, GitBranch } from 'lucide-react'
@@ -213,17 +213,17 @@ export function IncomeBreakdown({ year, month }: IncomeBreakdownProps) {
   const hasData = sources.length > 0
 
   return (
-    <Card className="border shadow-none">
+    <Card className="overflow-hidden border shadow-none">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="min-w-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
             แหล่งรายได้ · {periodLabel}
           </CardTitle>
           <span className="text-xs text-gray-400 dark:text-gray-500">เทียบกับ {compPeriodLabel}</span>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-5 overflow-hidden">
         {!hasData ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Banknote className="w-8 h-8 text-gray-200 dark:text-gray-700 mb-3" />
@@ -231,147 +231,132 @@ export function IncomeBreakdown({ year, month }: IncomeBreakdownProps) {
           </div>
         ) : (
           <>
-            {/* ── Summary strip ──────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-3">
-              {/* Total income */}
-              <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-3 text-center">
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">รายได้รวม</p>
-                <p className="text-sm font-bold text-violet-700 dark:text-violet-400">{formatCurrency(totalIncome)}</p>
-                {totalChangePct !== null && (
-                  <p className={cn(
-                    'text-[10px] mt-0.5 font-medium',
-                    totalChangePct >= 0 ? 'text-violet-600 dark:text-violet-400' : 'text-red-500'
-                  )}>
-                    {totalChangePct >= 0 ? '▲' : '▼'} {Math.abs(totalChangePct).toFixed(1)}%
-                  </p>
+            <div className="grid min-w-0 gap-5 xl:grid-cols-[220px_minmax(0,1fr)]">
+              <div className="min-w-0 space-y-3">
+                {/* ── Summary strip ──────────────────────────────── */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-1">
+                  {/* Total income */}
+                  <div className="col-span-2 min-w-0 rounded-xl bg-violet-50 p-2.5 text-center dark:bg-violet-900/20 sm:p-3 xl:col-span-1">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">รายได้รวม</p>
+                    <p className="text-base font-bold text-violet-700 dark:text-violet-400">{formatCurrency(totalIncome)}</p>
+                    {totalChangePct !== null && (
+                      <p className={cn(
+                        'text-[10px] mt-0.5 font-medium',
+                        totalChangePct >= 0 ? 'text-violet-600 dark:text-violet-400' : 'text-red-500'
+                      )}>
+                        {totalChangePct >= 0 ? '▲' : '▼'} {Math.abs(totalChangePct).toFixed(1)}%
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Number of sources */}
+                  <div className="min-w-0 rounded-xl bg-gray-50 p-2.5 text-center dark:bg-gray-800/60 sm:p-3">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">แหล่งรายได้</p>
+                    <p className="truncate text-[13px] font-bold text-gray-800 dark:text-gray-200 sm:text-sm">{sources.length} แหล่ง</p>
+                    <p className={cn('mt-0.5 truncate text-[10px] font-medium', divLabel.color)}>{divLabel.text}</p>
+                  </div>
+
+                  {/* Top source */}
+                  <div className="min-w-0 rounded-xl bg-blue-50 p-2.5 text-center dark:bg-blue-900/20 sm:p-3">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">แหล่งหลัก</p>
+                    <p className="truncate text-[13px] font-bold text-blue-700 dark:text-blue-400 sm:text-sm">{dominantSource?.name ?? '—'}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-gray-400 dark:text-gray-500">
+                      {dominantSource ? `${dominantSource.pct.toFixed(0)}% ของรายได้` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ── Dominance warning ──────────────────────────── */}
+                {dominanceWarning && (
+                  <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+                    <GitBranch className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <span className="font-medium">"{dominantSource.name}"</span> คิดเป็น{' '}
+                      {dominantSource.pct.toFixed(0)}% ของรายได้ทั้งหมด
+                      — พิจารณาเพิ่มแหล่งรายได้เพื่อกระจายความเสี่ยง
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {/* Number of sources */}
-              <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-center">
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">แหล่งรายได้</p>
-                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{sources.length} แหล่ง</p>
-                <p className={cn('text-[10px] mt-0.5 font-medium', divLabel.color)}>{divLabel.text}</p>
-              </div>
-
-              {/* Top source */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">แหล่งหลัก</p>
-                <p className="text-sm font-bold text-blue-700 dark:text-blue-400 truncate">{dominantSource?.name ?? '—'}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-                  {dominantSource ? `${dominantSource.pct.toFixed(0)}% ของรายได้` : ''}
-                </p>
-              </div>
-            </div>
-
-            {/* ── Dominance warning ──────────────────────────── */}
-            {dominanceWarning && (
-              <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
-                <GitBranch className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>
-                  <span className="font-medium">"{dominantSource.name}"</span> คิดเป็น{' '}
-                  {dominantSource.pct.toFixed(0)}% ของรายได้ทั้งหมด
-                  — พิจารณาเพิ่มแหล่งรายได้เพื่อกระจายความเสี่ยง
-                </span>
-              </div>
-            )}
-
-            {/* ── Donut chart + source list ───────────────────── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-              {/* Donut */}
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={sources}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={58}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      dataKey="amount"
-                      nameKey="name"
-                    >
-                      {sources.map((s) => (
-                        <Cell key={s.categoryId} fill={s.color} />
-                      ))}
-                    </Pie>
-                    <ReTooltip
-                      formatter={(value) => [formatCurrency(Number(value)), '']}
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 8,
-                        border: '1px solid #e5e7eb',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                {/* Center label */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">รายได้รวม</p>
-                  <p className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight">
-                    {compactFmt(totalIncome)}
-                  </p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">บาท</p>
+              {/* ── Horizontal source cards ─────────────────────── */}
+              <div className="min-w-0 space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">สัดส่วนแหล่งรายได้</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">เรียงจากรายได้สูงสุด</p>
                 </div>
-              </div>
 
-              {/* Source list */}
-              <div className="space-y-2.5">
-                {sources.map((src) => {
-                  const isUp = (src.changePct ?? 0) > 0
-                  const isDown = (src.changePct ?? 0) < 0
-                  const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : Minus
-                  return (
-                    <div key={src.categoryId}>
-                      <div className="flex items-center gap-2 mb-1">
-                        {/* Icon */}
+                <div className="grid min-w-0 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                  {sources.map((src) => {
+                    const isUp = (src.changePct ?? 0) > 0
+                    const isDown = (src.changePct ?? 0) < 0
+                    const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : Minus
+                    return (
+                      <div
+                        key={src.categoryId}
+                        className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white/80 p-3 transition-colors hover:bg-gray-50/80 dark:border-gray-800 dark:bg-gray-900/30 dark:hover:bg-gray-800/50"
+                      >
                         <div
-                          className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0"
-                          style={{ backgroundColor: src.color + '20' }}
-                        >
-                          <CategoryIcon name={src.icon} className="w-3.5 h-3.5" style={{ color: src.color }} />
-                        </div>
-
-                        {/* Name + stats */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{src.name}</span>
-                            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">
-                              {formatCurrency(src.amount)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between mt-0.5">
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                              {src.pct.toFixed(1)}% · {src.txCount} รายการ
-                            </span>
-                            {src.changePct !== null && (
-                              <span className={cn(
-                                'flex items-center gap-0.5 text-[10px] font-medium flex-shrink-0',
-                                isUp ? 'text-violet-600 dark:text-violet-400' : isDown ? 'text-red-500' : 'text-gray-400'
-                              )}>
-                                <ChangeIcon className="w-3 h-3" />
-                                {Math.abs(src.changePct).toFixed(1)}%
-                              </span>
-                            )}
-                            {src.changePct === null && src.prevAmount === 0 && (
-                              <span className="text-[10px] text-blue-500 flex-shrink-0">ใหม่</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden ml-9">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${src.pct}%`, backgroundColor: src.color }}
+                          className="absolute inset-y-3 left-0 w-1 rounded-r-full"
+                          style={{ backgroundColor: src.color }}
                         />
+
+                        <div className="flex min-w-0 items-center gap-3 pl-1.5">
+                          {/* Icon */}
+                          <div
+                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                            style={{ backgroundColor: src.color + '20' }}
+                          >
+                            <CategoryIcon name={src.icon} className="h-5 w-5" style={{ color: src.color }} />
+                          </div>
+
+                          {/* Name + stats */}
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+                              <p className="min-w-0 truncate text-xs font-semibold text-gray-800 dark:text-gray-200">
+                                {src.name}
+                              </p>
+                              <span className="w-11 flex-shrink-0 text-right text-[10px] font-bold" style={{ color: src.color }}>
+                                {src.pct.toFixed(1)}%
+                              </span>
+                            </div>
+
+                            <p className="mb-1.5 text-sm font-bold leading-tight text-gray-900 dark:text-gray-100">
+                              {formatCurrency(src.amount)}
+                            </p>
+
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                                <div
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${src.pct}%`, backgroundColor: src.color }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-1.5 flex min-w-0 items-center justify-between gap-2">
+                              <span className="truncate text-[10px] text-gray-400 dark:text-gray-500">
+                                {src.txCount} รายการ
+                              </span>
+                              {src.changePct !== null && (
+                                <span className={cn(
+                                  'flex items-center gap-0.5 text-[10px] font-medium flex-shrink-0',
+                                  isUp ? 'text-violet-600 dark:text-violet-400' : isDown ? 'text-red-500' : 'text-gray-400'
+                                )}>
+                                  <ChangeIcon className="w-3 h-3" />
+                                  {Math.abs(src.changePct).toFixed(1)}%
+                                </span>
+                              )}
+                              {src.changePct === null && src.prevAmount === 0 && (
+                                <span className="text-[10px] text-blue-500 flex-shrink-0">ใหม่</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
@@ -384,7 +369,7 @@ export function IncomeBreakdown({ year, month }: IncomeBreakdownProps) {
                 )}
               </p>
               <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={trendData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -6, bottom: 6 }}>
                   <defs>
                     {sources.slice(0, 5).map((src) => (
                       <linearGradient key={src.categoryId} id={`grad-${src.categoryId}`} x1="0" y1="0" x2="0" y2="1">
@@ -396,10 +381,11 @@ export function IncomeBreakdown({ year, month }: IncomeBreakdownProps) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-gray-800" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
-                    interval={0}
+                    interval="preserveStartEnd"
+                    minTickGap={2}
                   />
                   <YAxis
                     tickFormatter={compactFmt}

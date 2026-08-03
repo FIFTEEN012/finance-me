@@ -126,7 +126,7 @@ export function ReadingBookDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-[1.75rem] border-2 border-[#6d28d9] bg-white text-slate-900 shadow-[0_10px_0_0_#4c1d95] dark:border-violet-900 dark:bg-slate-900 dark:text-white dark:shadow-[0_10px_0_0_#1e1b4b]">
+      <DialogContent className="flex max-h-[calc(100dvh-2.5rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-[1.75rem] border-2 border-[#6d28d9] bg-white p-0 text-slate-900 shadow-[0_6px_0_0_#4c1d95] dark:border-violet-900 dark:bg-slate-900 dark:text-white dark:shadow-[0_6px_0_0_#1e1b4b]">
         <DialogHeader className="border-b-2 border-violet-100 px-5 py-4 dark:border-violet-950 shrink-0">
           <DialogTitle className="text-2xl font-black">
             {editingBook ? 'แก้ไขหนังสือ' : 'เพิ่มหนังสือใหม่'}
@@ -349,18 +349,18 @@ export function ReadingBookDialog({
         </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t-2 border-violet-100 bg-violet-50 px-5 py-4 dark:border-violet-950 dark:bg-slate-950/60 shrink-0">
+        <DialogFooter className="m-0 flex-row justify-end gap-2 rounded-none border-t-2 border-violet-100 bg-violet-50 px-4 py-3 dark:border-violet-950 dark:bg-slate-950/60 sm:px-5 sm:py-4 shrink-0">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-11 rounded-2xl border-2 font-bold"
+            className="h-11 min-w-[5.25rem] rounded-2xl border-2 px-4 font-bold"
           >
             ยกเลิก
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isInvalid}
-            className="h-11 rounded-2xl bg-[#58cc02] font-black text-white shadow-[0_4px_0_0_#2b6c00] hover:bg-[#46a302]"
+            className="h-11 min-w-0 rounded-2xl bg-[#58cc02] px-4 font-black text-white shadow-[0_3px_0_0_#2b6c00] hover:bg-[#46a302] sm:px-5"
           >
             {editingBook ? 'บันทึกการแก้ไข' : 'เพิ่มหนังสือ'}
           </Button>

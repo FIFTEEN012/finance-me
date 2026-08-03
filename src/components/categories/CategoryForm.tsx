@@ -93,7 +93,7 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl flex flex-col rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_8px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_8px_0_0_#0f130c] overflow-hidden">
+      <DialogContent className="flex max-h-[calc(100dvh-2.5rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-[1.5rem] border-2 border-[#becbb1] bg-[var(--quest-background)] p-0 text-[var(--quest-foreground)] shadow-[0_5px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-foreground)] dark:shadow-[0_5px_0_0_#0f130c]">
         <DialogHeader className="border-b-2 border-[#becbb1] px-6 py-4 dark:border-[#3b4630] shrink-0">
           <DialogTitle className="font-quest-heading text-2xl font-black text-[#2b6c00] dark:text-[#87fe45]">
             {editingCategory ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
@@ -226,16 +226,16 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
 
           </div>
 
-          <DialogFooter className="gap-2 border-t-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-6 py-4 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)] shrink-0">
+          <DialogFooter className="m-0 flex-row justify-end gap-2 rounded-none border-t-2 border-[#becbb1] bg-[var(--quest-surface-low)] px-4 py-3 dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)] sm:px-6 sm:py-4 shrink-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="quest-secondary-button"
+              className="quest-secondary-button min-w-[5.25rem] px-4"
             >
               ยกเลิก
             </Button>
-            <Button type="submit" className="quest-action-button px-5">
+            <Button type="submit" className="quest-action-button min-w-0 px-4 sm:px-5">
               <Plus className="h-4 w-4" />
               {editingCategory ? 'บันทึกการแก้ไข' : 'เพิ่มหมวดหมู่'}
             </Button>
