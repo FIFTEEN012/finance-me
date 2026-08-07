@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { RunningQuestSection } from '@/components/health/RunningQuestSection'
 import {
   Dialog,
   DialogContent,
@@ -382,6 +383,8 @@ export default function HealthPage() {
         />
         <SummaryCard icon={CalendarDays} label="เดือนนี้" value={`${monthLogCount} logs`} tone="indigo" />
       </div>
+
+      <RunningQuestSection />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <section className="space-y-4">

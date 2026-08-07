@@ -94,6 +94,12 @@ type HealthLogState = {
   achievements: HealthAchievement[]
 }
 
+type CompletedHealthEntry = {
+  date: string
+  intensity: HealthIntensity
+  xpEarned: number
+}
+
 export interface HealthQuestStore extends HealthLogState {
   addLog: (payload: LogPayload) => void
   updateLog: (id: string, payload: LogPayload) => void
@@ -165,14 +171,22 @@ export function calculateWorkoutXp(
   return Math.round((10 + volume + duration) * multiplier) + firstLogTodayBonus
 }
 
-function calculateTotalXp(logs: HealthWorkoutLog[]) {
+function calculateTotalXp(logs: CompletedHealthEntry[]) {
   return logs.reduce((sum, log) => sum + Math.max(0, log.xpEarned), 0)
 }
 
-function calculateRunningXp(run: HealthRunningLog) {
-  const baseXp = Math.round(run.distanceKm * 12)
-  const intensityMultiplier = run.intensity === 'hard' ? 1.4 : run.intensity === 'normal' ? 1.15 : 1
-  return Math.max(5, Math.round(baseXp * intensityMultiplier))
+export function calculateRunningXp(
+  payload: Pick<RunLogPayload, 'distanceKm' | 'durationSec' | 'intensity'>,
+  isFirstLogToday: boolean
+) {
+  const distance = normalizePositiveNumber(payload.distanceKm) ?? 0
+  const durationMin = (normalizePositiveNumber(payload.durationSec) ?? 0) / 60
+  const distanceXp = Math.min(distance, 42) * 12
+  const durationXp = Math.min(durationMin, 180) * 0.75
+  const multiplier = payload.intensity === 'hard' ? 1.4 : payload.intensity === 'normal' ? 1.15 : 1
+  const firstLogTodayBonus = isFirstLogToday ? 10 : 0
+
+  return Math.max(5, Math.round((distanceXp + durationXp) * multiplier) + firstLogTodayBonus)
 }
 
 function calculateAveragePaceSecPerKm(runs: HealthRunningLog[]) {
@@ -205,7 +219,7 @@ function deriveRunningStats(runningLogs: HealthRunningLog[], weeklyGoalKm = DEFA
   }
 }
 
-function calculateStreak(logs: HealthWorkoutLog[], today = getHealthDateKey()) {
+function calculateStreak(logs: CompletedHealthEntry[], today = getHealthDateKey()) {
   const completedDays = new Set(logs.filter((log) => log.xpEarned > 0).map((log) => log.date))
   if (completedDays.size === 0) return 0
 
@@ -220,7 +234,7 @@ function calculateStreak(logs: HealthWorkoutLog[], today = getHealthDateKey()) {
   return streak
 }
 
-function hasComebackGap(logs: HealthWorkoutLog[]) {
+function hasComebackGap(logs: CompletedHealthEntry[]) {
   const completedDates = Array.from(new Set(logs.map((log) => log.date))).sort()
 
   return completedDates.some((dateKey, index) => {
@@ -231,7 +245,7 @@ function hasComebackGap(logs: HealthWorkoutLog[]) {
 
 function mergeAchievementUnlocks(
   previousAchievements: HealthAchievement[],
-  logs: HealthWorkoutLog[],
+  logs: CompletedHealthEntry[],
   streak: number,
   now = new Date().toISOString()
 ) {
@@ -259,20 +273,30 @@ function mergeAchievementUnlocks(
   })
 }
 
-function deriveState(logs: HealthWorkoutLog[], achievements: HealthAchievement[]): HealthLogState {
+function deriveState(
+  logs: HealthWorkoutLog[],
+  achievements: HealthAchievement[],
+  runningLogs: HealthRunningLog[] = [],
+  weeklyRunningGoalKm = DEFAULT_WEEKLY_RUNNING_GOAL_KM
+): HealthLogState {
   const sortedLogs = [...logs].sort((a, b) => {
     if (a.date !== b.date) return b.date.localeCompare(a.date)
     return b.createdAt.localeCompare(a.createdAt)
   })
-  const streak = calculateStreak(sortedLogs)
+  const sortedRuns = [...runningLogs].sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date)
+    return b.createdAt.localeCompare(a.createdAt)
+  })
+  const completedEntries: CompletedHealthEntry[] = [...sortedLogs, ...sortedRuns]
+  const streak = calculateStreak(completedEntries)
 
   return {
     logs: sortedLogs,
-    runningLogs: [],
-    weeklyRunningGoalKm: DEFAULT_WEEKLY_RUNNING_GOAL_KM,
-    xp: calculateTotalXp(sortedLogs),
+    runningLogs: sortedRuns,
+    weeklyRunningGoalKm,
+    xp: calculateTotalXp(completedEntries),
     streak,
-    achievements: mergeAchievementUnlocks(achievements, sortedLogs, streak),
+    achievements: mergeAchievementUnlocks(achievements, completedEntries, streak),
   }
 }
 
@@ -288,6 +312,17 @@ function isHealthMood(value: unknown): value is HealthMood {
   return value === 'great' || value === 'ok' || value === 'tired'
 }
 
+function isHealthRunType(value: unknown): value is HealthRunType {
+  return (
+    value === 'easy' ||
+    value === 'long' ||
+    value === 'tempo' ||
+    value === 'interval' ||
+    value === 'treadmill' ||
+    value === 'recovery'
+  )
+}
+
 function isHealthWorkoutLog(value: unknown): value is HealthWorkoutLog {
   if (!isRecord(value)) return false
 
@@ -296,6 +331,23 @@ function isHealthWorkoutLog(value: unknown): value is HealthWorkoutLog {
     typeof value.exerciseId === 'string' &&
     typeof value.exerciseNameSnapshot === 'string' &&
     typeof value.date === 'string' &&
+    isHealthIntensity(value.intensity) &&
+    typeof value.xpEarned === 'number' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string'
+  )
+}
+
+function isHealthRunningLog(value: unknown): value is HealthRunningLog {
+  if (!isRecord(value)) return false
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.date === 'string' &&
+    typeof value.distanceKm === 'number' &&
+    typeof value.durationSec === 'number' &&
+    typeof value.paceSecPerKm === 'number' &&
+    isHealthRunType(value.runType) &&
     isHealthIntensity(value.intensity) &&
     typeof value.xpEarned === 'number' &&
     typeof value.createdAt === 'string' &&
@@ -343,6 +395,23 @@ function sanitizeLog(log: HealthWorkoutLog): HealthWorkoutLog {
   }
 }
 
+function sanitizeRunLog(log: HealthRunningLog): HealthRunningLog | undefined {
+  const distanceKm = normalizePositiveNumber(log.distanceKm)
+  const durationSec = normalizePositiveNumber(log.durationSec)
+  if (!distanceKm || !durationSec) return undefined
+
+  return {
+    ...log,
+    distanceKm,
+    durationSec,
+    paceSecPerKm: Math.round(durationSec / distanceKm),
+    runType: isHealthRunType(log.runType) ? log.runType : 'easy',
+    intensity: isHealthIntensity(log.intensity) ? log.intensity : 'normal',
+    mood: isHealthMood(log.mood) ? log.mood : undefined,
+    note: log.note?.trim() || undefined,
+  }
+}
+
 function migrateSessionToLog(session: HealthSession): HealthWorkoutLog | undefined {
   if (!session.endedAt || session.xpEarned <= 0) return undefined
 
@@ -380,35 +449,27 @@ function migrateHealthState(persistedState: unknown): HealthLogState {
       : []
 
   const runningLogs = Array.isArray(persistedState.runningLogs)
-    ? persistedState.runningLogs.filter((value): value is HealthRunningLog => {
-        if (!isRecord(value)) return false
-        return (
-          typeof value.id === 'string' &&
-          typeof value.date === 'string' &&
-          typeof value.distanceKm === 'number' &&
-          typeof value.durationSec === 'number' &&
-          typeof value.paceSecPerKm === 'number' &&
-          isHealthIntensity(value.intensity) &&
-          typeof value.xpEarned === 'number' &&
-          typeof value.createdAt === 'string' &&
-          typeof value.updatedAt === 'string'
-        )
-      })
+    ? persistedState.runningLogs.filter(isHealthRunningLog).map(sanitizeRunLog).filter((log): log is HealthRunningLog => Boolean(log))
     : []
 
-  return {
-    ...deriveState(logs, persistedAchievements),
-    runningLogs: runningLogs.sort((a, b) => {
-      if (a.date !== b.date) return b.date.localeCompare(a.date)
-      return b.createdAt.localeCompare(a.createdAt)
-    }),
-    weeklyRunningGoalKm: normalizePositiveNumber(persistedState.weeklyRunningGoalKm) ?? DEFAULT_WEEKLY_RUNNING_GOAL_KM,
-  }
+  return deriveState(
+    logs,
+    persistedAchievements,
+    runningLogs,
+    normalizePositiveNumber(persistedState.weeklyRunningGoalKm) ?? DEFAULT_WEEKLY_RUNNING_GOAL_KM
+  )
 }
 
-function buildLog(payload: LogPayload, existingLogs: HealthWorkoutLog[], existing?: HealthWorkoutLog) {
+function buildLog(
+  payload: LogPayload,
+  existingLogs: HealthWorkoutLog[],
+  existingRuns: HealthRunningLog[],
+  existing?: HealthWorkoutLog
+) {
   const now = new Date().toISOString()
-  const isFirstLogToday = !existingLogs.some((log) => log.date === payload.date && log.id !== existing?.id)
+  const isFirstLogToday =
+    !existingLogs.some((log) => log.date === payload.date && log.xpEarned > 0 && log.id !== existing?.id) &&
+    !existingRuns.some((log) => log.date === payload.date && log.xpEarned > 0)
 
   return {
     id: existing?.id ?? createId('health-log'),
@@ -427,14 +488,43 @@ function buildLog(payload: LogPayload, existingLogs: HealthWorkoutLog[], existin
   }
 }
 
+function buildRunLog(
+  payload: RunLogPayload,
+  existingLogs: HealthWorkoutLog[],
+  existingRuns: HealthRunningLog[],
+  existing?: HealthRunningLog
+) {
+  const now = new Date().toISOString()
+  const distanceKm = normalizePositiveNumber(payload.distanceKm) ?? 0
+  const durationSec = normalizePositiveNumber(payload.durationSec) ?? 0
+  const isFirstLogToday =
+    !existingLogs.some((log) => log.date === payload.date && log.xpEarned > 0) &&
+    !existingRuns.some((log) => log.date === payload.date && log.xpEarned > 0 && log.id !== existing?.id)
+
+  return {
+    id: existing?.id ?? createId('health-run'),
+    date: payload.date,
+    distanceKm,
+    durationSec,
+    paceSecPerKm: Math.round(durationSec / Math.max(distanceKm, 0.01)),
+    runType: payload.runType,
+    intensity: payload.intensity,
+    mood: payload.mood,
+    note: payload.note?.trim() || undefined,
+    xpEarned: calculateRunningXp(payload, isFirstLogToday),
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  }
+}
+
 export const useHealthQuestStore = create<HealthQuestStore>()(
   persist(
     (set, get) => ({
       ...deriveState([], getDefaultAchievements()),
       addLog: (payload) => {
         const state = get()
-        const nextLogs = [buildLog(payload, state.logs), ...state.logs]
-        set(deriveState(nextLogs, state.achievements))
+        const nextLogs = [buildLog(payload, state.logs, state.runningLogs), ...state.logs]
+        set(deriveState(nextLogs, state.achievements, state.runningLogs, state.weeklyRunningGoalKm))
       },
       updateLog: (id, payload) => {
         const state = get()
@@ -442,76 +532,41 @@ export const useHealthQuestStore = create<HealthQuestStore>()(
         if (!existing) return
 
         const nextLogs = state.logs.map((log) =>
-          log.id === id ? buildLog(payload, state.logs, existing) : log
+          log.id === id ? buildLog(payload, state.logs, state.runningLogs, existing) : log
         )
-        set(deriveState(nextLogs, state.achievements))
+        set(deriveState(nextLogs, state.achievements, state.runningLogs, state.weeklyRunningGoalKm))
       },
       deleteLog: (id) => {
         const state = get()
-        set(deriveState(state.logs.filter((log) => log.id !== id), state.achievements))
+        set(deriveState(
+          state.logs.filter((log) => log.id !== id),
+          state.achievements,
+          state.runningLogs,
+          state.weeklyRunningGoalKm
+        ))
       },
       addRunLog: (payload) => {
         const state = get()
-        const now = new Date().toISOString()
-        const nextRun: HealthRunningLog = {
-          id: createId('health-run'),
-          date: payload.date,
-          distanceKm: payload.distanceKm,
-          durationSec: payload.durationSec,
-          paceSecPerKm: Math.round(payload.durationSec / Math.max(payload.distanceKm, 0.01)),
-          runType: payload.runType,
-          intensity: payload.intensity,
-          mood: payload.mood,
-          note: payload.note?.trim() || undefined,
-          xpEarned: calculateRunningXp({
-            ...payload,
-            note: payload.note?.trim() || undefined,
-          } as HealthRunningLog),
-          createdAt: now,
-          updatedAt: now,
-        }
-        const runningLogs = [nextRun, ...state.runningLogs]
-        set({
-          ...deriveState(state.logs, state.achievements),
-          runningLogs,
-          weeklyRunningGoalKm: state.weeklyRunningGoalKm,
-        })
+        const runningLogs = [buildRunLog(payload, state.logs, state.runningLogs), ...state.runningLogs]
+        set(deriveState(state.logs, state.achievements, runningLogs, state.weeklyRunningGoalKm))
       },
       updateRunLog: (id, payload) => {
         const state = get()
         const existing = state.runningLogs.find((log) => log.id === id)
         if (!existing) return
 
-        const updated: HealthRunningLog = {
-          ...existing,
-          date: payload.date,
-          distanceKm: payload.distanceKm,
-          durationSec: payload.durationSec,
-          paceSecPerKm: Math.round(payload.durationSec / Math.max(payload.distanceKm, 0.01)),
-          runType: payload.runType,
-          intensity: payload.intensity,
-          mood: payload.mood,
-          note: payload.note?.trim() || undefined,
-          xpEarned: calculateRunningXp({
-            ...payload,
-            note: payload.note?.trim() || undefined,
-          } as HealthRunningLog),
-          updatedAt: new Date().toISOString(),
-        }
+        const updated = buildRunLog(payload, state.logs, state.runningLogs, existing)
         const runningLogs = state.runningLogs.map((log) => (log.id === id ? updated : log))
-        set({
-          ...deriveState(state.logs, state.achievements),
-          runningLogs,
-          weeklyRunningGoalKm: state.weeklyRunningGoalKm,
-        })
+        set(deriveState(state.logs, state.achievements, runningLogs, state.weeklyRunningGoalKm))
       },
       deleteRunLog: (id) => {
         const state = get()
-        set({
-          ...deriveState(state.logs, state.achievements),
-          runningLogs: state.runningLogs.filter((log) => log.id !== id),
-          weeklyRunningGoalKm: state.weeklyRunningGoalKm,
-        })
+        set(deriveState(
+          state.logs,
+          state.achievements,
+          state.runningLogs.filter((log) => log.id !== id),
+          state.weeklyRunningGoalKm
+        ))
       },
       getLogsByMonth: (month, year) =>
         get().logs.filter((log) => {
@@ -521,18 +576,17 @@ export const useHealthQuestStore = create<HealthQuestStore>()(
       getRunLogsByWeek: (dateKey = getHealthDateKey()) =>
         get().runningLogs.filter((log) => log.date >= shiftDateKey(dateKey, -6) && log.date <= dateKey),
       getRunningStats: (dateKey = getHealthDateKey()) =>
-        deriveRunningStats(get().runningLogs.filter((log) => log.date >= shiftDateKey(dateKey, -6) && log.date <= dateKey), get().weeklyRunningGoalKm),
+        deriveRunningStats(get().runningLogs.filter((log) => log.date <= dateKey), get().weeklyRunningGoalKm),
       getTodayCompleted: () => {
         const today = getHealthDateKey()
-        return get().logs.some((log) => log.date === today && log.xpEarned > 0)
+        return (
+          get().logs.some((log) => log.date === today && log.xpEarned > 0) ||
+          get().runningLogs.some((log) => log.date === today && log.xpEarned > 0)
+        )
       },
       recalculateStats: () => {
         const state = get()
-        set({
-          ...deriveState(state.logs, state.achievements),
-          runningLogs: state.runningLogs,
-          weeklyRunningGoalKm: state.weeklyRunningGoalKm,
-        })
+        set(deriveState(state.logs, state.achievements, state.runningLogs, state.weeklyRunningGoalKm))
       },
     }),
     {
