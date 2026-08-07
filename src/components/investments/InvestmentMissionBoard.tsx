@@ -60,6 +60,7 @@ interface InvestmentMissionBoardProps {
   holdingsCount: number
   isPositive: boolean
   onAddHolding: () => void
+  onBuyInvestment: () => void
   onSyncAll: () => void
   sections: MissionSectionItem[]
   summaryCards: SummaryStatItem[]
@@ -82,6 +83,7 @@ export function InvestmentMissionBoard({
   holdingsCount,
   isPositive,
   onAddHolding,
+  onBuyInvestment,
   onSyncAll,
   sections,
   summaryCards,
@@ -109,7 +111,7 @@ export function InvestmentMissionBoard({
           </p>
           <button
             type="button"
-            onClick={onAddHolding}
+            onClick={onBuyInvestment}
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] px-6 py-3 font-bold text-[#1e5000] shadow-[0_6px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_#1e5000]"
           >
             <Plus className="h-4 w-4" />
@@ -140,12 +142,21 @@ export function InvestmentMissionBoard({
       <section className="flex flex-col gap-4 md:flex-row">
         <button
           type="button"
-          onClick={onAddHolding}
+          onClick={onBuyInvestment}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] px-6 py-4 font-bold text-[#1e5000] shadow-[0_6px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_#1e5000]"
         >
           <Plus className="h-5 w-5" />
           เพิ่มสินทรัพย์ใหม่
         </button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAddHolding}
+          className="h-auto rounded-2xl border-2 border-[#6f7b64] bg-[var(--quest-surface)] px-6 py-4 font-bold text-[var(--quest-muted)] shadow-[0_6px_0_0_#6f7b64] transition-all hover:-translate-y-0.5 hover:bg-[var(--quest-surface-low)] active:translate-y-1 active:shadow-[0_2px_0_0_#6f7b64] dark:border-[#5f6e52] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)]"
+        >
+          <Plus className="h-4 w-4" />
+          เพิ่มพอร์ตย้อนหลัง
+        </Button>
         <Button
           type="button"
           variant="outline"

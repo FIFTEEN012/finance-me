@@ -1,4 +1,6 @@
-export type TransactionType = 'INCOME' | 'EXPENSE'
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER'
+
+export type TransferKind = 'investment_buy' | 'investment_sell' | 'internal_transfer'
 
 export interface Category {
   id: string
@@ -17,6 +19,8 @@ export interface Transaction {
   description: string
   note?: string
   tags?: string[]
+  linkedInvestmentOrderId?: string
+  transferKind?: TransferKind
   date: string
   createdAt: string
 }
@@ -115,6 +119,21 @@ export interface DividendRecord {
   amountPerUnit: number
   totalAmount: number
   date: string         // YYYY-MM-DD
+  note?: string
+  createdAt: string
+}
+
+export interface InvestmentOrder {
+  id: string
+  holdingId: string
+  transactionId: string
+  feeTransactionId?: string
+  type: 'BUY'
+  units: number
+  pricePerUnit: number
+  fee: number
+  currency: string
+  date: string
   note?: string
   createdAt: string
 }
@@ -221,11 +240,15 @@ export interface InvestmentHolding {
 
 export type {
   HealthAchievement,
+  HealthCatalogExercise,
   HealthExercise,
+  HealthExerciseDifficulty,
+  HealthIntensity,
   HealthMode,
   HealthMood,
   HealthQuest,
   HealthSession,
+  HealthWorkoutLog,
 } from './health'
 
 export type {

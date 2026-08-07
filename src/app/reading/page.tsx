@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import {
+  Brain,
   BookOpen,
   CheckCircle2,
   Clock,
+  Edit3,
   Flame,
   Library,
   Plus,
+  Sparkles,
+  Trash2,
   Trophy,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -15,6 +19,8 @@ import { toast } from 'sonner'
 import { ReadingAchievementGrid } from '@/components/reading/ReadingAchievementGrid'
 import { ReadingBookCard } from '@/components/reading/ReadingBookCard'
 import { ReadingBookDialog } from '@/components/reading/ReadingBookDialog'
+import { ReadingRecallCardDialog } from '@/components/reading/ReadingRecallCardDialog'
+import { ReadingRecallReviewPanel } from '@/components/reading/ReadingRecallReviewPanel'
 import { QuickReadingSessionForm } from '@/components/reading/QuickReadingSessionForm'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +29,7 @@ import { PressCard } from '@/components/ui/PressCard'
 import { useHydrated } from '@/hooks/useHydrated'
 import { formatDateShort } from '@/lib/utils'
 import { getReadingDateKey, useReadingStore } from '@/store/useReadingStore'
-import type { ReadingBook, ReadingCategory } from '@/types/reading'
+import type { ReadingBook, ReadingCategory, ReadingRecallCard, ReadingSession } from '@/types/reading'
 
 const CATEGORY_DEFAULTS: Record<ReadingCategory, { emoji: string; color: string }> = {
   finance: { emoji: '💸', color: '#58cc02' },
@@ -77,6 +83,8 @@ export default function ReadingPage() {
   const hydrated = useHydrated()
   const books = useReadingStore((state) => state.books)
   const sessions = useReadingStore((state) => state.sessions)
+  const recallCards = useReadingStore((state) => state.recallCards)
+  const recallReviews = useReadingStore((state) => state.recallReviews)
   const xp = useReadingStore((state) => state.xp)
   const streak = useReadingStore((state) => state.streak)
   const achievements = useReadingStore((state) => state.achievements)
@@ -84,19 +92,42 @@ export default function ReadingPage() {
   const updateBook = useReadingStore((state) => state.updateBook)
   const deleteBook = useReadingStore((state) => state.deleteBook)
   const addSession = useReadingStore((state) => state.addSession)
+  const addRecallCard = useReadingStore((state) => state.addRecallCard)
+  const updateRecallCard = useReadingStore((state) => state.updateRecallCard)
+  const deleteRecallCard = useReadingStore((state) => state.deleteRecallCard)
+  const reviewRecallCard = useReadingStore((state) => state.reviewRecallCard)
   const getBookProgress = useReadingStore((state) => state.getBookProgress)
   const getFinishedBooks = useReadingStore((state) => state.getFinishedBooks)
   const getMonthlyStats = useReadingStore((state) => state.getMonthlyStats)
   const getTodaySessions = useReadingStore((state) => state.getTodaySessions)
+  const getDueRecallCards = useReadingStore((state) => state.getDueRecallCards)
+  const getRecallStats = useReadingStore((state) => state.getRecallStats)
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false)
   const [editingBook, setEditingBook] = useState<ReadingBook | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ReadingBook | null>(null)
+  const [recallDialogOpen, setRecallDialogOpen] = useState(false)
+  const [editingRecallCard, setEditingRecallCard] = useState<ReadingRecallCard | null>(null)
+  const [recallSeed, setRecallSeed] = useState<{
+    bookId?: string
+    sessionId?: string
+    sourceText?: string
+    prompt?: string
+    answer?: string
+  } | null>(null)
 
   const monthlyStats = useMemo(() => getMonthlyStats(), [getMonthlyStats, sessions])
   const finishedBooks = useMemo(() => getFinishedBooks(), [books, getFinishedBooks])
   const todaySessions = useMemo(() => getTodaySessions(), [getTodaySessions, sessions])
   const latestSessions = useMemo(() => sessions.slice(0, 5), [sessions])
+  const dueRecallCards = useMemo(
+    () => getDueRecallCards(),
+    [getDueRecallCards, recallCards, recallReviews]
+  )
+  const recallStats = useMemo(
+    () => getRecallStats(),
+    [getRecallStats, recallCards, recallReviews]
+  )
   const totalPagesRead = useMemo(
     () => sessions.reduce((sum, session) => sum + session.pagesRead, 0),
     [sessions]
@@ -146,9 +177,53 @@ export default function ReadingPage() {
     setDeleteTarget(null)
   }
 
+  function handleCreateRecallCard(payload: {
+    bookId: string
+    sessionId?: string
+    prompt: string
+    answer: string
+    sourceText?: string
+    note?: string
+    tags: string[]
+  }) {
+    if (editingRecallCard) {
+      updateRecallCard({
+        id: editingRecallCard.id,
+        ...payload,
+      })
+      toast.success('อัปเดต recall card แล้ว')
+    } else {
+      addRecallCard(payload)
+      toast.success('สร้าง recall card แล้ว')
+    }
+
+    setRecallDialogOpen(false)
+    setEditingRecallCard(null)
+    setRecallSeed(null)
+  }
+
   function openCreateDialog() {
     setEditingBook(null)
     setBookDialogOpen(true)
+  }
+
+  function openCreateRecallCard(seed?: {
+    bookId?: string
+    sessionId?: string
+    sourceText?: string
+  }) {
+    setEditingRecallCard(null)
+    setRecallSeed(seed ?? null)
+    setRecallDialogOpen(true)
+  }
+
+  function openSessionRecallCard(session: ReadingSession) {
+    const sourceText = session.keyTakeaway ?? session.note ?? ''
+    openCreateRecallCard({
+      bookId: session.bookId,
+      sessionId: session.id,
+      sourceText,
+    })
   }
 
   if (!hydrated) {
@@ -178,11 +253,12 @@ export default function ReadingPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:min-w-[360px] lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:min-w-[420px] lg:grid-cols-5">
               <HeroStat icon={CheckCircle2} label="XP รวม" value={`${xp}`} />
               <HeroStat icon={Flame} label="Streak" value={`${streak} วัน`} />
               <HeroStat icon={Library} label="อ่านจบ" value={`${finishedBooks.length} เล่ม`} />
               <HeroStat icon={Clock} label="เดือนนี้" value={`${monthlyStats.totalPages} หน้า`} />
+              <HeroStat icon={Brain} label="Recall" value={`${recallStats.dueToday} ใบ`} />
             </div>
           </div>
 
@@ -205,6 +281,16 @@ export default function ReadingPage() {
           onSubmit={(payload) => {
             addSession(payload)
           }}
+        />
+
+        <ReadingRecallReviewPanel
+          cards={dueRecallCards}
+          books={books}
+          onReview={(cardId, rating) => {
+            reviewRecallCard(cardId, rating)
+            toast.success('บันทึกผลทบทวนแล้ว')
+          }}
+          onCreateCard={() => openCreateRecallCard()}
         />
 
         <section className="space-y-3">
@@ -251,6 +337,115 @@ export default function ReadingPage() {
           )}
         </section>
 
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {getSectionTitle(Brain, 'Recall Cards', 'คลังคำถามจากข้อคิดที่อยากจำระยะยาว')}
+            <Button
+              onClick={() => openCreateRecallCard()}
+              className="h-10 rounded-2xl bg-emerald-600 px-4 font-black text-white shadow-[0_4px_0_0_#166534] hover:bg-emerald-500"
+            >
+              <Sparkles className="h-4 w-4" />
+              สร้างการ์ด
+            </Button>
+          </div>
+
+          {recallCards.length > 0 ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {recallCards.map((card) => {
+                const book = books.find((item) => item.id === card.bookId)
+                const isDue = card.status === 'active' && card.dueDate <= getReadingDateKey()
+
+                return (
+                  <PressCard
+                    key={card.id}
+                    shadow="0 5px 0 0 #cbd5e1"
+                    shadowHover="0 3px 0 0 #cbd5e1"
+                    className="rounded-3xl border-[3px] border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={isDue ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}>
+                            {isDue ? 'Due today' : `Due ${formatDateShort(card.dueDate)}`}
+                          </Badge>
+                          {book && (
+                            <span className="flex min-w-0 items-center gap-1.5 text-xs font-black text-slate-500 dark:text-slate-400">
+                              {book.coverImage ? (
+                                <img src={book.coverImage} className="h-4 w-4 shrink-0 rounded object-cover" alt="" />
+                              ) : (
+                                <span>{book.coverEmoji}</span>
+                              )}
+                              <span className="truncate">{book.title}</span>
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="mt-3 text-base font-black leading-6 text-slate-900 dark:text-white">
+                          {card.prompt}
+                        </h3>
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                          {card.answer}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon-sm"
+                          onClick={() => {
+                            setEditingRecallCard(card)
+                            setRecallSeed(null)
+                            setRecallDialogOpen(true)
+                          }}
+                          className="rounded-xl border-2"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon-sm"
+                          onClick={() => {
+                            deleteRecallCard(card.id)
+                            toast.success('ลบ recall card แล้ว')
+                          }}
+                          className="rounded-xl border-2 text-rose-600 hover:text-rose-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                        ทบทวนแล้ว {card.reviewCount} ครั้ง
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                        interval {card.intervalDays} วัน
+                      </span>
+                      {card.lapses > 0 && (
+                        <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
+                          ลืม {card.lapses} ครั้ง
+                        </span>
+                      )}
+                    </div>
+                  </PressCard>
+                )
+              })}
+            </div>
+          ) : (
+            <EmptyReadingState
+              title="ยังไม่มี recall card"
+              description="สร้างการ์ดจากข้อคิดใน session หรือเพิ่มเอง เพื่อให้ระบบช่วยจัดคิวทบทวน"
+              action={
+                <Button
+                  onClick={() => openCreateRecallCard()}
+                  className="h-10 rounded-2xl bg-emerald-600 px-4 font-black text-white shadow-[0_4px_0_0_#166534] hover:bg-emerald-500"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  สร้างการ์ดแรก
+                </Button>
+              }
+            />
+          )}
+        </section>
+
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <section className="space-y-3">
             {getSectionTitle(CheckCircle2, 'Today Progress', 'ดูรายการ session ของวันนี้แบบรวดเร็ว')}
@@ -287,6 +482,17 @@ export default function ReadingPage() {
                               </p>
                             )}
                           </div>
+                          {(session.keyTakeaway || session.note) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openSessionRecallCard(session)}
+                              className="mt-3 h-8 rounded-xl border-2 px-3 text-xs font-black"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              สร้างการ์ด
+                            </Button>
+                          )}
                           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
                             +{session.xpEarned} XP
                           </Badge>
@@ -342,6 +548,17 @@ export default function ReadingPage() {
                               </p>
                             )}
                           </div>
+                          {(session.keyTakeaway || session.note) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openSessionRecallCard(session)}
+                              className="mt-3 h-8 rounded-xl border-2 px-3 text-xs font-black"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              สร้างการ์ด
+                            </Button>
+                          )}
                           <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200">
                             +{session.xpEarned}
                           </Badge>
@@ -374,6 +591,21 @@ export default function ReadingPage() {
         }}
         editingBook={editingBook}
         onSubmit={handleCreateBook}
+      />
+
+      <ReadingRecallCardDialog
+        open={recallDialogOpen}
+        onOpenChange={(open) => {
+          setRecallDialogOpen(open)
+          if (!open) {
+            setEditingRecallCard(null)
+            setRecallSeed(null)
+          }
+        }}
+        books={books}
+        seed={recallSeed}
+        editingCard={editingRecallCard}
+        onSubmit={handleCreateRecallCard}
       />
 
       <ConfirmDialog

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowDown, ArrowUp, Plus, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Plus, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -20,7 +20,7 @@ const ICON_OPTIONS = [
   'Briefcase', 'Store', 'TrendingUp', 'PlusCircle', 'Utensils', 'Car', 'Home',
   'HeartPulse', 'ShoppingBag', 'Tv', 'BookOpen', 'Zap', 'MoreHorizontal',
   'Wallet', 'CreditCard', 'Gift', 'Coffee', 'Plane', 'Music', 'Gamepad2',
-  'Dumbbell', 'Baby', 'PawPrint', 'Wrench', 'Scissors', 'Phone',
+  'Dumbbell', 'Baby', 'PawPrint', 'Wrench', 'Scissors', 'Phone', 'ArrowLeftRight',
 ]
 
 const COLOR_OPTIONS = [
@@ -32,7 +32,7 @@ const COLOR_OPTIONS = [
 
 const schema = z.object({
   name: z.string().min(1, 'กรุณาระบุชื่อหมวดหมู่').max(20, 'ชื่อยาวเกินไป'),
-  type: z.enum(['INCOME', 'EXPENSE']),
+  type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
   icon: z.string().min(1, 'กรุณาเลือกไอคอน'),
   color: z.string().min(1, 'กรุณาเลือกสี'),
 })
@@ -119,7 +119,7 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
               </p>
               <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--quest-surface-soft)] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[var(--quest-outline)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                {selectedType === 'INCOME' ? 'รายรับ' : 'รายจ่าย'}
+                {selectedType === 'INCOME' ? 'รายรับ' : selectedType === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย'}
               </div>
             </div>
           </div>
@@ -136,10 +136,11 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
 
           <div>
             <Label className="quest-field-label">ประเภท</Label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {[
                 { value: 'INCOME' as const, label: 'รายรับ', Icon: ArrowDown, accent: 'bg-[#dff7d0] text-[#2b6c00] border-[#2b6c00]' },
                 { value: 'EXPENSE' as const, label: 'รายจ่าย', Icon: ArrowUp, accent: 'bg-[#ffe0de] text-[#ba1a1a] border-[#ba1a1a]' },
+                { value: 'TRANSFER' as const, label: 'โอนย้าย', Icon: ArrowLeftRight, accent: 'bg-[#e0f2fe] text-[#0369a1] border-[#0369a1]' },
               ].map(({ value, label, Icon, accent }) => (
                 <button
                   key={value}
@@ -166,7 +167,11 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
                     <div>
                       <p className="text-sm font-black">{label}</p>
                       <p className="text-xs font-medium text-current/80">
-                        {value === 'INCOME' ? 'หมวดรับเงินและรายได้' : 'หมวดค่าใช้จ่ายและต้นทุน'}
+                        {value === 'INCOME'
+                          ? 'หมวดรับเงินและรายได้'
+                          : value === 'EXPENSE'
+                            ? 'หมวดค่าใช้จ่ายและต้นทุน'
+                            : 'หมวดเงินย้ายที่'}
                       </p>
                     </div>
                   </div>

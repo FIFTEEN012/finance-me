@@ -54,7 +54,7 @@ function buildPresets(): Preset[] {
 
 interface Filter {
   search:     string
-  type:       'ALL' | 'INCOME' | 'EXPENSE'
+  type:       'ALL' | 'INCOME' | 'EXPENSE' | 'TRANSFER'
   categoryId: string
   tag:        string
   dateFrom:   string
@@ -105,6 +105,7 @@ export default function TransactionsPage() {
 
   const totalIncome  = filtered.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0)
   const totalExpense = filtered.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0)
+  const totalTransfer = filtered.filter((t) => t.type === 'TRANSFER').reduce((s, t) => s + t.amount, 0)
   const net          = totalIncome - totalExpense
 
   const handleOpenAdd = () => { setEditing(null); setFormOpen(true) }
@@ -168,7 +169,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* ── 3. TRANSACTION SUMMARY STRIP (Duolingo Card Style) ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {/* Income Card - Emerald */}
         <PressCard
           shadow="0 5px 0 0 #065f46"
@@ -196,6 +197,20 @@ export default function TransactionsPage() {
           </div>
           <p className="font-black text-sm sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalExpense)}>
             {formatCurrency(totalExpense)}
+          </p>
+        </PressCard>
+
+        <PressCard
+          shadow="0 5px 0 0 #0369a1"
+          shadowHover="0 3px 0 0 #0369a1"
+          className="border-sky-400 bg-sky-500 text-white p-3.5 flex flex-col justify-between h-28 rounded-2xl"
+        >
+          <div className="flex justify-between items-start">
+            <span className="text-[10px] font-black uppercase tracking-wider text-sky-100">โอนย้าย</span>
+            <Zap className="w-4 h-4 text-sky-100" />
+          </div>
+          <p className="font-black text-sm sm:text-base md:text-xl leading-none num truncate" title={formatCurrency(totalTransfer)}>
+            {formatCurrency(totalTransfer)}
           </p>
         </PressCard>
 
@@ -248,7 +263,7 @@ export default function TransactionsPage() {
 
           {/* Segmented Type Filter pills */}
           <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border-2 border-slate-200 dark:border-slate-700/80 gap-1">
-            {(['ALL', 'INCOME', 'EXPENSE'] as const).map((t) => {
+            {(['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'] as const).map((t) => {
               const active = filter.type === t
               return (
                 <button
@@ -261,11 +276,13 @@ export default function TransactionsPage() {
                         ? 'bg-indigo-500 text-white border-indigo-700 shadow-[0_2px_0_0_#4338ca]'
                         : t === 'INCOME'
                           ? 'bg-[#58cc02] text-white border-[#2b6c00] shadow-[0_2px_0_0_#2b6c00]'
-                          : 'bg-rose-500 text-white border-rose-700 shadow-[0_2px_0_0_#be123c]'
+                          : t === 'EXPENSE'
+                            ? 'bg-rose-500 text-white border-rose-700 shadow-[0_2px_0_0_#be123c]'
+                            : 'bg-sky-500 text-white border-sky-700 shadow-[0_2px_0_0_#0369a1]'
                       : 'text-slate-500 dark:text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-700'
                   )}
                 >
-                  {t === 'ALL' ? 'ทั้งหมด' : t === 'INCOME' ? 'รายรับ' : 'รายจ่าย'}
+                  {t === 'ALL' ? 'ทั้งหมด' : t === 'INCOME' ? 'รายรับ' : t === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย'}
                 </button>
               )
             })}

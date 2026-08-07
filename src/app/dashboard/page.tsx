@@ -256,8 +256,13 @@ export default function DashboardPage() {
           id: transaction.id,
           title: transaction.description,
           meta: `${formatDateShort(transaction.date)} • ${category?.name ?? 'ไม่มีหมวดหมู่'}`,
-          amountLabel: `${transaction.type === 'INCOME' ? '+' : '-'}${formatCurrency(transaction.amount)}`,
-          amountTone: transaction.type === 'INCOME' ? ('income' as const) : ('expense' as const),
+          amountLabel: `${transaction.type === 'INCOME' ? '+' : transaction.type === 'EXPENSE' ? '-' : ''}${formatCurrency(transaction.amount)}`,
+          amountTone:
+            transaction.type === 'INCOME'
+              ? ('income' as const)
+              : transaction.type === 'EXPENSE'
+                ? ('expense' as const)
+                : ('transfer' as const),
           icon: category?.icon ?? 'Circle',
           iconColor: category?.color ?? '#6f7b64',
         }

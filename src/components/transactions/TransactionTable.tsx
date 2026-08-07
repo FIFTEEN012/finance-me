@@ -136,12 +136,15 @@ export function TransactionTable({ transactions, onEdit }: TransactionTableProps
   const selectedTxs = sorted.filter((t) => selected.has(t.id))
   const hasIncome   = selectedTxs.some((t) => t.type === 'INCOME')
   const hasExpense  = selectedTxs.some((t) => t.type === 'EXPENSE')
-  const mixedTypes  = hasIncome && hasExpense
+  const hasTransfer = selectedTxs.some((t) => t.type === 'TRANSFER')
+  const mixedTypes  = [hasIncome, hasExpense, hasTransfer].filter(Boolean).length > 1
   const recatCategories = mixedTypes
     ? categories
     : hasIncome
       ? categories.filter((c) => c.type === 'INCOME')
-      : categories.filter((c) => c.type === 'EXPENSE')
+      : hasExpense
+        ? categories.filter((c) => c.type === 'EXPENSE')
+        : categories.filter((c) => c.type === 'TRANSFER')
 
   return (
     <>
@@ -302,15 +305,24 @@ export function TransactionTable({ transactions, onEdit }: TransactionTableProps
                       'text-xs',
                       tx.type === 'INCOME'
                         ? 'border-violet-300 text-violet-700 bg-violet-50 dark:border-violet-500/30 dark:text-violet-400 dark:bg-violet-500/10'
-                        : 'border-red-300 text-red-700 bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:bg-red-500/10'
+                        : tx.type === 'EXPENSE'
+                          ? 'border-red-300 text-red-700 bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:bg-red-500/10'
+                          : 'border-sky-300 text-sky-700 bg-sky-50 dark:border-sky-500/30 dark:text-sky-400 dark:bg-sky-500/10'
                     )}>
-                      {tx.type === 'INCOME' ? 'รายรับ' : 'รายจ่าย'}
+                      {tx.type === 'INCOME' ? 'รายรับ' : tx.type === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย'}
                     </Badge>
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <span className={cn('font-semibold text-sm', tx.type === 'INCOME' ? 'text-violet-600 dark:text-violet-400' : 'text-red-500 dark:text-red-400')}>
-                      {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
+                    <span className={cn(
+                      'font-semibold text-sm',
+                      tx.type === 'INCOME'
+                        ? 'text-violet-600 dark:text-violet-400'
+                        : tx.type === 'EXPENSE'
+                          ? 'text-red-500 dark:text-red-400'
+                          : 'text-sky-600 dark:text-sky-400'
+                    )}>
+                      {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}{formatCurrency(tx.amount)}
                     </span>
                   </TableCell>
 
@@ -446,7 +458,7 @@ export function TransactionTable({ transactions, onEdit }: TransactionTableProps
                       <CategoryIcon name={c.icon} className="w-4 h-4" style={{ color: c.color }} />
                       {c.name}
                       <span className="text-xs text-gray-400 ml-1">
-                        {c.type === 'INCOME' ? '(รายรับ)' : '(รายจ่าย)'}
+                        {c.type === 'INCOME' ? '(รายรับ)' : c.type === 'EXPENSE' ? '(รายจ่าย)' : '(โอนย้าย)'}
                       </span>
                     </span>
                   </SelectItem>

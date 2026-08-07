@@ -24,7 +24,7 @@ import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { TagInput } from '@/components/shared/TagInput'
 
 const schema = z.object({
-  type: z.enum(['INCOME', 'EXPENSE']),
+  type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
   categoryId: z.string().min(1, 'กรุณาเลือกหมวดหมู่'),
   amount: z.number().positive('จำนวนเงินต้องมากกว่า 0'),
   description: z.string().min(1, 'กรุณาระบุรายละเอียด'),
@@ -126,7 +126,7 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
           <div>
             <Label className="text-sm mb-2 block">ประเภท</Label>
             <div className="flex gap-2">
-              {(['INCOME', 'EXPENSE'] as const).map((t) => (
+              {(['INCOME', 'EXPENSE', 'TRANSFER'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -136,11 +136,13 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
                     selectedType === t
                       ? t === 'INCOME'
                         ? 'bg-violet-50 border-violet-500 text-violet-700'
-                        : 'bg-red-50 border-red-500 text-red-700'
+                        : t === 'EXPENSE'
+                          ? 'bg-red-50 border-red-500 text-red-700'
+                          : 'bg-sky-50 border-sky-500 text-sky-700'
                       : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
                   )}
                 >
-                  {t === 'INCOME' ? 'รายรับ' : 'รายจ่าย'}
+                  {t === 'INCOME' ? 'รายรับ' : t === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย'}
                 </button>
               ))}
             </div>
@@ -245,7 +247,9 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
               className={cn(
                 selectedType === 'INCOME'
                   ? 'bg-violet-600 hover:bg-violet-700'
-                  : 'bg-red-500 hover:bg-red-600'
+                  : selectedType === 'EXPENSE'
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-sky-500 hover:bg-sky-600'
               )}
             >
               {editingTransaction ? 'บันทึกการแก้ไข' : 'เพิ่มรายการ'}

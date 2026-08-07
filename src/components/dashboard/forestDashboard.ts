@@ -42,7 +42,7 @@ export interface RecentQuestTransaction {
   title: string
   meta: string
   amountLabel: string
-  amountTone: 'income' | 'expense'
+  amountTone: 'income' | 'expense' | 'transfer'
   icon: string
   iconColor: string
 }

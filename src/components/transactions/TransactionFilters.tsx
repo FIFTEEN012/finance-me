@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 
 export interface TransactionFilter {
   search:     string
-  type:       'ALL' | 'INCOME' | 'EXPENSE'
+  type:       'ALL' | 'INCOME' | 'EXPENSE' | 'TRANSFER'
   categoryId: string
   tag:        string
   dateFrom:   string
@@ -116,7 +116,7 @@ export function TransactionFilters({ filters, onChange, total, filtered }: Trans
   /* Chips */
   const chips: Array<{ label: string; clear: () => void }> = []
   if (filters.type !== 'ALL')
-    chips.push({ label: filters.type === 'INCOME' ? 'รายรับ' : 'รายจ่าย', clear: () => onChange({ ...filters, type: 'ALL', categoryId: '' }) })
+    chips.push({ label: filters.type === 'INCOME' ? 'รายรับ' : filters.type === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย', clear: () => onChange({ ...filters, type: 'ALL', categoryId: '' }) })
   if (filters.categoryId) {
     const cat = categories.find((c) => c.id === filters.categoryId)
     if (cat) chips.push({ label: cat.name, clear: () => onChange({ ...filters, categoryId: '' }) })
@@ -163,6 +163,7 @@ export function TransactionFilters({ filters, onChange, total, filtered }: Trans
             <SelectItem value="ALL">ทั้งหมด</SelectItem>
             <SelectItem value="INCOME">รายรับ</SelectItem>
             <SelectItem value="EXPENSE">รายจ่าย</SelectItem>
+            <SelectItem value="TRANSFER">โอนย้าย</SelectItem>
           </SelectContent>
         </Select>
 

@@ -6,7 +6,7 @@ import { Transaction, TransactionType } from '@/types'
 
 interface TransactionStore {
   transactions: Transaction[]
-  addTransaction: (t: Omit<Transaction, 'id' | 'createdAt'>) => void
+  addTransaction: (t: Omit<Transaction, 'id' | 'createdAt'>) => string
   updateTransaction: (id: string, t: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => void
   deleteTransaction: (id: string) => void
   deleteTransactions: (ids: string[]) => void
@@ -23,13 +23,16 @@ export const useTransactionStore = create<TransactionStore>()(
   persist(
     (set, get) => ({
       transactions: [],
-      addTransaction: (t) =>
+      addTransaction: (t) => {
+        const id = crypto.randomUUID()
         set((s) => ({
           transactions: [
             ...s.transactions,
-            { ...t, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+            { ...t, id, createdAt: new Date().toISOString() },
           ],
-        })),
+        }))
+        return id
+      },
       updateTransaction: (id, t) =>
         set((s) => ({
           transactions: s.transactions.map((tx) =>

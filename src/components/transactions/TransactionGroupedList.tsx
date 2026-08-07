@@ -104,12 +104,15 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
   const selectedTxs  = transactions.filter((t) => selected.has(t.id))
   const hasIncome    = selectedTxs.some((t) => t.type === 'INCOME')
   const hasExpense   = selectedTxs.some((t) => t.type === 'EXPENSE')
-  const mixedTypes   = hasIncome && hasExpense
+  const hasTransfer  = selectedTxs.some((t) => t.type === 'TRANSFER')
+  const mixedTypes   = [hasIncome, hasExpense, hasTransfer].filter(Boolean).length > 1
   const recatCategories = mixedTypes
     ? categories
     : hasIncome
       ? categories.filter((c) => c.type === 'INCOME')
-      : categories.filter((c) => c.type === 'EXPENSE')
+      : hasExpense
+        ? categories.filter((c) => c.type === 'EXPENSE')
+        : categories.filter((c) => c.type === 'TRANSFER')
 
   /* ── Actions ── */
   const handleDelete = () => {
@@ -200,6 +203,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
         {groups.map(([dateKey, txs], gi) => {
           const dailyTotal = txs.reduce((sum, tx) => {
             if (tx.type === 'INCOME') return sum + tx.amount
+            if (tx.type === 'TRANSFER') return sum
             return sum - tx.amount
           }, 0)
 
@@ -235,6 +239,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
                 const cat   = getCategoryById(tx.categoryId)
                 const isSel = selected.has(tx.id)
                 const isInc = tx.type === 'INCOME'
+                const isTransfer = tx.type === 'TRANSFER'
 
                 return (
                   <div
@@ -293,9 +298,11 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
                         'text-sm font-semibold num tabular-nums',
                         isInc
                           ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-red-500 dark:text-red-400',
+                          : isTransfer
+                            ? 'text-sky-600 dark:text-sky-400'
+                            : 'text-red-500 dark:text-red-400',
                       )}>
-                        {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                        {isInc ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)}
                       </span>
 
                       <DropdownMenu>
@@ -380,7 +387,7 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
           <div className="space-y-3 py-1">
             {mixedTypes && (
               <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-2">
-                รายการที่เลือกมีทั้งรายรับและรายจ่าย — จะแสดงหมวดหมู่ทั้งหมด
+                รายการที่เลือกมีหลายประเภท — จะแสดงหมวดหมู่ทั้งหมด
               </p>
             )}
             <Select value={recatCategoryId} onValueChange={(v) => setRecatCategoryId(v ?? '')}>

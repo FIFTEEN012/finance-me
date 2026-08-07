@@ -149,8 +149,8 @@ export function GlobalSearch() {
         title:     t.description,
         subtitle:  formatDateShort(t.date),
         meta:      formatCurrency(t.amount),
-        icon:      t.type === 'INCOME' ? TrendingUp : TrendingDown,
-        iconColor: t.type === 'INCOME' ? 'text-violet-500' : 'text-red-500',
+        icon:      t.type === 'INCOME' ? TrendingUp : t.type === 'EXPENSE' ? TrendingDown : ArrowLeftRight,
+        iconColor: t.type === 'INCOME' ? 'text-violet-500' : t.type === 'EXPENSE' ? 'text-red-500' : 'text-sky-500',
         href:      '/transactions',
       }))
     list.push(...txResults)
@@ -178,7 +178,7 @@ export function GlobalSearch() {
         id:        `cat-${c.id}`,
         type:      'category',
         title:     c.name,
-        subtitle:  c.type === 'INCOME' ? 'รายรับ' : 'รายจ่าย',
+        subtitle:  c.type === 'INCOME' ? 'รายรับ' : c.type === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย',
         icon:      Tags,
         iconColor: 'text-pink-500',
         href:      '/categories',

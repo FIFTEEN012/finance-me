@@ -9,12 +9,16 @@ import type {
   ReadingCategory,
   ReadingGoal,
   ReadingGoalType,
+  ReadingRecallCard,
+  ReadingRecallCardStatus,
+  ReadingRecallRating,
+  ReadingRecallReview,
   ReadingSession,
   ReadingStatus,
 } from '@/types/reading'
 
 const STORE_NAME = 'finance-reading'
-const STORE_VERSION = 1
+const STORE_VERSION = 2
 const BOOK_FINISH_BONUS_XP = 100
 
 type StoredReadingBook = ReadingBook & {
@@ -28,6 +32,8 @@ type ReadingState = {
   xp: number
   streak: number
   achievements: ReadingAchievement[]
+  recallCards: ReadingRecallCard[]
+  recallReviews: ReadingRecallReview[]
 }
 
 type AddBookInput = Omit<ReadingBook, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -55,12 +61,45 @@ type SetGoalInput = Omit<ReadingGoal, 'createdAt'> & {
   createdAt?: string
 }
 
+type AddRecallCardInput = Omit<
+  ReadingRecallCard,
+  | 'id'
+  | 'status'
+  | 'dueDate'
+  | 'lastReviewedAt'
+  | 'reviewCount'
+  | 'ease'
+  | 'intervalDays'
+  | 'lapses'
+  | 'createdAt'
+  | 'updatedAt'
+> & {
+  id?: string
+  status?: ReadingRecallCardStatus
+  dueDate?: string
+  tags?: string[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+type UpdateRecallCardInput = Partial<Omit<ReadingRecallCard, 'id' | 'createdAt'>> & {
+  id: string
+}
+
 type MonthlyReadingStats = {
   totalMinutes: number
   totalPages: number
   totalXp: number
   finishedBooks: number
   sessionCount: number
+}
+
+type RecallStats = {
+  totalCards: number
+  activeCards: number
+  dueToday: number
+  reviewedToday: number
+  rememberedRate: number
 }
 
 export interface ReadingStore extends ReadingState {
@@ -71,10 +110,16 @@ export interface ReadingStore extends ReadingState {
   updateSession: (session: UpdateSessionInput) => void
   deleteSession: (sessionId: string) => void
   setGoal: (goal: SetGoalInput) => void
+  addRecallCard: (card: AddRecallCardInput) => void
+  updateRecallCard: (card: UpdateRecallCardInput) => void
+  deleteRecallCard: (cardId: string) => void
+  reviewRecallCard: (cardId: string, rating: ReadingRecallRating) => void
   getTodaySessions: () => ReadingSession[]
   getBookProgress: (bookId: string) => number
   getFinishedBooks: () => ReadingBook[]
   getMonthlyStats: (date?: Date) => MonthlyReadingStats
+  getDueRecallCards: (date?: Date) => ReadingRecallCard[]
+  getRecallStats: (date?: Date) => RecallStats
   recalculateStats: () => void
   unlockAchievements: () => void
 }
@@ -147,6 +192,27 @@ function shiftDateKey(dateKey: string, days: number) {
   return getReadingDateKey(date)
 }
 
+function getDateKeyFromIso(iso: string) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return getReadingDateKey()
+  return getReadingDateKey(date)
+}
+
+function getNextRecallInterval(card: ReadingRecallCard, rating: ReadingRecallRating) {
+  if (rating === 'forgot') return 1
+  if (rating === 'partial') return card.intervalDays <= 1 ? 2 : 3
+
+  const rememberedSteps = [1, 3, 7, 14, 30]
+  const nextStep = rememberedSteps.find((days) => days > card.intervalDays)
+  return nextStep ?? rememberedSteps[rememberedSteps.length - 1]
+}
+
+function getNextEase(card: ReadingRecallCard, rating: ReadingRecallRating) {
+  if (rating === 'forgot') return Math.max(1.3, card.ease - 0.2)
+  if (rating === 'partial') return Math.max(1.3, card.ease - 0.05)
+  return Math.min(2.8, card.ease + 0.05)
+}
+
 function calculateSessionXp(durationMin: number, pagesRead: number) {
   return Math.max(0, durationMin) * 2 + Math.max(0, pagesRead)
 }
@@ -163,6 +229,8 @@ function getDefaultState(): ReadingState {
     xp: 0,
     streak: 0,
     achievements: getDefaultAchievements(),
+    recallCards: [],
+    recallReviews: [],
   }
 }
 
@@ -190,6 +258,23 @@ function cloneSession(session: ReadingSession): ReadingSession {
 
 function cloneGoal(goal: ReadingGoal): ReadingGoal {
   return { ...goal }
+}
+
+function cloneRecallCard(card: ReadingRecallCard): ReadingRecallCard {
+  return { ...card, tags: [...card.tags] }
+}
+
+function cloneRecallReview(review: ReadingRecallReview): ReadingRecallReview {
+  return { ...review }
+}
+
+function normalizeTags(tags: unknown) {
+  return Array.isArray(tags)
+    ? tags
+        .filter((tag): tag is string => typeof tag === 'string')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    : []
 }
 
 function sortSessionsAscending(sessions: ReadingSession[]) {
@@ -358,7 +443,10 @@ function deriveBooksAndSessions(
 }
 
 function deriveState(
-  state: Pick<ReadingState, 'books' | 'sessions' | 'goals' | 'achievements'>
+  state: Pick<
+    ReadingState,
+    'books' | 'sessions' | 'goals' | 'achievements' | 'recallCards' | 'recallReviews'
+  >
 ): ReadingState {
   const { books, sessions } = deriveBooksAndSessions(state.books, state.sessions)
   const streak = calculateStreak(sessions)
@@ -379,6 +467,8 @@ function deriveState(
     xp,
     streak,
     achievements,
+    recallCards: state.recallCards.map(cloneRecallCard),
+    recallReviews: state.recallReviews.map(cloneRecallReview),
   }
 }
 
@@ -435,6 +525,14 @@ function isReadingGoalType(value: unknown): value is ReadingGoalType {
   return value === 'daily_minutes' || value === 'daily_pages' || value === 'monthly_books'
 }
 
+function isReadingRecallCardStatus(value: unknown): value is ReadingRecallCardStatus {
+  return value === 'active' || value === 'archived'
+}
+
+function isReadingRecallRating(value: unknown): value is ReadingRecallRating {
+  return value === 'forgot' || value === 'partial' || value === 'remembered'
+}
+
 function isReadingBook(value: unknown): value is StoredReadingBook {
   if (!isRecord(value)) return false
   return (
@@ -489,6 +587,44 @@ function isReadingAchievement(value: unknown): value is ReadingAchievement {
   )
 }
 
+function isReadingRecallCard(value: unknown): value is ReadingRecallCard {
+  if (!isRecord(value)) return false
+  return (
+    typeof value.id === 'string' &&
+    typeof value.bookId === 'string' &&
+    (value.sessionId === undefined || typeof value.sessionId === 'string') &&
+    typeof value.prompt === 'string' &&
+    typeof value.answer === 'string' &&
+    (value.sourceText === undefined || typeof value.sourceText === 'string') &&
+    (value.note === undefined || typeof value.note === 'string') &&
+    Array.isArray(value.tags) &&
+    isReadingRecallCardStatus(value.status) &&
+    typeof value.dueDate === 'string' &&
+    (value.lastReviewedAt === undefined || typeof value.lastReviewedAt === 'string') &&
+    typeof value.reviewCount === 'number' &&
+    typeof value.ease === 'number' &&
+    typeof value.intervalDays === 'number' &&
+    typeof value.lapses === 'number' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string'
+  )
+}
+
+function isReadingRecallReview(value: unknown): value is ReadingRecallReview {
+  if (!isRecord(value)) return false
+  return (
+    typeof value.id === 'string' &&
+    typeof value.cardId === 'string' &&
+    typeof value.bookId === 'string' &&
+    isReadingRecallRating(value.rating) &&
+    typeof value.reviewedAt === 'string' &&
+    typeof value.previousDueDate === 'string' &&
+    typeof value.nextDueDate === 'string' &&
+    typeof value.previousIntervalDays === 'number' &&
+    typeof value.nextIntervalDays === 'number'
+  )
+}
+
 function migrateReadingState(persistedState: unknown): ReadingState {
   const defaults = getDefaultState()
   if (!isRecord(persistedState)) return defaults
@@ -502,12 +638,20 @@ function migrateReadingState(persistedState: unknown): ReadingState {
   const goals = Array.isArray(persistedState.goals)
     ? persistedState.goals.filter(isReadingGoal).map(cloneGoal)
     : []
+  const recallCards = Array.isArray(persistedState.recallCards)
+    ? persistedState.recallCards.filter(isReadingRecallCard).map(cloneRecallCard)
+    : []
+  const recallReviews = Array.isArray(persistedState.recallReviews)
+    ? persistedState.recallReviews.filter(isReadingRecallReview).map(cloneRecallReview)
+    : []
 
   return deriveState({
     books,
     sessions,
     goals,
     achievements: mergeAchievements(persistedState.achievements),
+    recallCards,
+    recallReviews,
   })
 }
 
@@ -548,6 +692,8 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: state.sessions,
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards,
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -595,6 +741,8 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: state.sessions,
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards,
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -606,6 +754,8 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: state.sessions.filter((session) => session.bookId !== bookId),
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards.filter((card) => card.bookId !== bookId),
+            recallReviews: state.recallReviews.filter((review) => review.bookId !== bookId),
           })
         )
       },
@@ -632,6 +782,8 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: [session, ...state.sessions],
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards,
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -664,6 +816,8 @@ export const useReadingStore = create<ReadingStore>()(
             ),
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards,
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -675,6 +829,10 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: state.sessions.filter((session) => session.id !== sessionId),
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards.map((card) =>
+              card.sessionId === sessionId ? { ...card, sessionId: undefined } : card
+            ),
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -697,6 +855,105 @@ export const useReadingStore = create<ReadingStore>()(
 
         set({ goals })
       },
+      addRecallCard: (input) => {
+        const state = get()
+        if (!state.books.some((book) => book.id === input.bookId)) return
+
+        const now = new Date().toISOString()
+        const card: ReadingRecallCard = {
+          ...input,
+          id: input.id ?? createId('reading-recall-card'),
+          prompt: input.prompt.trim(),
+          answer: input.answer.trim(),
+          sourceText: input.sourceText?.trim() || undefined,
+          note: input.note?.trim() || undefined,
+          tags: normalizeTags(input.tags),
+          status: input.status ?? 'active',
+          dueDate: input.dueDate ?? getReadingDateKey(new Date(now)),
+          reviewCount: 0,
+          ease: 2.3,
+          intervalDays: 0,
+          lapses: 0,
+          createdAt: input.createdAt ?? now,
+          updatedAt: input.updatedAt ?? now,
+        }
+
+        if (!card.prompt || !card.answer) return
+        set({ recallCards: [card, ...state.recallCards] })
+      },
+      updateRecallCard: (input) => {
+        const state = get()
+        const current = state.recallCards.find((card) => card.id === input.id)
+        if (!current) return
+        if (input.bookId && !state.books.some((book) => book.id === input.bookId)) return
+
+        const nextCard: ReadingRecallCard = {
+          ...current,
+          ...input,
+          prompt: input.prompt === undefined ? current.prompt : input.prompt.trim(),
+          answer: input.answer === undefined ? current.answer : input.answer.trim(),
+          sourceText:
+            input.sourceText === undefined
+              ? current.sourceText
+              : input.sourceText.trim() || undefined,
+          note: input.note === undefined ? current.note : input.note.trim() || undefined,
+          tags: input.tags === undefined ? current.tags : normalizeTags(input.tags),
+          updatedAt: new Date().toISOString(),
+        }
+
+        if (!nextCard.prompt || !nextCard.answer) return
+        set({
+          recallCards: state.recallCards.map((card) =>
+            card.id === input.id ? nextCard : card
+          ),
+        })
+      },
+      deleteRecallCard: (cardId) => {
+        const state = get()
+        set({
+          recallCards: state.recallCards.filter((card) => card.id !== cardId),
+          recallReviews: state.recallReviews.filter((review) => review.cardId !== cardId),
+        })
+      },
+      reviewRecallCard: (cardId, rating) => {
+        const state = get()
+        const current = state.recallCards.find((card) => card.id === cardId)
+        if (!current || current.status !== 'active') return
+
+        const reviewedAt = new Date().toISOString()
+        const previousDueDate = current.dueDate
+        const previousIntervalDays = current.intervalDays
+        const nextIntervalDays = getNextRecallInterval(current, rating)
+        const nextDueDate = shiftDateKey(getDateKeyFromIso(reviewedAt), nextIntervalDays)
+        const nextCard: ReadingRecallCard = {
+          ...current,
+          dueDate: nextDueDate,
+          lastReviewedAt: reviewedAt,
+          reviewCount: current.reviewCount + 1,
+          ease: getNextEase(current, rating),
+          intervalDays: nextIntervalDays,
+          lapses: rating === 'forgot' ? current.lapses + 1 : current.lapses,
+          updatedAt: reviewedAt,
+        }
+        const review: ReadingRecallReview = {
+          id: createId('reading-recall-review'),
+          cardId,
+          bookId: current.bookId,
+          rating,
+          reviewedAt,
+          previousDueDate,
+          nextDueDate,
+          previousIntervalDays,
+          nextIntervalDays,
+        }
+
+        set({
+          recallCards: state.recallCards.map((card) =>
+            card.id === cardId ? nextCard : card
+          ),
+          recallReviews: [review, ...state.recallReviews],
+        })
+      },
       getTodaySessions: () => {
         const today = getReadingDateKey()
         return get().sessions.filter((session) => session.date === today)
@@ -713,6 +970,34 @@ export const useReadingStore = create<ReadingStore>()(
         const state = get()
         return getMonthlyStatsFromState(state.sessions, state.books, date)
       },
+      getDueRecallCards: (date = new Date()) => {
+        const today = getReadingDateKey(date)
+        return get()
+          .recallCards.filter((card) => card.status === 'active' && card.dueDate <= today)
+          .sort((left, right) => left.dueDate.localeCompare(right.dueDate))
+      },
+      getRecallStats: (date = new Date()) => {
+        const state = get()
+        const today = getReadingDateKey(date)
+        const todayReviews = state.recallReviews.filter(
+          (review) => getDateKeyFromIso(review.reviewedAt) === today
+        )
+        const rememberedToday = todayReviews.filter(
+          (review) => review.rating === 'remembered'
+        ).length
+        const activeCards = state.recallCards.filter((card) => card.status === 'active')
+
+        return {
+          totalCards: state.recallCards.length,
+          activeCards: activeCards.length,
+          dueToday: activeCards.filter((card) => card.dueDate <= today).length,
+          reviewedToday: todayReviews.length,
+          rememberedRate:
+            todayReviews.length === 0
+              ? 0
+              : Math.round((rememberedToday / todayReviews.length) * 100),
+        }
+      },
       recalculateStats: () => {
         const state = get()
         set(
@@ -721,6 +1006,8 @@ export const useReadingStore = create<ReadingStore>()(
             sessions: state.sessions,
             goals: state.goals,
             achievements: state.achievements,
+            recallCards: state.recallCards,
+            recallReviews: state.recallReviews,
           })
         )
       },
@@ -746,6 +1033,8 @@ export const useReadingStore = create<ReadingStore>()(
         xp: state.xp,
         streak: state.streak,
         achievements: state.achievements,
+        recallCards: state.recallCards,
+        recallReviews: state.recallReviews,
       }),
     }
   )

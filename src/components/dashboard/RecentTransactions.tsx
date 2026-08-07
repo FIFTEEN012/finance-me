@@ -56,10 +56,14 @@ export function RecentTransactions({ className }: { className?: string }) {
                 <span
                   className={cn(
                     'text-sm font-semibold ml-3 shrink-0',
-                    tx.type === 'INCOME' ? 'text-violet-600' : 'text-red-500'
+                    tx.type === 'INCOME'
+                      ? 'text-violet-600'
+                      : tx.type === 'EXPENSE'
+                        ? 'text-red-500'
+                        : 'text-sky-600'
                   )}
                 >
-                  {tx.type === 'INCOME' ? '+' : '-'}
+                  {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : ''}
                   {formatCurrency(tx.amount)}
                 </span>
               </div>

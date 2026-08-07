@@ -68,7 +68,7 @@ export function ExportDialog({ open, onOpenChange, filtered }: ExportDialogProps
           case 'note':        return t.note ? `"${t.note.replace(/"/g, '""')}"` : ''
           case 'tags':        return t.tags?.length ? `"${t.tags.join(', ')}"` : ''
           case 'category':    return cat?.name ?? ''
-          case 'type':        return t.type === 'INCOME' ? 'รายรับ' : 'รายจ่าย'
+          case 'type':        return t.type === 'INCOME' ? 'รายรับ' : t.type === 'EXPENSE' ? 'รายจ่าย' : 'โอนย้าย'
           case 'amount':      return t.type === 'EXPENSE' ? `-${t.amount}` : `${t.amount}`
           default:            return ''
         }

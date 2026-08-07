@@ -16,4 +16,5 @@ export const defaultCategories: Category[] = [
   { id: 'cat-expense-7', name: 'การศึกษา', type: 'EXPENSE', icon: 'BookOpen', color: '#3b82f6', isDefault: true },
   { id: 'cat-expense-8', name: 'สาธารณูปโภค', type: 'EXPENSE', icon: 'Zap', color: '#f59e0b', isDefault: true },
   { id: 'cat-expense-9', name: 'รายจ่ายอื่นๆ', type: 'EXPENSE', icon: 'MoreHorizontal', color: '#94a3b8', isDefault: true },
+  { id: 'cat-transfer-1', name: 'ย้ายเงินไปลงทุน', type: 'TRANSFER', icon: 'ArrowLeftRight', color: '#0ea5e9', isDefault: true },
 ]

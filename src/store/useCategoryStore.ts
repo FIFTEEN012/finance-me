@@ -42,6 +42,23 @@ export const useCategoryStore = create<CategoryStore>()(
         get().categories.find((c) => c.id === id),
       replaceCategories: (categories) => set({ categories }),
     }),
-    { name: 'finance-categories' }
+    {
+      name: 'finance-categories',
+      version: 2,
+      migrate: (persistedState) => {
+        if (
+          typeof persistedState !== 'object' ||
+          persistedState === null ||
+          !Array.isArray((persistedState as { categories?: unknown }).categories)
+        ) {
+          return { categories: defaultCategories }
+        }
+
+        const categories = (persistedState as { categories: Category[] }).categories
+        const existingIds = new Set(categories.map((category) => category.id))
+        const missingDefaults = defaultCategories.filter((category) => !existingIds.has(category.id))
+        return { categories: [...categories, ...missingDefaults] }
+      },
+    }
   )
 )

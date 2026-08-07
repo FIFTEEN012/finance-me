@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { InvestmentBuyDialog } from '@/components/investments/InvestmentBuyDialog'
 import { InvestmentForm, ASSET_CLASS_META } from '@/components/investments/InvestmentForm'
 import { InvestmentMissionBoard, type GrowthProgressModel, type MissionSectionItem, type SummaryStatItem } from '@/components/investments/InvestmentMissionBoard'
 import { UpdatePriceDialog } from '@/components/investments/UpdatePriceDialog'
@@ -28,6 +29,7 @@ function getYahooSymbol(h: InvestmentHolding): string | null {
 export default function InvestmentsPage() {
   const { holdings, deleteHolding, updatePrice } = useInvestmentStore()
   const [formOpen, setFormOpen] = useState(false)
+  const [buyOpen, setBuyOpen] = useState(false)
   const [editingHolding, setEditingHolding] = useState<InvestmentHolding | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingHolding, setUpdatingHolding] = useState<InvestmentHolding | null>(null)
@@ -217,6 +219,7 @@ export default function InvestmentsPage() {
           setEditingHolding(null)
           setFormOpen(true)
         }}
+        onBuyInvestment={() => setBuyOpen(true)}
         onSyncAll={() => {
           void syncAllPrices()
         }}
@@ -232,6 +235,12 @@ export default function InvestmentsPage() {
         open={formOpen}
         onOpenChange={(o) => { setFormOpen(o); if (!o) setEditingHolding(null) }}
         editingHolding={editingHolding}
+      />
+
+      <InvestmentBuyDialog
+        open={buyOpen}
+        onOpenChange={setBuyOpen}
+        holdings={holdings}
       />
 
       <UpdatePriceDialog

@@ -108,7 +108,14 @@ export function SplitTransactionDialog({ transaction, open, onOpenChange }: Prop
               {new Date(transaction.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}
             </p>
           </div>
-          <p className={cn('font-bold text-lg', transaction.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
+          <p className={cn(
+            'font-bold text-lg',
+            transaction.type === 'INCOME'
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : transaction.type === 'EXPENSE'
+                ? 'text-red-500'
+                : 'text-sky-600 dark:text-sky-400'
+          )}>
             {formatCurrency(totalOriginal)}
           </p>
         </div>

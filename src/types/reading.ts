@@ -10,6 +10,10 @@ export type ReadingStatus = 'wishlist' | 'reading' | 'finished'
 
 export type ReadingGoalType = 'daily_minutes' | 'daily_pages' | 'monthly_books'
 
+export type ReadingRecallCardStatus = 'active' | 'archived'
+
+export type ReadingRecallRating = 'forgot' | 'partial' | 'remembered'
+
 export type ReadingBook = {
   id: string
   title: string
@@ -58,4 +62,36 @@ export type ReadingAchievement = {
   emoji: string
   unlocked: boolean
   unlockedAt?: string
+}
+
+export type ReadingRecallCard = {
+  id: string
+  bookId: string
+  sessionId?: string
+  prompt: string
+  answer: string
+  sourceText?: string
+  note?: string
+  tags: string[]
+  status: ReadingRecallCardStatus
+  dueDate: string
+  lastReviewedAt?: string
+  reviewCount: number
+  ease: number
+  intervalDays: number
+  lapses: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type ReadingRecallReview = {
+  id: string
+  cardId: string
+  bookId: string
+  rating: ReadingRecallRating
+  reviewedAt: string
+  previousDueDate: string
+  nextDueDate: string
+  previousIntervalDays: number
+  nextIntervalDays: number
 }

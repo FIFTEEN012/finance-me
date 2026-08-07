@@ -40,7 +40,11 @@ export function RecentTransactionQuestCard({ transactions }: RecentTransactionQu
               <p
                 className={cn(
                   'num text-[1.1rem] font-black tracking-tight',
-                  transaction.amountTone === 'income' ? 'text-[#1b4300]' : 'text-[#ba1a1a]'
+                  transaction.amountTone === 'income'
+                    ? 'text-[#1b4300]'
+                    : transaction.amountTone === 'expense'
+                      ? 'text-[#ba1a1a]'
+                      : 'text-[#0369a1]'
                 )}
               >
                 {transaction.amountLabel}
