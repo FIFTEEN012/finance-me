@@ -26,6 +26,19 @@ function formatDayKey(date: Date) {
   return `${year}-${month}-${day}`
 }
 
+function getTxDateKey(dateStr: string) {
+  if (!dateStr) return ''
+  if (dateStr.length >= 10 && dateStr[4] === '-' && dateStr[7] === '-') {
+    return dateStr.slice(0, 10)
+  }
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = `${d.getMonth() + 1}`.padStart(2, '0')
+  const day = `${d.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function getPreviousMonth(month: number, year: number) {
   return month === 1 ? { month: 12, year: year - 1 } : { month: month - 1, year }
 }
@@ -131,7 +144,7 @@ export default function DashboardPage() {
   })
 
   const activityDays = useMemo(() => {
-    return new Set(transactions.map((transaction) => formatDayKey(new Date(transaction.date))))
+    return new Set(transactions.map((transaction) => getTxDateKey(transaction.date)))
   }, [transactions])
 
   const hasLoggedToday = activityDays.has(todayKey)
@@ -185,7 +198,7 @@ export default function DashboardPage() {
       date.setDate(now.getDate() - (6 - index))
       const key = formatDayKey(date)
 
-      const dailyTransactions = transactions.filter((transaction) => formatDayKey(new Date(transaction.date)) === key)
+      const dailyTransactions = transactions.filter((transaction) => getTxDateKey(transaction.date) === key)
       const incomeTotal = dailyTransactions
         .filter((transaction) => transaction.type === 'INCOME')
         .reduce((sum, transaction) => sum + transaction.amount, 0)
@@ -206,8 +219,8 @@ export default function DashboardPage() {
 
     return rawDays.map((day) => ({
       ...day,
-      incomeHeight: day.incomeTotal > 0 ? Math.max(14, Math.round((day.incomeTotal / maxDailyValue) * 100)) : 0,
-      expenseHeight: day.expenseTotal > 0 ? Math.max(10, Math.round((day.expenseTotal / maxDailyValue) * 100)) : 0,
+      incomeHeight: day.incomeTotal > 0 ? Math.max(12, Math.round((day.incomeTotal / maxDailyValue) * 100)) : 0,
+      expenseHeight: day.expenseTotal > 0 ? Math.max(12, Math.round((day.expenseTotal / maxDailyValue) * 100)) : 0,
     }))
   }, [now, todayKey, transactions])
 
