@@ -27,38 +27,32 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useQuickAddStore } from '@/store/useQuickAddStore'
 import { cn } from '@/lib/utils'
 
-const PRIMARY = [
+// 4 Primary navigation slots around the center (+) button
+const PRIMARY_LEFT = [
   { href: '/dashboard', label: 'หน้าแรก', icon: LayoutDashboard },
   { href: '/transactions', label: 'ธุรกรรม', icon: ArrowLeftRight },
-  null,
-  { href: '/reports', label: 'รายงาน', icon: BarChart3 },
+]
+
+const PRIMARY_RIGHT = [
   { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
 ]
 
+// All sub-features accessible via "More" (เพิ่มเติม) sheet
 const SECONDARY = [
-  { href: '/cycle', label: 'รอบเดือน', icon: Droplets },
-  { href: '/health', label: 'สุขภาพ', icon: HeartPulse },
-  { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen },
-  { href: '/categories', label: 'หมวดหมู่', icon: Tags },
-  { href: '/goals', label: 'เป้าหมายออม', icon: Target },
-  { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp },
-  { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal },
-  { href: '/import', label: 'นำเข้าข้อมูล', icon: FileUp },
-  { href: '/settings', label: 'ตั้งค่า', icon: Settings },
+  { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
+  { href: '/cycle', label: 'รอบเดือน', icon: Droplets, desc: 'ติดตามวงล้อรอบเดือน' },
+  { href: '/health', label: 'สุขภาพ', icon: HeartPulse, desc: 'บันทึกการออกกำลังกาย' },
+  { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen, desc: 'บันทึกหน้าและทบทวน' },
+  { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
+  { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },
+  { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal, desc: 'หารค่าใช้จ่ายกับเพื่อน' },
+  { href: '/categories', label: 'หมวดหมู่', icon: Tags, desc: 'จัดการหมวดหมู่รายรับจ่าย' },
+  { href: '/import', label: 'นำเข้าข้อมูล', icon: FileUp, desc: 'นำเข้าไฟล์ Statement' },
+  { href: '/settings', label: 'ตั้งค่า', icon: Settings, desc: 'โปรไฟล์ สกุลเงิน ธีม' },
 ]
 
 export function BottomNav() {
   const pathname = usePathname() ?? ''
-  const isForestDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/')
-  const isQuestPage =
-    isForestDashboard ||
-    pathname === '/categories' ||
-    pathname.startsWith('/categories/') ||
-    pathname === '/investments' ||
-    pathname.startsWith('/investments/') ||
-    pathname === '/bill-split' ||
-    pathname.startsWith('/bill-split/')
-
   const { setOpen } = useQuickAddStore()
   const [moreOpen, setMoreOpen] = useState(false)
 
@@ -68,154 +62,98 @@ export function BottomNav() {
 
   return (
     <>
+      {/* Unified Symmetrical Floating Capsule BottomNav (Mobile Only) */}
       <nav
         className={cn(
-          'fixed inset-x-0 z-40 flex h-18 items-center px-2',
-          isForestDashboard ? 'bottom-0 md:hidden' : 'lg:hidden',
-          isForestDashboard
-            ? 'h-20 border-x-0 border-b-0 border-t-2 border-[var(--forest-outline-variant)] bg-[var(--forest-surface)] shadow-[0_-2px_0_0_#becbb1]'
-            : isQuestPage
-              ? 'bottom-0 mx-0 h-20 w-full max-w-none rounded-none border-x-0 border-b-0 border-t-2 border-[#becbb1] bg-[#faf9f9] shadow-none dark:border-[#3b4630] dark:bg-[#161b11]'
-              : 'bottom-4 mx-auto w-[92%] max-w-lg rounded-3xl border-2 border-slate-200 bg-white/95 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.15),0_6px_0_0_#e5e5e5] dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.4),0_6px_0_0_#020617]'
+          'fixed bottom-4 inset-x-0 mx-auto w-[92%] max-w-lg z-40 lg:hidden',
+          'h-18 rounded-3xl border-2 border-slate-200 dark:border-slate-800',
+          'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md',
+          'shadow-[0_8px_20px_-4px_rgba(0,0,0,0.15),0_6px_0_0_#e5e5e5] dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.4),0_6px_0_0_#020617]',
+          'px-2 flex items-center'
         )}
       >
-        <div className="flex w-full items-center justify-around">
-          {PRIMARY.filter(Boolean)
-            .slice(0, 2)
-            .map((item) => {
-              const navItem = item!
-              const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
-              return (
-                <Link
-                  key={navItem.href}
-                  href={navItem.href}
-                  className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95"
+        <div className="grid grid-cols-5 w-full items-center">
+          {/* Left Slot 1 & 2 */}
+          {PRIMARY_LEFT.map((navItem) => {
+            const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
+            return (
+              <Link
+                key={navItem.href}
+                href={navItem.href}
+                className="flex flex-col items-center justify-center py-1 transition-transform active:scale-95"
+              >
+                <navItem.icon
+                  className={cn(
+                    'h-[22px] w-[22px] transition-colors',
+                    isActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'mt-1 truncate text-[10px] font-black tracking-wide',
+                    isActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                  )}
                 >
-                  <navItem.icon
-                    className={cn(
-                      'h-[22px] w-[22px] transition-colors',
-                      isActive
-                        ? isForestDashboard
-                          ? 'scale-110 text-[var(--forest-primary)]'
-                          : 'scale-110 text-[#58cc02]'
-                        : isForestDashboard
-                          ? 'text-[var(--forest-muted)]'
-                          : isQuestPage
-                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                            : 'text-slate-400 dark:text-slate-500'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'mt-1 truncate text-[10px] font-black tracking-wide',
-                      isActive
-                        ? isForestDashboard
-                          ? 'text-[var(--forest-primary)]'
-                          : 'text-[#58cc02]'
-                        : isForestDashboard
-                          ? 'text-[var(--forest-muted)]'
-                          : isQuestPage
-                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                            : 'text-slate-400 dark:text-slate-500'
-                    )}
-                  >
-                    {navItem.label}
-                  </span>
-                </Link>
-              )
-            })}
+                  {navItem.label}
+                </span>
+              </Link>
+            )
+          })}
 
-          <button
-            onClick={() => setOpen(true)}
-            aria-label="บันทึกด่วน"
-            className={cn(
-              'relative flex flex-shrink-0 items-center justify-center select-none transition-all duration-100 active:translate-y-[2px]',
-              isForestDashboard
-                ? 'top-0 h-11 w-11 rounded-xl border-2 border-[var(--forest-primary)] bg-[var(--forest-primary-container)] text-[var(--forest-primary)] shadow-[0_4px_0_0_#1b4300]'
-                : isQuestPage
-                  ? 'top-0 h-11 w-11 rounded-xl border-2 border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
-                  : '-top-4 h-12 w-12 rounded-2xl border-2 border-b-4 border-[#2b6c00] bg-[#58cc02] text-white shadow-[0_3px_0_0_#2b6c00] active:border-b-2'
-            )}
-          >
-            <Plus className="h-6 w-6 stroke-[3px]" />
-          </button>
+          {/* Center Slot 3: Elevated Centered Plus Button (+) */}
+          <div className="flex items-center justify-center">
+            <button
+              onClick={() => setOpen(true)}
+              aria-label="บันทึกด่วน"
+              className="relative -top-4.5 h-13 w-13 rounded-2xl border-2 border-b-4 border-[#2b6c00] bg-[#58cc02] text-white shadow-[0_4px_0_0_#1e5000] active:translate-y-[2px] active:border-b-2 flex items-center justify-center transition-transform hover:scale-105 select-none"
+            >
+              <Plus className="h-7 w-7 stroke-[3.2px]" />
+            </button>
+          </div>
 
-          {PRIMARY.filter(Boolean)
-            .slice(2)
-            .map((item) => {
-              const navItem = item!
-              const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
-              return (
-                <Link
-                  key={navItem.href}
-                  href={navItem.href}
-                  className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95"
+          {/* Right Slot 4: Budgets */}
+          {PRIMARY_RIGHT.map((navItem) => {
+            const isActive = pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)
+            return (
+              <Link
+                key={navItem.href}
+                href={navItem.href}
+                className="flex flex-col items-center justify-center py-1 transition-transform active:scale-95"
+              >
+                <navItem.icon
+                  className={cn(
+                    'h-[22px] w-[22px] transition-colors',
+                    isActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'mt-1 truncate text-[10px] font-black tracking-wide',
+                    isActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                  )}
                 >
-                  <navItem.icon
-                    className={cn(
-                      'h-[22px] w-[22px] transition-colors',
-                      isActive
-                        ? isForestDashboard
-                          ? 'scale-110 text-[var(--forest-primary)]'
-                          : 'scale-110 text-[#58cc02]'
-                        : isForestDashboard
-                          ? 'text-[var(--forest-muted)]'
-                          : isQuestPage
-                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                            : 'text-slate-400 dark:text-slate-500'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'mt-1 truncate text-[10px] font-black tracking-wide',
-                      isActive
-                        ? isForestDashboard
-                          ? 'text-[var(--forest-primary)]'
-                          : 'text-[#58cc02]'
-                        : isForestDashboard
-                          ? 'text-[var(--forest-muted)]'
-                          : isQuestPage
-                            ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                            : 'text-slate-400 dark:text-slate-500'
-                    )}
-                  >
-                    {navItem.label}
-                  </span>
-                </Link>
-              )
-            })}
+                  {navItem.label}
+                </span>
+              </Link>
+            )
+          })}
 
+          {/* Right Slot 5: More (เพิ่มเติม) */}
           <button
             onClick={() => setMoreOpen(true)}
             aria-label="เมนูเพิ่มเติม"
-            className="flex flex-1 flex-col items-center justify-center py-1.5 transition-transform active:scale-95"
+            className="flex flex-col items-center justify-center py-1 transition-transform active:scale-95"
           >
             <MoreHorizontal
               className={cn(
                 'h-[22px] w-[22px] transition-colors',
-                isSecondaryActive
-                  ? isForestDashboard
-                    ? 'scale-110 text-[var(--forest-primary)]'
-                    : 'scale-110 text-[#58cc02]'
-                  : isForestDashboard
-                    ? 'text-[var(--forest-muted)]'
-                    : isQuestPage
-                      ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                      : 'text-slate-400 dark:text-slate-500'
+                isSecondaryActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
               )}
             />
             <span
               className={cn(
-                'mt-1 text-[10px] font-black tracking-wide',
-                isSecondaryActive
-                  ? isForestDashboard
-                    ? 'text-[var(--forest-primary)]'
-                    : 'text-[#58cc02]'
-                  : isForestDashboard
-                    ? 'text-[var(--forest-muted)]'
-                    : isQuestPage
-                      ? 'text-[#6f7b64] dark:text-[#c2cfb4]'
-                      : 'text-slate-400 dark:text-slate-500'
+                'mt-1 truncate text-[10px] font-black tracking-wide',
+                isSecondaryActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
               )}
             >
               เพิ่มเติม
@@ -224,18 +162,14 @@ export function BottomNav() {
         </div>
       </nav>
 
+      {/* More Menu Sheet */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
           className={cn(
             'rounded-t-[32px] border-x-2 border-t-2 border-slate-200 bg-white px-0 pb-safe',
             'shadow-[0_-8px_24px_rgba(0,0,0,0.08),0_-6px_0_0_#e5e5e5]',
-            'dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_-8px_24px_rgba(0,0,0,0.3),0_-6px_0_0_#020617]',
-            isForestDashboard &&
-              'border-[var(--forest-outline-variant)] bg-[var(--forest-surface)] shadow-[0_-6px_0_0_#becbb1]',
-            !isForestDashboard &&
-              isQuestPage &&
-              'border-[#becbb1] bg-[#faf9f9] shadow-[0_-6px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[#161b11] dark:shadow-[0_-6px_0_0_#0f130c]'
+            'dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_-8px_24px_rgba(0,0,0,0.3),0_-6px_0_0_#020617]'
           )}
         >
           <SheetHeader className="border-b-2 border-slate-100 px-5 pb-3 pt-1 dark:border-slate-800">
@@ -245,7 +179,7 @@ export function BottomNav() {
           </SheetHeader>
 
           <nav className="custom-scrollbar grid max-h-[60vh] grid-cols-2 gap-2.5 overflow-y-auto px-4 py-4">
-            {SECONDARY.map(({ href, label, icon: Icon }) => {
+            {SECONDARY.map(({ href, label, icon: Icon, desc }) => {
               const isActive = pathname === href || pathname.startsWith(`${href}/`)
               return (
                 <Link
@@ -253,21 +187,35 @@ export function BottomNav() {
                   href={href}
                   onClick={() => setMoreOpen(false)}
                   className={cn(
-                    'flex select-none items-center gap-3 rounded-2xl border-2 px-4 py-3 text-[13px] font-bold transition-all',
+                    'flex select-none items-center gap-3 rounded-2xl border-2 px-3.5 py-3 transition-all',
                     isActive
-                      ? isForestDashboard
-                        ? 'border-[var(--forest-primary)] border-b-4 bg-[var(--forest-primary)] text-white shadow-[0_2px_0_0_#0a1b00]'
-                        : 'border-[#2b6c00] border-b-4 bg-[#58cc02] text-white shadow-[0_2px_0_0_#2b6c00]'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200'
+                      ? 'border-[#2b6c00] border-b-4 bg-[#58cc02] text-white shadow-[0_3px_0_0_#2b6c00]'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800'
                   )}
                 >
-                  <Icon
+                  <div
                     className={cn(
-                      'h-4.5 w-4.5 flex-shrink-0',
-                      isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     )}
-                  />
-                  <span>{label}</span>
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="truncate text-xs font-black leading-tight">{label}</p>
+                    {desc && (
+                      <p
+                        className={cn(
+                          'truncate text-[10px] font-medium mt-0.5',
+                          isActive ? 'text-white/80' : 'text-slate-400'
+                        )}
+                      >
+                        {desc}
+                      </p>
+                    )}
+                  </div>
                 </Link>
               )
             })}
