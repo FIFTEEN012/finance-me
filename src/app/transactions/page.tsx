@@ -448,18 +448,6 @@ export default function TransactionsPage() {
         </PressCard>
       </div>
 
-      {/* ── 6. MOBILE FLOATING ACTION BUTTON ── */}
-      <button
-        onClick={handleOpenAdd}
-        aria-label="เพิ่มธุรกรรม"
-        className={cn(
-          'lg:hidden fixed bottom-24 right-6 w-14 h-14 bg-[#58cc02] text-white rounded-2xl shadow-[0_5px_0_0_#2b6c00] border-2 border-[#2b6c00]',
-          'flex items-center justify-center active:translate-y-[3px] active:shadow-[0_2px_0_0_#2b6c00] transition-all z-40 select-none'
-        )}
-      >
-        <Plus className="w-7 h-7 stroke-[3px]" />
-      </button>
-
       {/* ── DIALOGS ── */}
       <TransactionForm
         open={formOpen}
