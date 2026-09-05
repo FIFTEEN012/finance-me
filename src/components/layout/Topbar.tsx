@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { CurrencyConverterWidget } from '@/components/shared/CurrencyConverterWidget'
 import { SyncButton } from '@/components/shared/SyncButton'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useSearchStore } from '@/store/useSearchStore'
@@ -82,7 +81,6 @@ export function Topbar() {
             </kbd>
           </span>
         </button>
-        <CurrencyConverterWidget />
         <SyncButton />
         <ThemeToggle />
       </div>

@@ -6,7 +6,6 @@ import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { BottomNav } from './BottomNav'
 import { QuickAddTransaction } from '@/components/shared/QuickAddTransaction'
-import { ReceiptScanner } from '@/components/shared/ReceiptScanner'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { OnboardingWizard } from '@/components/shared/OnboardingWizard'
 import { PwaRegister } from '@/components/shared/PwaRegister'
@@ -17,7 +16,6 @@ import { useHydrated } from '@/hooks/useHydrated'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { usePortfolioSnapshot } from '@/hooks/usePortfolioSnapshot'
-import { useExchangeRateStore } from '@/store/useExchangeRateStore'
 import { clearRemovedFeatureStorage } from '@/lib/cloudSync'
 import { cn } from '@/lib/utils'
 
@@ -29,17 +27,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     clearRemovedFeatureStorage()
   }, [])
 
-  const fetchRates = useExchangeRateStore((state) => state.fetchRates)
-  const isStale = useExchangeRateStore((state) => state.isStale)
-
-  useEffect(() => {
-    if (isStale()) fetchRates()
-  }, [fetchRates, isStale])
-
-  const getRate = useExchangeRateStore((state) => state.getRate)
   const holdings = useInvestmentStore((state) => state.holdings)
   const portfolioValue = holdings.reduce(
-    (sum, holding) => sum + holding.units * holding.currentPricePerUnit * getRate(holding.currency ?? 'THB'),
+    (sum, holding) => sum + holding.units * holding.currentPricePerUnit,
     0
   )
 
@@ -96,7 +86,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <BottomNav />
 
       <QuickAddTransaction />
-      <ReceiptScanner />
       <GlobalSearch />
       {hydrated && !onboardingCompleted && <OnboardingWizard />}
       <PwaRegister />

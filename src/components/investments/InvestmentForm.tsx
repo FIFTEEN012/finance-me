@@ -12,8 +12,16 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { InvestmentHolding, AssetClass } from '@/types'
-import { EXCHANGE_RATES, CURRENCY_SYMBOLS } from '@/lib/exchangeRates'
 import { cn } from '@/lib/utils'
+
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  THB: '฿',
+  USD: '$',
+  EUR: '€',
+  JPY: '¥',
+  SGD: 'S$',
+  GBP: '£',
+}
 
 export const ASSET_CLASS_META: Record<AssetClass, { label: string; color: string; emoji: string }> = {
   stock:       { label: 'หุ้น',        color: '#10b981', emoji: '📈' },
@@ -61,15 +69,11 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
   const avgCost      = watch('avgCostPerUnit') || 0
   const currentPrice = watch('currentPricePerUnit') || 0
   const sym          = CURRENCY_SYMBOLS[currency] ?? currency
-  const rate         = EXCHANGE_RATES[currency] ?? 1
-  const isForeign    = currency !== 'THB'
 
-  const totalCostNative    = units * avgCost
-  const currentValueNative = units * currentPrice
-  const gainLossNative     = currentValueNative - totalCostNative
-  const returnPct          = totalCostNative > 0 ? (gainLossNative / totalCostNative) * 100 : 0
-  const currentValueTHB    = currentValueNative * rate
-  const gainLossTHB        = gainLossNative * rate
+  const totalCost    = units * avgCost
+  const currentValue = units * currentPrice
+  const gainLoss     = currentValue - totalCost
+  const returnPct    = totalCost > 0 ? (gainLoss / totalCost) * 100 : 0
 
   useEffect(() => {
     if (open) {
@@ -176,11 +180,6 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
                 </button>
               ))}
             </div>
-            {isForeign && (
-              <p className="text-[11px] text-gray-400 dark:text-white/30 mt-1.5">
-                อัตราแลกเปลี่ยน: 1 {currency} ≈ ฿{rate.toLocaleString('th-TH')}
-              </p>
-            )}
           </div>
 
           {/* Name + Ticker */}
@@ -253,30 +252,22 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
           {units > 0 && (avgCost > 0 || currentPrice > 0) && (
             <div className={cn(
               'space-y-1.5 rounded-xl border p-3 text-sm',
-              gainLossNative >= 0
+              gainLoss >= 0
                 ? 'border-[#58cc02] bg-[#efffe4] dark:border-[#2b6c00] dark:bg-[#1b2614]'
                 : 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/20'
             )}>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-white/40 text-xs">มูลค่าปัจจุบัน</span>
                 <div className="text-right">
-                  <span className="font-bold text-gray-800 dark:text-white/80">{fmt(currentValueNative)}</span>
-                  {isForeign && (
-                    <span className="text-xs text-gray-400 dark:text-white/30 ml-1.5">≈ ฿{(currentValueTHB).toLocaleString('th-TH', { maximumFractionDigits: 0 })}</span>
-                  )}
+                  <span className="font-bold text-gray-800 dark:text-white/80">{fmt(currentValue)}</span>
                 </div>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-white/40 text-xs">กำไร/ขาดทุน</span>
                 <div className="text-right">
-                  <span className={cn('font-bold text-sm', gainLossNative >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
-                    {gainLossNative >= 0 ? '+' : ''}{fmt(gainLossNative)} ({gainLossNative >= 0 ? '+' : ''}{returnPct.toFixed(2)}%)
+                  <span className={cn('font-bold text-sm', gainLoss >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
+                    {gainLoss >= 0 ? '+' : ''}{fmt(gainLoss)} ({gainLoss >= 0 ? '+' : ''}{returnPct.toFixed(2)}%)
                   </span>
-                  {isForeign && (
-                    <p className={cn('text-[11px]', gainLossTHB >= 0 ? 'text-emerald-500 dark:text-emerald-500/70' : 'text-red-400')}>
-                      ≈ {gainLossTHB >= 0 ? '+' : ''}฿{Math.abs(gainLossTHB).toLocaleString('th-TH', { maximumFractionDigits: 0 })}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

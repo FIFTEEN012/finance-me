@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { InvestmentHolding } from '@/types'
-import { EXCHANGE_RATES, CURRENCY_SYMBOLS } from '@/lib/exchangeRates'
+import { CURRENCY_SYMBOLS } from '@/components/investments/InvestmentForm'
 
 interface Props {
   open: boolean
@@ -22,7 +22,6 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
 
   const currency = holding?.currency ?? 'THB'
   const sym      = CURRENCY_SYMBOLS[currency] ?? currency
-  const rate     = EXCHANGE_RATES[currency] ?? 1
   const isForeign = currency !== 'THB'
 
   function handleOpen(o: boolean) {
@@ -42,7 +41,6 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
 
   const parsedPrice    = parseFloat(price)
   const totalNative    = holding ? holding.units * parsedPrice : 0
-  const totalTHB       = totalNative * rate
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
@@ -98,14 +96,6 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
                   {sym}{totalNative.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              {isForeign && (
-                <div className="flex justify-between">
-                  <span>เทียบเท่า (THB)</span>
-                  <span className="font-bold text-[var(--quest-foreground)]">
-                    ฿{totalTHB.toLocaleString('th-TH', { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-              )}
             </div>
           )}
         </div>

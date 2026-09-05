@@ -4,12 +4,11 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { InvestmentBuyDialog } from '@/components/investments/InvestmentBuyDialog'
-import { InvestmentForm, ASSET_CLASS_META } from '@/components/investments/InvestmentForm'
+import { InvestmentForm, ASSET_CLASS_META, CURRENCY_SYMBOLS } from '@/components/investments/InvestmentForm'
 import { InvestmentMissionBoard, type GrowthProgressModel, type MissionSectionItem, type SummaryStatItem } from '@/components/investments/InvestmentMissionBoard'
 import { UpdatePriceDialog } from '@/components/investments/UpdatePriceDialog'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { AssetClass, InvestmentHolding } from '@/types'
-import { EXCHANGE_RATES, CURRENCY_SYMBOLS } from '@/lib/exchangeRates'
 
 // Map a holding's ticker + currency + assetClass to a Yahoo Finance symbol
 function getYahooSymbol(h: InvestmentHolding): string | null {
@@ -51,12 +50,7 @@ export default function InvestmentsPage() {
         toast.error(`ดึงราคา ${h.ticker} ไม่สำเร็จ`)
         return false
       }
-      // For crypto: Yahoo returns USD price; convert if holding currency is THB
-      let price = data.price as number
-      if (h.assetClass === 'crypto' && (h.currency ?? 'THB') === 'THB') {
-        price = price * (EXCHANGE_RATES['USD'] ?? 35.5)
-      }
-      updatePrice(h.id, price)
+      updatePrice(h.id, data.price as number)
       return true
     } catch {
       toast.error(`ดึงราคา ${h.ticker} ไม่สำเร็จ`)
@@ -86,17 +80,16 @@ export default function InvestmentsPage() {
     setIsSyncingAll(false)
   }
 
-  // Compute totals (all in THB)
+  // Compute totals
   const { totalCost, totalValue, totalGainLoss, totalReturn, allocationData, groupedHoldings } = useMemo(() => {
-    const rate = (cur: string) => EXCHANGE_RATES[cur] ?? 1
-    const totalCost = holdings.reduce((s, h) => s + h.units * h.avgCostPerUnit * rate(h.currency ?? 'THB'), 0)
-    const totalValue = holdings.reduce((s, h) => s + h.units * h.currentPricePerUnit * rate(h.currency ?? 'THB'), 0)
+    const totalCost = holdings.reduce((s, h) => s + h.units * h.avgCostPerUnit, 0)
+    const totalValue = holdings.reduce((s, h) => s + h.units * h.currentPricePerUnit, 0)
     const totalGainLoss = totalValue - totalCost
     const totalReturn = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0
 
     const classMap = new Map<string, number>()
     holdings.forEach((h) => {
-      const val = h.units * h.currentPricePerUnit * rate(h.currency ?? 'THB')
+      const val = h.units * h.currentPricePerUnit
       classMap.set(h.assetClass, (classMap.get(h.assetClass) ?? 0) + val)
     })
     const allocationData = Array.from(classMap.entries()).map(([cls, value]) => ({
@@ -115,7 +108,6 @@ export default function InvestmentsPage() {
     return { totalCost, totalValue, totalGainLoss, totalReturn, allocationData, groupedHoldings: grouped }
   }, [holdings])
 
-  const toTHB = (amount: number, currency: string) => amount * (EXCHANGE_RATES[currency] ?? 1)
   const fmt = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const formatSignedThb = (n: number) => `${n >= 0 ? '+' : '-'}฿${fmt(Math.abs(n))}`
   const formatSignedPercent = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
@@ -157,7 +149,7 @@ export default function InvestmentsPage() {
     .filter((assetClass) => groupedHoldings.has(assetClass))
     .map((assetClass, index) => {
       const items = groupedHoldings.get(assetClass) ?? []
-      const classValue = items.reduce((sum, holding) => sum + toTHB(holding.units * holding.currentPricePerUnit, holding.currency ?? 'THB'), 0)
+      const classValue = items.reduce((sum, holding) => sum + holding.units * holding.currentPricePerUnit, 0)
 
       return {
         assetClass,
@@ -167,20 +159,18 @@ export default function InvestmentsPage() {
           const currency = holding.currency ?? 'THB'
           const symbol = CURRENCY_SYMBOLS[currency] ?? currency
           const valueNative = holding.units * holding.currentPricePerUnit
-          const valueTHB = toTHB(valueNative, currency)
-          const costTHB = toTHB(holding.units * holding.avgCostPerUnit, currency)
-          const gainLossTHB = valueTHB - costTHB
-          const returnPct = costTHB > 0 ? (gainLossTHB / costTHB) * 100 : 0
+          const costNative = holding.units * holding.avgCostPerUnit
+          const gainLoss = valueNative - costNative
+          const returnPct = costNative > 0 ? (gainLoss / costNative) * 100 : 0
           const isSyncing = syncingIds.has(holding.id)
           const canSync = getYahooSymbol(holding) !== null
 
           return {
             canSync,
-            currentValueLabel: `฿${fmt(valueTHB)}`,
-            currentValueNativeLabel: currency !== 'THB' ? `(${symbol}${fmt(valueNative)})` : undefined,
-            gainLossLabel: formatSignedThb(gainLossTHB),
+            currentValueLabel: `${symbol}${fmt(valueNative)}`,
+            gainLossLabel: `${gainLoss >= 0 ? '+' : '-'}${symbol}${fmt(Math.abs(gainLoss))}`,
             id: holding.id,
-            isPositive: gainLossTHB >= 0,
+            isPositive: gainLoss >= 0,
             isSyncing,
             lastUpdatedLabel: fmtTime(holding.lastPriceUpdate),
             name: holding.name,

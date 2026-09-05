@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
-import { CURRENCY_SYMBOLS } from '@/lib/exchangeRates'
+import { CURRENCY_SYMBOLS } from '@/components/investments/InvestmentForm'
 
 const schema = z.object({
   holdingId:     z.string().min(1, 'เลือกหลักทรัพย์'),

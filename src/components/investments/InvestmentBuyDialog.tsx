@@ -9,11 +9,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ASSET_CLASS_META } from '@/components/investments/InvestmentForm'
+import { ASSET_CLASS_META, CURRENCY_SYMBOLS } from '@/components/investments/InvestmentForm'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
-import { CURRENCY_SYMBOLS, EXCHANGE_RATES } from '@/lib/exchangeRates'
 import { cn } from '@/lib/utils'
 import type { AssetClass, InvestmentHolding } from '@/types'
 
@@ -61,7 +60,6 @@ export function InvestmentBuyDialog({
   )
   const selectedHolding = holdings.find((holding) => holding.id === holdingId)
   const totalInvestment = Math.max(0, units) * Math.max(0, pricePerUnit)
-  const totalInvestmentTHB = totalInvestment * (EXCHANGE_RATES[currency] ?? 1)
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency
 
   useEffect(() => {
@@ -114,14 +112,9 @@ export function InvestmentBuyDialog({
     const transferTransactionId = addTransaction({
       type: 'TRANSFER',
       categoryId: transferCategory.id,
-      amount: totalInvestmentTHB,
+      amount: totalInvestment,
       description,
-      note: [
-        note.trim(),
-        currency !== 'THB'
-          ? `${symbol}${totalInvestment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          : '',
-      ].filter(Boolean).join(' · ') || undefined,
+      note: note.trim() || undefined,
       tags: ['investment'],
       linkedInvestmentOrderId: orderId,
       transferKind: 'investment_buy',
@@ -301,14 +294,9 @@ export function InvestmentBuyDialog({
               Transfer เข้าพอร์ต
             </span>
               <span>
-                ฿{totalInvestmentTHB.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {symbol}{totalInvestment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            {currency !== 'THB' && (
-              <p className="mt-1 text-right text-xs text-sky-700 dark:text-sky-200">
-                {symbol}{totalInvestment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            )}
             {fee > 0 && (
               <div className="mt-2 flex items-center justify-between gap-3 text-rose-700 dark:text-rose-200">
                 <span>Expense ค่าธรรมเนียม</span>

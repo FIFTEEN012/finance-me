@@ -14,7 +14,6 @@ import { GoalBehindAlert } from '@/components/goals/GoalBehindAlert'
 import { GoalTimeline } from '@/components/goals/GoalTimeline'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
-import { useExchangeRateStore } from '@/store/useExchangeRateStore'
 import { Goal } from '@/types'
 import { formatCurrency, cn } from '@/lib/utils'
 import { PressCard } from '@/components/ui/PressCard'
@@ -25,11 +24,10 @@ const MILESTONE_EMOJI: Record<number, string> = { 25: '🎯', 50: '⭐', 75: '�
 export default function GoalsPage() {
   const { goals, deleteGoal, syncPortfolioGoals } = useGoalStore()
   const holdings = useInvestmentStore((s) => s.holdings)
-  const getRate = useExchangeRateStore((s) => s.getRate)
 
   /* Sync portfolio-linked goals every time portfolio value changes */
   const portfolioValueTHB = holdings.reduce(
-    (s, h) => s + h.units * h.currentPricePerUnit * getRate(h.currency ?? 'THB'),
+    (s, h) => s + h.units * h.currentPricePerUnit,
     0
   )
 

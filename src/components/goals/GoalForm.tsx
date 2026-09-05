@@ -13,7 +13,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
-import { useExchangeRateStore } from '@/store/useExchangeRateStore'
 import { Goal } from '@/types'
 
 const EMOJI_OPTIONS = ['✈️', '💻', '🏠', '🚗', '🎮', '🎁', '🎓', '🍔', '💰', '🛒', '🏥', '🎯']
@@ -48,10 +47,9 @@ interface GoalFormProps {
 export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
   const { addGoal, updateGoal } = useGoalStore()
   const holdings = useInvestmentStore((s) => s.holdings)
-  const getRate = useExchangeRateStore((s) => s.getRate)
 
   const portfolioValueTHB = holdings.reduce(
-    (s, h) => s + h.units * h.currentPricePerUnit * getRate(h.currency ?? 'THB'),
+    (s, h) => s + h.units * h.currentPricePerUnit,
     0
   )
 

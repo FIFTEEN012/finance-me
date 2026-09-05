@@ -16,6 +16,16 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Data backends
+
+The server-side backend selector is legacy-safe:
+
+- If `DATA_BACKEND` is missing, blank/whitespace-only, or unknown, the existing `legacy` backend remains selected.
+- Only an explicit `DATA_BACKEND=postgres` selects the local PostgreSQL backend.
+- The local PostgreSQL environment example is [`docs/local-postgres.env.example`](docs/local-postgres.env.example). Copy it to the untracked `.env.local` and replace its placeholders locally; do not commit credentials or tokens.
+
+Selecting PostgreSQL does not silently change the frontend or authentication. Replacing frontend cloud sync, replacing authentication, and importing old data are future, approval-gated phases.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
