@@ -15,6 +15,8 @@ export const SYNC_STORE_KEYS = [
   'finance-onboarding',
   'finance-bill-splits',
   'finance-reading',
+  'finance-health-quests',
+  'finance-cycle',
 ] as const
 
 const REMOVED_SYNC_STORE_KEYS = [

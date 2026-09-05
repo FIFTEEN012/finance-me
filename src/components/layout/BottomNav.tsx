@@ -19,6 +19,7 @@ import {
   FileUp,
   HeartPulse,
   BookOpen,
+  Droplets,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -35,6 +36,7 @@ const PRIMARY = [
 ]
 
 const SECONDARY = [
+  { href: '/cycle', label: 'รอบเดือน', icon: Droplets },
   { href: '/health', label: 'สุขภาพ', icon: HeartPulse },
   { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen },
   { href: '/categories', label: 'หมวดหมู่', icon: Tags },

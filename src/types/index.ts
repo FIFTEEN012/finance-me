@@ -260,3 +260,10 @@ export type {
   ReadingSession,
   ReadingStatus,
 } from './reading'
+
+export type {
+  CyclePhase,
+  CycleSettings,
+  CyclePeriodLog,
+  CurrentCycleInfo,
+} from './cycle'
