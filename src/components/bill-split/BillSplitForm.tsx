@@ -214,7 +214,7 @@ export function BillSplitForm({ open, onClose }: Props) {
                   className={cn(
                     'rounded-[1.25rem] border-2 px-4 py-3 text-left transition-all',
                     mode === value
-                      ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
+                      ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)]'
                       : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] shadow-[0_4px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)] dark:shadow-[0_4px_0_0_#0f130c]'
                   )}
                 >
@@ -223,7 +223,7 @@ export function BillSplitForm({ open, onClose }: Props) {
                       className={cn(
                         'flex h-9 w-9 items-center justify-center rounded-xl border-2',
                         mode === value
-                          ? 'border-[#1e5000] bg-white/25 text-[#1e5000]'
+                          ? 'border-white/30 bg-white/25 text-[var(--quest-on-primary-container)]'
                           : 'border-[#becbb1] bg-[var(--quest-surface-soft)] text-[var(--quest-muted)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-soft)]'
                       )}
                     >
@@ -231,7 +231,7 @@ export function BillSplitForm({ open, onClose }: Props) {
                     </div>
                     <div>
                       <p className="text-sm font-black">{label}</p>
-                      <p className={cn('text-xs font-medium', mode === value ? 'text-[#1f5100]' : 'text-[var(--quest-muted)]')}>
+                      <p className={cn('text-xs font-medium', mode === value ? 'text-white/90' : 'text-[var(--quest-muted)]')}>
                         {desc}
                       </p>
                     </div>
@@ -251,7 +251,7 @@ export function BillSplitForm({ open, onClose }: Props) {
               <button
                 type="button"
                 onClick={addPerson}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-[#2b6c00] bg-[#58cc02] px-3 py-1.5 text-sm font-bold text-[#1e5000] shadow-[0_3px_0_0_#1e5000] transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] px-3 py-1.5 text-sm font-bold text-[var(--quest-on-primary-container)] shadow-[0_3px_0_0_var(--quest-primary)] transition-all hover:-translate-y-0.5"
               >
                 <UserPlus className="h-4 w-4" />
                 เพิ่มคน

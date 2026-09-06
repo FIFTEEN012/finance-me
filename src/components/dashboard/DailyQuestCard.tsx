@@ -10,17 +10,17 @@ interface DailyQuestCardProps {
 
 const toneStyles = {
   start: {
-    cardClass: 'border-[var(--forest-secondary-container)] bg-[var(--forest-secondary-container)]/5',
-    iconWrapClass: 'border-[var(--forest-secondary-container)] bg-white text-[var(--forest-secondary)]',
-    buttonClass: 'border-[var(--forest-secondary)] bg-[var(--forest-secondary-container)] text-white shadow-[0_4px_0_0_#006590]',
-    shadow: '0 4px 0 0 #2fb8ff',
+    cardClass: 'border-[var(--forest-primary-container)] bg-[var(--forest-primary-container)]/5',
+    iconWrapClass: 'border-[var(--forest-primary-container)] bg-white text-[var(--forest-primary)]',
+    buttonClass: 'border-[var(--forest-primary)] bg-[var(--forest-primary-container)] text-white shadow-[0_4px_0_0_var(--forest-primary)]',
+    shadow: '0 4px 0 0 var(--forest-primary-container)',
     Icon: ReceiptText,
   },
   budget: {
-    cardClass: 'border-[var(--forest-secondary-container)] bg-[var(--forest-secondary-container)]/5',
-    iconWrapClass: 'border-[var(--forest-secondary-container)] bg-white text-[var(--forest-secondary)]',
-    buttonClass: 'border-[var(--forest-secondary)] bg-[var(--forest-secondary-container)] text-white shadow-[0_4px_0_0_#006590]',
-    shadow: '0 4px 0 0 #2fb8ff',
+    cardClass: 'border-[var(--forest-primary-container)] bg-[var(--forest-primary-container)]/5',
+    iconWrapClass: 'border-[var(--forest-primary-container)] bg-white text-[var(--forest-primary)]',
+    buttonClass: 'border-[var(--forest-primary)] bg-[var(--forest-primary-container)] text-white shadow-[0_4px_0_0_var(--forest-primary)]',
+    shadow: '0 4px 0 0 var(--forest-primary-container)',
     Icon: PiggyBank,
   },
   goal: {
@@ -34,7 +34,7 @@ const toneStyles = {
     cardClass: 'border-[var(--forest-primary-container)] bg-[var(--forest-primary-container)]/10',
     iconWrapClass: 'border-[var(--forest-primary)] bg-white text-[var(--forest-primary)]',
     buttonClass: '',
-    shadow: '0 4px 0 0 #58cc02',
+    shadow: '0 4px 0 0 var(--forest-primary-container)',
     Icon: CheckCircle2,
   },
 } as const

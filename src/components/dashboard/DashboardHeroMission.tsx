@@ -7,7 +7,7 @@ interface DashboardHeroMissionProps {
 
 export function DashboardHeroMission({ hero }: DashboardHeroMissionProps) {
   return (
-    <section className="relative overflow-hidden rounded-[1.5rem] border-2 border-[var(--forest-primary)] bg-gradient-to-br from-[var(--forest-primary-container)] via-[var(--forest-primary-container)] to-[var(--forest-primary)] p-5 text-white shadow-[0_6px_0_0_#1b4300] md:p-6">
+    <section className="relative overflow-hidden rounded-[1.5rem] border-2 border-[var(--forest-primary)] bg-[var(--forest-primary-container)] p-5 text-white shadow-[0_6px_0_0_var(--forest-primary)] md:p-6">
       <div className="absolute -bottom-10 -right-10 opacity-10">
         <PiggyBank className="h-44 w-44" />
       </div>

@@ -41,7 +41,7 @@ export function WeeklyOverviewCard({ days }: WeeklyOverviewCardProps) {
                   <span className="bg-[var(--forest-surface-high)] px-2 py-0.5 rounded-lg border border-[var(--forest-outline-variant)]">
                     {hoveredDay.id} ({hoveredDay.label})
                   </span>
-                  <span className="text-[#2b6c00] dark:text-[#87fe45] flex items-center gap-1">
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                     <TrendingUp className="h-3.5 w-3.5" />
                     +{formatCurrency(hoveredDay.incomeTotal)}
                   </span>
@@ -83,11 +83,11 @@ export function WeeklyOverviewCard({ days }: WeeklyOverviewCardProps) {
                     >
                       {/* Bars Track Area */}
                       <div className="w-full h-full flex items-end justify-center gap-1 pb-1">
-                        {/* Income Bar (Green) */}
+                        {/* Income Bar (Emerald) */}
                         <div className="flex-1 max-w-[14px] h-full flex items-end justify-center">
                           <div
                             className={cn(
-                              'w-full rounded-t-md bg-[#58cc02] shadow-[0_2px_0_0_#2b6c00] transition-all duration-300',
+                              'w-full rounded-t-md bg-emerald-500 shadow-[0_2px_0_0_#047857] transition-all duration-300',
                               isHovered ? 'brightness-110' : ''
                             )}
                             style={{
@@ -118,7 +118,7 @@ export function WeeklyOverviewCard({ days }: WeeklyOverviewCardProps) {
                           className={cn(
                             'text-[10px] font-black rounded-md px-1.5 py-0.5 transition-colors',
                             day.isToday
-                              ? 'bg-[#58cc02] text-white shadow-sm'
+                              ? 'bg-[var(--forest-primary-container)] text-white shadow-sm'
                               : hasDayActivity
                                 ? 'text-[var(--forest-foreground)]'
                                 : 'text-[var(--forest-muted)]'
@@ -138,7 +138,7 @@ export function WeeklyOverviewCard({ days }: WeeklyOverviewCardProps) {
           <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-[11px] font-bold border-t border-[var(--forest-outline-variant)]/40">
             <div className="flex items-center gap-4 text-[var(--forest-muted)]">
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#58cc02] shadow-[0_1px_0_0_#2b6c00]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_1px_0_0_#047857]" />
                 รายรับ <span className="text-[var(--forest-foreground)] font-extrabold">{formatCurrency(totalIncome)}</span>
               </span>
               <span className="flex items-center gap-1.5">

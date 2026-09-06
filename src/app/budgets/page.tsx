@@ -142,13 +142,13 @@ export default function BudgetsPage() {
       </div>
 
       {/* ── 2. HERO BUDGET CARD ── */}
-      <section className="relative bg-[#58cc02] text-[#1e5000] p-8 rounded-[32px] border-[3px] border-[#2b6c00] shadow-[0_8px_0_0_#1e5000] overflow-hidden">
+      <section className="relative bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] p-8 rounded-[32px] border-[3px] border-[var(--quest-primary)] shadow-[0_8px_0_0_var(--quest-primary)] overflow-hidden">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/20 rounded-full blur-3xl"></div>
         <div className="relative z-10 space-y-6">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-2xl sm:text-3xl font-black text-white">ภารกิจคุมงบเดือนนี้</h3>
-              <p className="text-sm font-semibold text-green-50 opacity-90 mt-1">
+              <p className="text-sm font-semibold text-white/90 mt-1">
                 เป้าหมาย: ใช้ให้น้อยกว่าที่ตั้งไว้!
               </p>
             </div>
@@ -238,12 +238,12 @@ export default function BudgetsPage() {
           </div>
 
           {/* Remaining Card */}
-          <div className="bg-[#87fe45] border-2 border-[#58cc02] shadow-[0_4px_0_0_#1e5000] p-6 rounded-3xl dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-100 dark:shadow-none flex flex-col justify-between gap-3 h-28">
+          <div className="bg-[var(--quest-primary-container)]/20 border-2 border-[var(--quest-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)] p-6 rounded-3xl dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-100 dark:shadow-none flex flex-col justify-between gap-3 h-28">
             <div className="flex justify-between items-start">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#2b6c00] dark:text-[#87fe45]">Remaining</span>
-              <Shield className="w-5 h-5 text-[#2b6c00] dark:text-[#87fe45]" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]">Remaining</span>
+              <Shield className="w-5 h-5 text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]" />
             </div>
-            <p className="text-xl font-black num leading-none text-[#082100] dark:text-white truncate">
+            <p className="text-xl font-black num leading-none text-slate-900 dark:text-white truncate">
               {formatCurrency(remaining)}
             </p>
           </div>
@@ -281,7 +281,7 @@ export default function BudgetsPage() {
         {view !== 'log' && (
           <button
             onClick={handleOpenAdd}
-            className="w-full md:w-auto px-10 py-4 bg-[#58cc02] text-white border-2 border-[#2b6c00] rounded-2xl font-black text-sm shadow-[0_6px_0_0_#1e5000] hover:translate-y-[2px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 select-none cursor-pointer"
+            className="w-full md:w-auto px-10 py-4 bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] rounded-2xl font-black text-sm shadow-[0_6px_0_0_var(--quest-primary)] hover:translate-y-[2px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 select-none cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[3px]" /> ตั้งงบประมาณ
           </button>
@@ -316,7 +316,7 @@ export default function BudgetsPage() {
             action={
               <button
                 onClick={handleOpenAdd}
-                className="font-black text-xs px-5 py-3 rounded-2xl bg-[#58cc02] text-white border-2 border-[#2b6c00] border-b-4 shadow-[0_2px_0_0_#2b6c00] active:translate-y-[2px] active:border-b-2 hover:bg-[#58cc02] flex items-center gap-1.5 transition-all select-none cursor-pointer"
+                className="font-black text-xs px-5 py-3 rounded-2xl bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] border-b-4 shadow-[0_2px_0_0_var(--quest-primary)] active:translate-y-[2px] active:border-b-2 hover:bg-[var(--quest-primary-container)] flex items-center gap-1.5 transition-all select-none cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[3px]" /> เริ่มตั้งงบประมาณแรก
               </button>
@@ -334,7 +334,7 @@ export default function BudgetsPage() {
                 ติดตามด่านการเก็บออมและสเปกเตอร์การใช้เงินแต่ละหมวด
               </p>
             </div>
-            <span className="text-xs font-bold text-[#2b6c00] dark:text-[#58cc02] px-4 py-1 bg-primary-container/20 rounded-full border border-primary-container/30">
+            <span className="text-xs font-bold text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)] px-4 py-1 bg-[var(--quest-primary-container)]/20 rounded-full border border-[var(--quest-primary-container)]/30">
               {budgets.length} ภารกิจเปิดอยู่
             </span>
           </div>
@@ -354,7 +354,7 @@ export default function BudgetsPage() {
             {/* Empty State Placeholder to quickly add budget */}
             <div
               onClick={handleOpenAdd}
-              className="bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 hover:border-[#58cc02] dark:hover:bg-slate-800/30 p-6 rounded-3xl border-2 border-dashed border-[#becbb1] dark:border-slate-800 flex flex-col items-center justify-center text-center opacity-65 cursor-pointer transition-colors group h-full min-h-[140px]"
+              className="bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 hover:border-[var(--quest-primary-container)] dark:hover:bg-slate-800/30 p-6 rounded-3xl border-2 border-dashed border-[#becbb1] dark:border-slate-800 flex flex-col items-center justify-center text-center opacity-65 cursor-pointer transition-colors group h-full min-h-[140px]"
             >
               <span className="text-4xl mb-2 group-hover:scale-110 transition-transform">🐣</span>
               <p className="text-sm font-bold text-slate-600 dark:text-slate-400">เพิ่มงบหมวดหมู่ใหม่</p>

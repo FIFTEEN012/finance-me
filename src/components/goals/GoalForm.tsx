@@ -229,7 +229,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
               <Input
                 {...register('name')}
                 placeholder={linkedPortfolio ? 'เช่น พอร์ตล้านแรก' : 'เช่น เที่ยวญี่ปุ่น, ซื้อ MacBook'}
-                className={`w-full px-4 py-3 rounded-2xl border-2 focus:border-[#58cc02] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all ${
+                className={`w-full px-4 py-3 rounded-2xl border-2 focus:border-[var(--quest-primary-container)] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all ${
                   errors.name ? 'border-red-400' : 'border-slate-200'
                 }`}
               />
@@ -247,7 +247,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
                   {...register('targetAmount', { valueAsNumber: true })}
                   type="number"
                   step="0.01"
-                  className={`w-full pl-8 pr-4 py-3 rounded-2xl border-2 focus:border-[#58cc02] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all ${
+                  className={`w-full pl-8 pr-4 py-3 rounded-2xl border-2 focus:border-[var(--quest-primary-container)] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all ${
                     errors.targetAmount ? 'border-red-400' : 'border-slate-200'
                   }`}
                   placeholder="0.00"
@@ -268,7 +268,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
                     {...register('savedAmount', { valueAsNumber: true })}
                     type="number"
                     step="0.01"
-                    className="w-full pl-8 pr-4 py-3 rounded-2xl border-2 focus:border-[#58cc02] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all border-slate-200"
+                    className="w-full pl-8 pr-4 py-3 rounded-2xl border-2 focus:border-[var(--quest-primary-container)] focus:ring-0 font-bold text-slate-800 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all border-slate-200"
                     placeholder="0.00"
                   />
                 </div>
@@ -283,7 +283,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
               <Input
                 {...register('targetDate')}
                 type="date"
-                className={`w-full px-4 py-3 rounded-2xl border-2 focus:border-[#58cc02] focus:ring-0 font-bold text-slate-850 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 transition-all ${
+                className={`w-full px-4 py-3 rounded-2xl border-2 focus:border-[var(--quest-primary-container)] focus:ring-0 font-bold text-slate-850 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 transition-all ${
                   errors.targetDate ? 'border-red-400' : 'border-slate-200'
                 }`}
               />
@@ -298,7 +298,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
               <Input
                 {...register('description')}
                 placeholder="รายละเอียดหรือความประทับใจสำหรับเป้าหมายนี้"
-                className="w-full px-4 py-3 rounded-2xl border-2 focus:border-[#58cc02] focus:ring-0 font-bold text-slate-850 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all border-slate-200"
+                className="w-full px-4 py-3 rounded-2xl border-2 focus:border-[var(--quest-primary-container)] focus:ring-0 font-bold text-slate-850 dark:text-slate-100 dark:bg-slate-950 dark:border-slate-800 placeholder:text-slate-350 transition-all border-slate-200"
               />
             </div>
 
@@ -313,9 +313,9 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
                     key={emoji}
                     type="button"
                     onClick={() => setValue('icon', emoji)}
-                    className={`aspect-square flex items-center justify-center text-2xl bg-slate-50 dark:bg-slate-850 border-2 rounded-2xl hover:border-[#58cc02] dark:hover:border-[#58cc02] transition-all cursor-pointer select-none ${
+                    className={`aspect-square flex items-center justify-center text-2xl bg-slate-50 dark:bg-slate-850 border-2 rounded-2xl hover:border-[var(--quest-primary-container)] dark:hover:border-[var(--quest-primary-container)] transition-all cursor-pointer select-none ${
                       selectedIcon === emoji
-                        ? 'border-[#58cc02] bg-[#58cc02]/10 ring-2 ring-[#58cc02]'
+                        ? 'border-[var(--quest-primary-container)] bg-[var(--quest-primary-container)]/10 ring-2 ring-[var(--quest-primary-container)]'
                         : 'border-slate-200 dark:border-slate-800'
                     }`}
                   >
@@ -326,7 +326,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
                 {isCustomLucideIcon && (
                   <button
                     type="button"
-                    className="aspect-square flex items-center justify-center bg-slate-50 dark:bg-slate-850 border-2 rounded-2xl border-[#58cc02] bg-[#58cc02]/10 ring-2 ring-[#58cc02] cursor-default select-none"
+                    className="aspect-square flex items-center justify-center bg-slate-50 dark:bg-slate-850 border-2 rounded-2xl border-[var(--quest-primary-container)] bg-[var(--quest-primary-container)]/10 ring-2 ring-[var(--quest-primary-container)] cursor-default select-none"
                   >
                     <CategoryIcon name={selectedIcon} className="w-6 h-6" style={{ color: selectedColor }} />
                   </button>
@@ -369,7 +369,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
           <div className="flex flex-col gap-3 px-8 pb-8 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/10 shrink-0">
             <button
               type="submit"
-              className="tactile-button w-full bg-[#58cc02] text-white border-2 border-[#2b6c00] py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_0_#1e5000] active:translate-y-[2px] hover:bg-[#58cc02] transition-transform select-none cursor-pointer flex items-center justify-center gap-2"
+              className="tactile-button w-full bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_0_var(--quest-primary)] active:translate-y-[2px] hover:opacity-95 transition-transform select-none cursor-pointer flex items-center justify-center gap-2"
             >
               {editingGoal ? 'บันทึกความเปลี่ยนแปลง' : 'เริ่มภารกิจเลย!'}
             </button>

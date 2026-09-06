@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Search, X, LayoutDashboard, ArrowLeftRight, PiggyBank,
   BarChart3, Tags, Target, Plus, TrendingUp, TrendingDown, ArrowRight,
-  Wallet,
-  HeartPulse,
+  Wallet, Droplets,
 } from 'lucide-react'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
@@ -39,7 +38,7 @@ const PAGES: Result[] = [
   { id: 'p-transactions', type: 'page', title: 'รายการธุรกรรม',      subtitle: 'บันทึกรายรับ-รายจ่าย',      icon: ArrowLeftRight,  iconColor: 'text-blue-500',   href: '/transactions' },
   { id: 'p-budgets',      type: 'page', title: 'งบประมาณ',            subtitle: 'ตั้งและติดตามงบ',            icon: PiggyBank,       iconColor: 'text-violet-500', href: '/budgets'      },
   { id: 'p-reports',      type: 'page', title: 'รายงาน',              subtitle: 'วิเคราะห์การเงิน',           icon: BarChart3,       iconColor: 'text-indigo-500', href: '/reports'      },
-  { id: 'p-health',       type: 'page', title: 'สุขภาพ',               subtitle: 'Health Quest - ภารกิจสุขภาพสั้น ๆ ทำเท่าที่ไหว', icon: HeartPulse, iconColor: 'text-emerald-500', href: '/health'       },
+  { id: 'p-cycle',        type: 'page', title: 'รอบเดือน',            subtitle: 'วงล้อรอบเดือนและการคาดการณ์', icon: Droplets,        iconColor: 'text-rose-500',   href: '/cycle'        },
   { id: 'p-categories',   type: 'page', title: 'หมวดหมู่',            subtitle: 'จัดการหมวดหมู่',             icon: Tags,            iconColor: 'text-pink-500',   href: '/categories'   },
   { id: 'p-goals',        type: 'page', title: 'เป้าหมายการออม',      subtitle: 'ติดตามเป้าหมาย',             icon: Target,          iconColor: 'text-amber-500',  href: '/goals'        },
 ]

@@ -109,7 +109,7 @@ export function UpdatePriceDialog({ open, onOpenChange, holding }: Props) {
           </Button>
           <Button
             onClick={handleSave}
-            className="h-11 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] font-bold text-[#1e5000] shadow-[0_4px_0_0_#1e5000] hover:bg-[#58cc02]/95"
+            className="h-11 rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] font-bold text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)] hover:opacity-95"
           >
             บันทึก
           </Button>

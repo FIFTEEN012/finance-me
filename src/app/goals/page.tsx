@@ -120,7 +120,7 @@ export default function GoalsPage() {
     <div className="space-y-6 pb-28 text-slate-800 dark:text-slate-100">
 
       {/* ── 1. HERO GOAL CARD ── */}
-      <section className="relative overflow-hidden rounded-[32px] bg-[#58cc02] p-8 border-b-8 border-[#2b6c00] text-white shadow-[0_6px_0_0_#1f5100]">
+      <section className="relative overflow-hidden rounded-[32px] bg-[var(--quest-primary-container)] p-8 border-b-8 border-[var(--quest-primary)] text-white shadow-[0_6px_0_0_var(--quest-primary)]">
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 flex flex-col gap-4 text-center md:text-left items-center md:items-start">
             <h1 className="text-3xl md:text-5xl font-black leading-tight">เส้นทางพิชิตเป้าหมายการออม</h1>
@@ -129,7 +129,7 @@ export default function GoalsPage() {
             </p>
             <button
               onClick={() => setFormOpen(true)}
-              className="tactile-button mt-4 bg-white text-[#2b6c00] px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_0_#cbd5e1] border border-slate-200 w-fit transition-transform select-none cursor-pointer flex items-center gap-2"
+              className="tactile-button mt-4 bg-white text-[var(--quest-primary)] px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_0_rgba(0,0,0,0.15)] border border-slate-200 w-fit transition-transform select-none cursor-pointer flex items-center gap-2"
             >
               เริ่มออมเลย!
             </button>
@@ -149,11 +149,11 @@ export default function GoalsPage() {
             <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
               <span className="text-xl">⚡</span> พลังงานการออมรวม
             </h3>
-            <span className="text-2xl font-black text-[#2b6c00] dark:text-[#58cc02]">{overallProgress}%</span>
+            <span className="text-2xl font-black text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]">{overallProgress}%</span>
           </div>
           <div className="w-full h-10 bg-slate-100 dark:bg-slate-800 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden p-1.5">
             <div
-              className="h-full bg-[#58cc02] rounded-full relative transition-all duration-1000"
+              className="h-full bg-[var(--quest-primary-container)] rounded-full relative transition-all duration-1000"
               style={{ width: `${overallProgress}%` }}
             >
               <div className="absolute top-0 right-0 h-full w-4 bg-white/30 rounded-full"></div>
@@ -211,7 +211,7 @@ export default function GoalsPage() {
         <div className="flex justify-center py-4">
           <button
             onClick={() => setFormOpen(true)}
-            className="tactile-button w-full max-w-md bg-[#58cc02] text-white border-2 border-[#2b6c00] py-5 rounded-3xl font-black text-2xl shadow-[0_6px_0_0_#16a34a] flex items-center justify-center gap-4 group cursor-pointer hover:bg-[#58cc02] active:translate-y-[2px] transition-transform select-none"
+            className="tactile-button w-full max-w-md bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] py-5 rounded-3xl font-black text-2xl shadow-[0_6px_0_0_var(--quest-primary)] flex items-center justify-center gap-4 group cursor-pointer hover:bg-[var(--quest-primary-container)] active:translate-y-[2px] transition-transform select-none"
           >
             <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform stroke-[3px]" />
             เพิ่มเป้าหมายใหม่
@@ -229,7 +229,7 @@ export default function GoalsPage() {
             action={
               <button
                 onClick={() => setFormOpen(true)}
-                className="font-black text-xs px-5 py-3 rounded-2xl bg-[#58cc02] text-white border-2 border-[#2b6c00] border-b-4 shadow-[0_2px_0_0_#2b6c00] active:translate-y-[2px] active:border-b-2 hover:bg-[#58cc02] flex items-center gap-1.5 transition-all select-none cursor-pointer"
+                className="font-black text-xs px-5 py-3 rounded-2xl bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] border-b-4 shadow-[0_2px_0_0_var(--quest-primary)] active:translate-y-[2px] active:border-b-2 hover:bg-[var(--quest-primary-container)] flex items-center gap-1.5 transition-all select-none cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[3px]" /> สร้างเป้าหมายแรก
               </button>

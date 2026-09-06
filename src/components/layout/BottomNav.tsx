@@ -17,8 +17,6 @@ import {
   Settings,
   SplitSquareHorizontal,
   FileUp,
-  HeartPulse,
-  BookOpen,
   Droplets,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -41,8 +39,6 @@ const PRIMARY_RIGHT = [
 const SECONDARY = [
   { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
   { href: '/cycle', label: 'รอบเดือน', icon: Droplets, desc: 'ติดตามวงล้อรอบเดือน' },
-  { href: '/health', label: 'สุขภาพ', icon: HeartPulse, desc: 'บันทึกการออกกำลังกาย' },
-  { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen, desc: 'บันทึกหน้าและทบทวน' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },
   { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal, desc: 'หารค่าใช้จ่ายกับเพื่อน' },
@@ -85,13 +81,13 @@ export function BottomNav() {
                 <navItem.icon
                   className={cn(
                     'h-[22px] w-[22px] transition-colors',
-                    isActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                    isActive ? 'scale-110 text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
                   )}
                 />
                 <span
                   className={cn(
                     'mt-1 truncate text-[10px] font-black tracking-wide',
-                    isActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                    isActive ? 'text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
                   )}
                 >
                   {navItem.label}
@@ -105,7 +101,7 @@ export function BottomNav() {
             <button
               onClick={() => setOpen(true)}
               aria-label="บันทึกด่วน"
-              className="relative -top-4.5 h-13 w-13 rounded-2xl border-2 border-b-4 border-[#2b6c00] bg-[#58cc02] text-white shadow-[0_4px_0_0_#1e5000] active:translate-y-[2px] active:border-b-2 flex items-center justify-center transition-transform hover:scale-105 select-none"
+              className="relative -top-4.5 h-13 w-13 rounded-2xl border-2 border-b-4 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-white shadow-[0_4px_0_0_var(--quest-primary)] active:translate-y-[2px] active:border-b-2 flex items-center justify-center transition-transform hover:scale-105 select-none"
             >
               <Plus className="h-7 w-7 stroke-[3.2px]" />
             </button>
@@ -123,13 +119,13 @@ export function BottomNav() {
                 <navItem.icon
                   className={cn(
                     'h-[22px] w-[22px] transition-colors',
-                    isActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                    isActive ? 'scale-110 text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
                   )}
                 />
                 <span
                   className={cn(
                     'mt-1 truncate text-[10px] font-black tracking-wide',
-                    isActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                    isActive ? 'text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
                   )}
                 >
                   {navItem.label}
@@ -147,13 +143,13 @@ export function BottomNav() {
             <MoreHorizontal
               className={cn(
                 'h-[22px] w-[22px] transition-colors',
-                isSecondaryActive ? 'scale-110 text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                isSecondaryActive ? 'scale-110 text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
               )}
             />
             <span
               className={cn(
                 'mt-1 truncate text-[10px] font-black tracking-wide',
-                isSecondaryActive ? 'text-[#58cc02]' : 'text-slate-400 dark:text-slate-500'
+                isSecondaryActive ? 'text-[var(--quest-primary-container)]' : 'text-slate-400 dark:text-slate-500'
               )}
             >
               เพิ่มเติม
@@ -189,7 +185,7 @@ export function BottomNav() {
                   className={cn(
                     'flex select-none items-center gap-3 rounded-2xl border-2 px-3.5 py-3 transition-all',
                     isActive
-                      ? 'border-[#2b6c00] border-b-4 bg-[#58cc02] text-white shadow-[0_3px_0_0_#2b6c00]'
+                      ? 'border-[var(--quest-primary)] border-b-4 bg-[var(--quest-primary-container)] text-white shadow-[0_3px_0_0_var(--quest-primary)]'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800'
                   )}
                 >

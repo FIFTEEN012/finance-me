@@ -50,7 +50,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
             className={cn(
               'inline-flex w-fit items-center rounded-full border px-3 py-1 text-[11px] font-bold tracking-[0.14em]',
               settled
-                ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000]'
+                ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)]'
                 : 'border-[#ffb872] bg-[#ff9c27]/15 text-[#8c5000]'
             )}
           >
@@ -68,7 +68,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
               'mt-1 font-quest-heading text-[1.7rem] font-black tracking-tight',
               settled
                 ? 'text-[var(--quest-outline)] line-through'
-                : 'text-[#2b6c00] dark:text-[#87fe45]'
+                : 'text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]'
             )}
           >
             {formatBillSplitAmount(split.totalAmount, split.currency)}
@@ -79,7 +79,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
           <div className="flex -space-x-3">
             {visibleParticipants.map((participant, index) => {
               const theme = participant.name === split.paidBy
-                ? 'bg-[#58cc02] text-[#1e5000]'
+                ? 'bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)]'
                 : avatarThemes[index % avatarThemes.length]
 
               return (
@@ -110,7 +110,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
           <button
             type="button"
             onClick={() => setDetailsOpen((open) => !open)}
-            className="inline-flex items-center gap-1 text-sm font-bold text-[#2b6c00] transition-colors hover:text-[#58cc02] dark:text-[#87fe45]"
+            className="inline-flex items-center gap-1 text-sm font-bold text-[var(--quest-primary)] transition-colors hover:text-[var(--quest-primary-container)] dark:text-[var(--quest-primary-container)]"
             aria-expanded={detailsOpen}
           >
             ดูรายละเอียด
@@ -135,7 +135,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black',
                       isPayer
-                        ? 'bg-[#58cc02] text-[#1e5000]'
+                        ? 'bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)]'
                         : 'bg-[var(--quest-surface-soft)] text-[var(--quest-muted)]'
                     )}
                   >
@@ -147,7 +147,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
                       className={cn(
                         'truncate text-sm font-black',
                         isPayer
-                          ? 'text-[#2b6c00] dark:text-[#87fe45]'
+                          ? 'text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]'
                           : 'text-[var(--quest-foreground)]'
                       )}
                     >
@@ -170,7 +170,7 @@ export function BillQuestSplitCard({ split, onDeleteRequest, onTogglePaid }: Bil
                       {formatBillSplitAmount(participant.share, split.currency)}
                     </span>
                     {isPayer ? (
-                      <span className="rounded-full bg-[#58cc02] px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-[#1e5000]">
+                      <span className="rounded-full bg-[var(--quest-primary-container)] px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-[var(--quest-on-primary-container)]">
                         จ่ายแล้ว
                       </span>
                     ) : (

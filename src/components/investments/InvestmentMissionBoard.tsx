@@ -73,7 +73,7 @@ interface InvestmentMissionBoardProps {
 const SUMMARY_STYLES: Record<SummaryStatItem['accent'], { border: string; shadow: string; text: string }> = {
   orange: { border: '#ff9c27', shadow: '0 4px 0 0 #ff9c27', text: '#8c5000' },
   blue: { border: '#2fb8ff', shadow: '0 4px 0 0 #2fb8ff', text: '#006590' },
-  green: { border: '#58cc02', shadow: '0 4px 0 0 #58cc02', text: '#2b6c00' },
+  green: { border: 'var(--quest-primary)', shadow: '0 4px 0 0 var(--quest-primary)', text: 'var(--quest-primary)' },
 }
 
 export function InvestmentMissionBoard({
@@ -100,7 +100,7 @@ export function InvestmentMissionBoard({
           shadowHover="0 3px 0 0 #becbb1"
           className="border-[#becbb1] bg-[var(--quest-surface)] px-6 py-10 text-center dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
         >
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-[#becbb1] bg-[var(--quest-surface-low)] text-[#58cc02] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-[#becbb1] bg-[var(--quest-surface-low)] text-[var(--quest-primary-container)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
             <Sparkles className="h-10 w-10" />
           </div>
           <h2 className="mt-6 font-quest-heading text-[1.7rem] font-black text-[var(--quest-foreground)]">
@@ -112,7 +112,7 @@ export function InvestmentMissionBoard({
           <button
             type="button"
             onClick={onBuyInvestment}
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] px-6 py-3 font-bold text-[#1e5000] shadow-[0_6px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_#1e5000]"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] px-6 py-3 font-bold text-[var(--quest-on-primary-container)] shadow-[0_6px_0_0_var(--quest-primary)] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_var(--quest-primary)]"
           >
             <Plus className="h-4 w-4" />
             เริ่มภารกิจใหม่
@@ -143,7 +143,7 @@ export function InvestmentMissionBoard({
         <button
           type="button"
           onClick={onBuyInvestment}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] px-6 py-4 font-bold text-[#1e5000] shadow-[0_6px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_#1e5000]"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] px-6 py-4 font-bold text-[var(--quest-on-primary-container)] shadow-[0_6px_0_0_var(--quest-primary)] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_2px_0_0_var(--quest-primary)]"
         >
           <Plus className="h-5 w-5" />
           เพิ่มสินทรัพย์ใหม่
@@ -193,12 +193,12 @@ export function PortfolioHero({
 }) {
   return (
     <PressCard
-      shadow={isPositive ? '0 8px 0 0 #1e5000' : '0 8px 0 0 #7f1d1d'}
-      shadowHover={isPositive ? '0 4px 0 0 #1e5000' : '0 4px 0 0 #7f1d1d'}
+      shadow={isPositive ? '0 8px 0 0 var(--quest-primary)' : '0 8px 0 0 #7f1d1d'}
+      shadowHover={isPositive ? '0 4px 0 0 var(--quest-primary)' : '0 4px 0 0 #7f1d1d'}
       className={cn(
         'border-4 px-6 py-7 text-[var(--quest-on-primary-container)] md:px-8',
         isPositive
-          ? 'border-[#2b6c00] bg-[#58cc02]'
+          ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)]'
           : 'border-rose-700 bg-rose-400 text-rose-950'
       )}
     >

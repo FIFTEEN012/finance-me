@@ -182,12 +182,13 @@ export default function SettingsPage() {
   ]
 
   const accentOptions: { value: AccentColor; label: string; color: string }[] = [
-    { value: 'violet',  label: 'ม่วง',    color: '#7c3aed' },
-    { value: 'rose',    label: 'กุหลาบ',  color: '#e11d48' },
-    { value: 'blue',    label: 'น้ำเงิน', color: '#2563eb' },
-    { value: 'emerald', label: 'เขียว',   color: '#059669' },
-    { value: 'amber',   label: 'เหลือง',  color: '#d97706' },
-    { value: 'indigo',  label: 'คราม',    color: '#4338ca' },
+    { value: 'violet',  label: 'ม่วง',         color: '#7c3aed' },
+    { value: 'pink',    label: 'ชมพู (Sakura)', color: '#ec4899' },
+    { value: 'rose',    label: 'กุหลาบ',       color: '#e11d48' },
+    { value: 'blue',    label: 'น้ำเงิน',      color: '#2563eb' },
+    { value: 'emerald', label: 'เขียว',        color: '#059669' },
+    { value: 'amber',   label: 'เหลือง',       color: '#d97706' },
+    { value: 'indigo',  label: 'คราม',         color: '#4338ca' },
   ]
 
   const currencyOptions: { value: CurrencyCode; label: string; symbol: string }[] = [

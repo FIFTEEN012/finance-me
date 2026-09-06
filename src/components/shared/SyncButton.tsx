@@ -87,7 +87,7 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
       ? 'text-red-400'
       : syncStatus === 'success'
         ? 'text-emerald-500 dark:text-emerald-400'
-        : 'text-[#2b6c00] dark:text-[#87fe45]'
+        : 'text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]'
 
   if (!user) {
     return (
@@ -97,7 +97,7 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
           title="เข้าสู่ระบบเพื่อ cloud sync"
           className={cn(
             'p-1.5 rounded-lg transition-colors',
-            'text-gray-400 hover:bg-[#58cc02]/10 hover:text-[#2b6c00] dark:text-white/30 dark:hover:bg-[#58cc02]/20 dark:hover:text-[#87fe45]',
+            'text-gray-400 hover:bg-[var(--quest-primary-container)]/10 hover:text-[var(--quest-primary)] dark:text-white/30 dark:hover:bg-[var(--quest-primary-container)]/20 dark:hover:text-[var(--quest-primary-container)]',
             triggerClassName
           )}
         >

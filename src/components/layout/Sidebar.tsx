@@ -13,8 +13,6 @@ import {
   Settings,
   SplitSquareHorizontal,
   FileUp,
-  HeartPulse,
-  BookOpen,
   Droplets,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -45,8 +43,6 @@ const groupedNav = [
     title: 'Wellness',
     items: [
       { href: '/cycle', label: 'รอบเดือน', icon: Droplets },
-      { href: '/health', label: 'สุขภาพ', icon: HeartPulse },
-      { href: '/reading', label: 'อ่านหนังสือ', icon: BookOpen },
     ],
   },
   {
@@ -73,11 +69,11 @@ export function Sidebar() {
     >
       {/* Brand Header */}
       <div className="p-6 flex items-center gap-3 flex-shrink-0">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] text-white shadow-[0_3px_0_0_#2b6c00]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-white shadow-[0_3px_0_0_var(--quest-primary)]">
           <span className="text-xl">🦉</span>
         </div>
         <div className="min-w-0">
-          <h1 className="font-quest-heading text-lg font-black tracking-tight text-[#58cc02] dark:text-[#87fe45] leading-tight">
+          <h1 className="font-quest-heading text-lg font-black tracking-tight text-[var(--quest-primary-container)] dark:text-[var(--quest-primary)] leading-tight">
             FinanceMe
           </h1>
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#6f7b64] dark:text-[#c2cfb4] leading-none mt-0.5">
@@ -105,8 +101,8 @@ export function Sidebar() {
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all select-none',
                       isActive
-                        ? 'bg-[#58cc02] text-white border-b-4 border-[#2b6c00] shadow-sm transform active:translate-y-[2px] active:border-b-0'
-                        : 'hover:bg-[#f4f3f3] dark:hover:bg-slate-800 text-[#3f4a36] dark:text-[#c2cfb4] hover:text-[#2b6c00] dark:hover:text-[#87fe45]'
+                        ? 'bg-[var(--quest-primary-container)] text-white border-b-4 border-[var(--quest-primary)] shadow-sm transform active:translate-y-[2px] active:border-b-0'
+                        : 'hover:bg-[#f4f3f3] dark:hover:bg-slate-800 text-[#3f4a36] dark:text-[#c2cfb4] hover:text-[var(--quest-primary-container)] dark:hover:text-[var(--quest-primary)]'
                     )}
                   >
                     <Icon
@@ -126,20 +122,24 @@ export function Sidebar() {
 
       {/* Footer Profile Pin & Utilities */}
       <div className="flex-shrink-0 border-t-2 border-[#becbb1] dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 space-y-3">
-        <div className="flex items-center gap-3 p-2">
-          <div className="w-10 h-10 rounded-full border-2 border-[#58cc02] overflow-hidden shrink-0 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-lg">
-            {avatarEmoji}
+        <div className="flex items-center justify-between gap-2 p-1">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-full border-2 border-[var(--quest-primary-container)] overflow-hidden shrink-0 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-base">
+              {avatarEmoji}
+            </div>
+            <div className="overflow-hidden min-w-0">
+              <p className="font-bold text-xs truncate text-slate-800 dark:text-white">{profileName}</p>
+              <p className="text-[9px] text-[#3f4a36] dark:text-[#c2cfb4] uppercase font-black opacity-60">
+                Level 5 Pioneer
+              </p>
+            </div>
           </div>
-          <div className="overflow-hidden">
-            <p className="font-bold text-sm truncate text-slate-800 dark:text-white">{profileName}</p>
-            <p className="text-[10px] text-[#3f4a36] dark:text-[#c2cfb4] uppercase font-black opacity-60">
-              Level 5 Pioneer
-            </p>
+          <div className="shrink-0">
+            <ThemeToggle />
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 px-1">
+        <div className="pt-0.5">
           <DataManager />
-          <ThemeToggle />
         </div>
       </div>
     </aside>

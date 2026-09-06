@@ -7,10 +7,10 @@ interface DashboardSummaryCardProps {
 
 const toneStyles = {
   income: {
-    borderClass: 'border-[#58cc02]',
-    iconWrapClass: 'bg-[#58cc02]/15 text-[#1b4300]',
-    valueClass: 'text-[#1b4300]',
-    shadowColor: '#58cc02',
+    borderClass: 'border-[var(--forest-primary-container)]',
+    iconWrapClass: 'bg-[var(--forest-primary-container)]/15 text-[var(--forest-primary)]',
+    valueClass: 'text-emerald-600 dark:text-emerald-400',
+    shadowColor: 'var(--forest-primary-container)',
   },
   expense: {
     borderClass: 'border-[#ba1a1a]/25',

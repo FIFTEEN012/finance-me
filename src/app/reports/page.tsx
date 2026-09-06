@@ -38,9 +38,9 @@ export default function ReportsPage() {
 
       {/* ── 1. HERO REPORT QUEST CARD ── */}
       <PressCard
-        shadow="0 6px 0 0 #2b6c00"
-        shadowHover="0 3px 0 0 #2b6c00"
-        className="relative overflow-hidden border-2 border-[#2b6c00] bg-gradient-to-r from-[#58cc02] to-[#2b6c00] p-6 sm:p-8 text-white rounded-[32px]"
+        shadow="0 6px 0 0 var(--quest-primary)"
+        shadowHover="0 3px 0 0 var(--quest-primary)"
+        className="relative overflow-hidden border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] p-6 sm:p-8 text-[var(--quest-on-primary-container)] rounded-[32px]"
       >
         <div className="absolute -right-8 -bottom-8 w-48 h-48 opacity-25 animate-bounce pointer-events-none hidden md:block">
           <Trophy className="w-full h-full text-white" />
@@ -191,7 +191,7 @@ export default function ReportsPage() {
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           <div className="flex items-center gap-2 px-1">
-            <BarChart3 className="w-4 h-4 text-[#2b6c00] dark:text-[#58cc02]" />
+            <BarChart3 className="w-4 h-4 text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]" />
             <div>
               <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 ภาพรวมรายรับ–รายจ่าย

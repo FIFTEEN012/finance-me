@@ -30,10 +30,10 @@ export function BudgetCard({ budget, spent, rollover = 0, onEdit, onDelete }: Bu
     ? 'bg-[#ba1a1a]'
     : pct >= 80
       ? 'bg-[#ff9c27]'
-      : 'bg-[#58cc02]'
+      : 'bg-[var(--quest-primary-container)]'
 
   return (
-    <Card className="bg-white dark:bg-slate-900 rounded-3xl border-[3px] border-[#becbb1] dark:border-slate-800 shadow-[0_4px_0_0_rgba(0,0,0,0.05)] hover:border-[#58cc02] dark:hover:border-[#58cc02] group transition-all duration-200 overflow-hidden">
+    <Card className="bg-white dark:bg-slate-900 rounded-3xl border-[3px] border-[#becbb1] dark:border-slate-800 shadow-[0_4px_0_0_rgba(0,0,0,0.05)] hover:border-[var(--quest-primary-container)] dark:hover:border-[var(--quest-primary-container)] group transition-all duration-200 overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -60,7 +60,7 @@ export function BudgetCard({ budget, spent, rollover = 0, onEdit, onDelete }: Bu
           <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => onEdit(budget)}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[#2b6c00] transition-colors cursor-pointer"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[var(--quest-primary)] transition-colors cursor-pointer"
               title="แก้ไขงบประมาณ"
             >
               <Pencil className="w-4 h-4" />
@@ -78,7 +78,7 @@ export function BudgetCard({ budget, spent, rollover = 0, onEdit, onDelete }: Bu
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-black">
-            <span className={cn('num', isOver ? 'text-[#ba1a1a]' : 'text-[#2b6c00] dark:text-[#58cc02]')}>
+            <span className={cn('num', isOver ? 'text-[#ba1a1a]' : 'text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]')}>
               {formatCurrency(spent)}
             </span>
             <span className="num text-slate-400 dark:text-slate-500">

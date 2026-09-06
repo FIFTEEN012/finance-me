@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { SyncButton } from '@/components/shared/SyncButton'
-import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -16,8 +15,7 @@ const pageTitles: Record<string, string> = {
   '/reports': 'รายงาน',
   '/categories': 'หมวดหมู่',
   '/goals': 'เป้าหมายการออม',
-  '/health': 'สุขภาพ',
-  '/reading': 'ภารกิจอ่านหนังสือ',
+  '/cycle': 'รอบเดือน',
   '/bill-split': 'แบ่งบิล',
   '/settings': 'ตั้งค่า',
   '/investments': 'พอร์ตลงทุน',
@@ -42,20 +40,20 @@ export function Topbar() {
       {/* Mobile branding logo */}
       <div className="flex items-center gap-1.5 lg:hidden">
         <span className="text-xl">🦉</span>
-        <span className="text-[11px] font-black uppercase leading-none tracking-wider text-[#58cc02]">
+        <span className="text-[11px] font-black uppercase leading-none tracking-wider text-[var(--quest-primary-container)]">
           FinanceMe
         </span>
       </div>
 
       {/* Desktop page title */}
       <div className="hidden items-center gap-2.5 lg:flex">
-        <h1 className="text-sm font-black uppercase tracking-tight text-[#2b6c00] dark:text-[#87fe45]">
+        <h1 className="text-sm font-black uppercase tracking-tight text-[var(--quest-primary)] dark:text-[var(--quest-primary-container)]">
           {title}
         </h1>
         {pathname === '/dashboard' && (
-          <span className="flex items-center gap-1.5 rounded-full border border-[#58cc02]/20 bg-[#58cc02]/10 px-2 py-0.5 dark:border-[#58cc02]/10 dark:bg-[#58cc02]/15">
-            <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#58cc02]" />
-            <span className="text-[9px] font-black uppercase tracking-wider text-[#58cc02]">Live</span>
+          <span className="flex items-center gap-1.5 rounded-full border border-[var(--quest-primary-container)]/20 bg-[var(--quest-primary-container)]/10 px-2 py-0.5 dark:border-[var(--quest-primary-container)]/10 dark:bg-[var(--quest-primary-container)]/15">
+            <span className="live-dot h-1.5 w-1.5 rounded-full bg-[var(--quest-primary-container)]" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--quest-primary-container)]">Live</span>
           </span>
         )}
       </div>
@@ -72,7 +70,7 @@ export function Topbar() {
         <button
           onClick={() => setOpen(true)}
           aria-label="ค้นหาข้อมูล"
-          className="flex items-center gap-2 rounded-full border-2 border-[#becbb1] bg-white px-3 py-1.5 text-[#6f7b64] hover:bg-[#f4f3f3] hover:text-[#2b6c00] dark:border-[#3b4630] dark:bg-[#1c2117] dark:text-[#c2cfb4] dark:hover:bg-[#22281c] dark:hover:text-[#87fe45] transition-all cursor-pointer"
+          className="flex items-center gap-2 rounded-full border-2 border-[#becbb1] bg-white px-3 py-1.5 text-[#6f7b64] hover:bg-[#f4f3f3] hover:text-[var(--quest-primary)] dark:border-[#3b4630] dark:bg-[#1c2117] dark:text-[#c2cfb4] dark:hover:bg-[#22281c] dark:hover:text-[var(--quest-primary-container)] transition-all cursor-pointer"
         >
           <Search className="h-4 w-4 stroke-[2.5px]" />
           <span className="hidden items-center gap-1 text-[10px] font-black text-[#6f7b64] dark:text-[#c2cfb4] md:flex">
@@ -82,7 +80,6 @@ export function Topbar() {
           </span>
         </button>
         <SyncButton />
-        <ThemeToggle />
       </div>
     </header>
   )

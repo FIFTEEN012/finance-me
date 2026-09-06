@@ -328,9 +328,7 @@
 }
 
 /* Finance Quest route */
-:root,
-.quest-shell,
-.quest-page {
+:root {
   --quest-background: #faf9f9;
   --quest-surface: #ffffff;
   --quest-surface-low: #f4f3f3;
@@ -339,7 +337,7 @@
   --quest-outline-variant: #becbb1;
   --quest-primary: #2b6c00;
   --quest-primary-container: #58cc02;
-  --quest-on-primary-container: #1e5000;
+  --quest-on-primary-container: #ffffff;
   --quest-secondary: #006590;
   --quest-secondary-container: #2fb8ff;
   --quest-secondary-ink: #004666;
@@ -350,9 +348,7 @@
   --quest-muted: #3f4a36;
 }
 
-.dark,
-.dark .quest-shell,
-.dark .quest-page {
+.dark {
   --quest-background: #161b11;
   --quest-surface: #1c2117;
   --quest-surface-low: #22281c;
@@ -419,12 +415,12 @@
 .quest-hero-card {
   position: relative;
   overflow: hidden;
-  border: 3px solid #6be026;
+  border: 3px solid var(--quest-primary-container);
   border-radius: 1.5rem;
-  background: #58cc02;
-  color: #1e5000;
+  background: var(--quest-primary-container);
+  color: var(--quest-on-primary-container);
   padding: 1.5rem;
-  box-shadow: 0 8px 0 0 #1e5000;
+  box-shadow: 0 8px 0 0 var(--quest-primary);
 }
 
 .quest-hero-card::before,
@@ -448,7 +444,7 @@
   left: -2rem;
   width: 8rem;
   height: 8rem;
-  background: rgb(30 80 0 / 0.1);
+  background: rgb(0 0 0 / 0.08);
 }
 
 .quest-soft-card {
@@ -460,14 +456,16 @@
 
 .quest-action-button {
   min-height: 3rem;
-  border: 2px solid #1f5100;
+  border: 2px solid var(--quest-primary);
   border-radius: 1rem;
-  background: #58cc02;
-  color: #1e5000;
+  background: var(--quest-primary-container);
+  color: var(--quest-on-primary-container);
   font-family: var(--font-quest-heading);
   font-weight: 800;
-  box-shadow: 0 6px 0 0 #1e5000;
+  box-shadow: 0 6px 0 0 var(--quest-primary);
   transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .quest-action-button:hover {
@@ -476,7 +474,7 @@
 
 .quest-action-button:active {
   transform: translateY(4px);
-  box-shadow: 0 2px 0 0 #1e5000;
+  box-shadow: 0 2px 0 0 var(--quest-primary);
 }
 
 .quest-secondary-button {
@@ -489,6 +487,8 @@
   font-weight: 700;
   box-shadow: 0 4px 0 0 #6f7b64;
   transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .quest-secondary-button:hover {
@@ -552,10 +552,10 @@
 }
 
 .quest-filter-pill-active {
-  border-color: #2b6c00;
-  background: #58cc02;
-  color: #1e5000;
-  box-shadow: 0 4px 0 0 #1e5000;
+  border-color: var(--quest-primary);
+  background: var(--quest-primary-container);
+  color: var(--quest-on-primary-container);
+  box-shadow: 0 4px 0 0 var(--quest-primary);
 }
 
 .dark .quest-soft-card {
@@ -568,19 +568,17 @@
 }
 
 /* Forest Polish dashboard */
-:root,
-.forest-shell,
-.forest-page {
+:root {
   --forest-background: #f0f4f0;
   --forest-surface: #f7f9f7;
   --forest-surface-low: #f2f4f2;
   --forest-surface-soft: #eceeec;
   --forest-surface-high: #e8eae8;
   --forest-surface-highest: #e3e5e3;
-  --forest-outline: #6f7b64;
-  --forest-outline-variant: #becbb1;
-  --forest-primary: #1b4300;
-  --forest-primary-container: #58cc02;
+  --forest-outline: var(--quest-outline);
+  --forest-outline-variant: var(--quest-outline-variant);
+  --forest-primary: var(--quest-primary);
+  --forest-primary-container: var(--quest-primary-container);
   --forest-secondary: #006590;
   --forest-secondary-container: #2fb8ff;
   --forest-tertiary: #8c5000;
@@ -589,17 +587,17 @@
   --forest-muted: #3f4a36;
 }
 
-.dark,
-.dark .forest-shell,
-.dark .forest-page {
+.dark {
   --forest-background: #13190f;
   --forest-surface: #1a2116;
   --forest-surface-low: #20281b;
   --forest-surface-soft: #252e20;
   --forest-surface-high: #2b3526;
   --forest-surface-highest: #303b2a;
-  --forest-outline: #87947b;
-  --forest-outline-variant: #44523a;
+  --forest-outline: var(--quest-outline);
+  --forest-outline-variant: var(--quest-outline-variant);
+  --forest-primary: var(--quest-primary);
+  --forest-primary-container: var(--quest-primary-container);
   --forest-foreground: #eff5e8;
   --forest-muted: #c2cfb4;
 }
@@ -825,6 +823,15 @@ html[data-accent="rose"] {
   --sidebar-primary: oklch(0.55 0.24 12);
   --sidebar-ring: oklch(0.55 0.24 12);
   --chart-1: oklch(0.55 0.24 12);
+  --quest-primary: #9f1239;
+  --quest-primary-container: #f43f5e;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #fb7185;
+  --quest-outline-variant: #fecdd3;
+  --forest-primary: #9f1239;
+  --forest-primary-container: #f43f5e;
+  --forest-outline: #fb7185;
+  --forest-outline-variant: #fecdd3;
 }
 html[data-accent="rose"].dark {
   --primary: oklch(0.72 0.21 12);
@@ -832,6 +839,15 @@ html[data-accent="rose"].dark {
   --sidebar-primary: oklch(0.72 0.21 12);
   --sidebar-ring: oklch(0.72 0.21 12);
   --chart-1: oklch(0.72 0.21 12);
+  --quest-primary: #fb7185;
+  --quest-primary-container: #9f1239;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #e11d48;
+  --quest-outline-variant: #881337;
+  --forest-primary: #fb7185;
+  --forest-primary-container: #9f1239;
+  --forest-outline: #e11d48;
+  --forest-outline-variant: #881337;
 }
 
 /* blue */
@@ -841,6 +857,15 @@ html[data-accent="blue"] {
   --sidebar-primary: oklch(0.52 0.22 232);
   --sidebar-ring: oklch(0.52 0.22 232);
   --chart-1: oklch(0.52 0.22 232);
+  --quest-primary: #0369a1;
+  --quest-primary-container: #0ea5e9;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #38bdf8;
+  --quest-outline-variant: #bae6fd;
+  --forest-primary: #0369a1;
+  --forest-primary-container: #0ea5e9;
+  --forest-outline: #38bdf8;
+  --forest-outline-variant: #bae6fd;
 }
 html[data-accent="blue"].dark {
   --primary: oklch(0.70 0.20 232);
@@ -848,6 +873,15 @@ html[data-accent="blue"].dark {
   --sidebar-primary: oklch(0.70 0.20 232);
   --sidebar-ring: oklch(0.70 0.20 232);
   --chart-1: oklch(0.70 0.20 232);
+  --quest-primary: #38bdf8;
+  --quest-primary-container: #0369a1;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #0284c7;
+  --quest-outline-variant: #0c4a6e;
+  --forest-primary: #38bdf8;
+  --forest-primary-container: #0369a1;
+  --forest-outline: #0284c7;
+  --forest-outline-variant: #0c4a6e;
 }
 
 /* emerald */
@@ -857,6 +891,15 @@ html[data-accent="emerald"] {
   --sidebar-primary: oklch(0.55 0.20 152);
   --sidebar-ring: oklch(0.55 0.20 152);
   --chart-1: oklch(0.55 0.20 152);
+  --quest-primary: #047857;
+  --quest-primary-container: #10b981;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #34d399;
+  --quest-outline-variant: #a7f3d0;
+  --forest-primary: #047857;
+  --forest-primary-container: #10b981;
+  --forest-outline: #34d399;
+  --forest-outline-variant: #a7f3d0;
 }
 html[data-accent="emerald"].dark {
   --primary: oklch(0.73 0.18 152);
@@ -864,6 +907,15 @@ html[data-accent="emerald"].dark {
   --sidebar-primary: oklch(0.73 0.18 152);
   --sidebar-ring: oklch(0.73 0.18 152);
   --chart-1: oklch(0.73 0.18 152);
+  --quest-primary: #34d399;
+  --quest-primary-container: #047857;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #059669;
+  --quest-outline-variant: #064e3b;
+  --forest-primary: #34d399;
+  --forest-primary-container: #047857;
+  --forest-outline: #059669;
+  --forest-outline-variant: #064e3b;
 }
 
 /* amber */
@@ -873,6 +925,15 @@ html[data-accent="amber"] {
   --sidebar-primary: oklch(0.60 0.18 50);
   --sidebar-ring: oklch(0.60 0.18 50);
   --chart-1: oklch(0.60 0.18 50);
+  --quest-primary: #b45309;
+  --quest-primary-container: #f59e0b;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #fbbf24;
+  --quest-outline-variant: #fde68a;
+  --forest-primary: #b45309;
+  --forest-primary-container: #f59e0b;
+  --forest-outline: #fbbf24;
+  --forest-outline-variant: #fde68a;
 }
 html[data-accent="amber"].dark {
   --primary: oklch(0.76 0.16 50);
@@ -880,6 +941,15 @@ html[data-accent="amber"].dark {
   --sidebar-primary: oklch(0.76 0.16 50);
   --sidebar-ring: oklch(0.76 0.16 50);
   --chart-1: oklch(0.76 0.16 50);
+  --quest-primary: #fbbf24;
+  --quest-primary-container: #b45309;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #d97706;
+  --quest-outline-variant: #78350f;
+  --forest-primary: #fbbf24;
+  --forest-primary-container: #b45309;
+  --forest-outline: #d97706;
+  --forest-outline-variant: #78350f;
 }
 
 /* indigo */
@@ -889,6 +959,15 @@ html[data-accent="indigo"] {
   --sidebar-primary: oklch(0.50 0.24 245);
   --sidebar-ring: oklch(0.50 0.24 245);
   --chart-1: oklch(0.50 0.24 245);
+  --quest-primary: #4338ca;
+  --quest-primary-container: #6366f1;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #818cf8;
+  --quest-outline-variant: #c7d2fe;
+  --forest-primary: #4338ca;
+  --forest-primary-container: #6366f1;
+  --forest-outline: #818cf8;
+  --forest-outline-variant: #c7d2fe;
 }
 html[data-accent="indigo"].dark {
   --primary: oklch(0.70 0.22 245);
@@ -896,6 +975,49 @@ html[data-accent="indigo"].dark {
   --sidebar-primary: oklch(0.70 0.22 245);
   --sidebar-ring: oklch(0.70 0.22 245);
   --chart-1: oklch(0.70 0.22 245);
+  --quest-primary: #818cf8;
+  --quest-primary-container: #4338ca;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #4f46e5;
+  --quest-outline-variant: #312e81;
+  --forest-primary: #818cf8;
+  --forest-primary-container: #4338ca;
+  --forest-outline: #4f46e5;
+  --forest-outline-variant: #312e81;
+}
+
+/* pink (sakura / rose pink) */
+html[data-accent="pink"] {
+  --primary: oklch(0.65 0.24 350);
+  --ring: oklch(0.65 0.24 350);
+  --sidebar-primary: oklch(0.65 0.24 350);
+  --sidebar-ring: oklch(0.65 0.24 350);
+  --chart-1: oklch(0.65 0.24 350);
+  --quest-primary: #be185d;
+  --quest-primary-container: #ec4899;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #f472b6;
+  --quest-outline-variant: #fbcfe8;
+  --forest-primary: #be185d;
+  --forest-primary-container: #ec4899;
+  --forest-outline: #f472b6;
+  --forest-outline-variant: #fbcfe8;
+}
+html[data-accent="pink"].dark {
+  --primary: oklch(0.76 0.19 350);
+  --ring: oklch(0.76 0.19 350);
+  --sidebar-primary: oklch(0.76 0.19 350);
+  --sidebar-ring: oklch(0.76 0.19 350);
+  --chart-1: oklch(0.76 0.19 350);
+  --quest-primary: #f472b6;
+  --quest-primary-container: #be185d;
+  --quest-on-primary-container: #ffffff;
+  --quest-outline: #db2777;
+  --quest-outline-variant: #831843;
+  --forest-primary: #f472b6;
+  --forest-primary-container: #be185d;
+  --forest-outline: #db2777;
+  --forest-outline-variant: #831843;
 }
 
 /* ── Print styles ── */

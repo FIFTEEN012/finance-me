@@ -239,29 +239,6 @@ export interface InvestmentHolding {
 }
 
 export type {
-  HealthAchievement,
-  HealthCatalogExercise,
-  HealthExercise,
-  HealthExerciseDifficulty,
-  HealthIntensity,
-  HealthMode,
-  HealthMood,
-  HealthQuest,
-  HealthSession,
-  HealthWorkoutLog,
-} from './health'
-
-export type {
-  ReadingAchievement,
-  ReadingBook,
-  ReadingCategory,
-  ReadingGoal,
-  ReadingGoalType,
-  ReadingSession,
-  ReadingStatus,
-} from './reading'
-
-export type {
   CyclePhase,
   CycleSettings,
   CyclePeriodLog,

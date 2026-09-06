@@ -184,9 +184,9 @@ export function PrintableReport({ open, onOpenChange, year, month }: PrintableRe
           {!reportCoverImage && (
             <div
               onClick={triggerUpload}
-              className="no-print mb-8 flex flex-col items-center justify-center gap-3 border-3 border-dashed border-[#becbb1] hover:border-[#2b6c00] bg-[#faf9f9] dark:bg-slate-900/50 hover:bg-[#58cc02]/5 rounded-3xl p-8 text-center cursor-pointer transition-all select-none"
+              className="no-print mb-8 flex flex-col items-center justify-center gap-3 border-3 border-dashed border-[#becbb1] hover:border-[var(--quest-primary)] bg-[#faf9f9] dark:bg-slate-900/50 hover:bg-[var(--quest-primary-container)]/5 rounded-3xl p-8 text-center cursor-pointer transition-all select-none"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#58cc02]/10 border-2 border-[#becbb1] text-[#2b6c00]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--quest-primary-container)]/10 border-2 border-[#becbb1] text-[var(--quest-primary)]">
                 <UploadCloud className="h-6 w-6" />
               </div>
               <div>

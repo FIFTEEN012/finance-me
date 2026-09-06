@@ -7,7 +7,7 @@ export type CurrencyCode = 'THB' | 'USD' | 'EUR' | 'JPY' | 'SGD' | 'GBP'
 export type FirstDayOfWeek = 'monday' | 'sunday'
 export type DateFormat = 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD'
 export type NumberFormat = 'thai' | 'international'
-export type AccentColor = 'violet' | 'rose' | 'blue' | 'emerald' | 'amber' | 'indigo'
+export type AccentColor = 'violet' | 'rose' | 'blue' | 'emerald' | 'amber' | 'indigo' | 'pink'
 
 export interface AppSettings {
   displayName:    string

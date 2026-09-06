@@ -171,7 +171,7 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
                   className={cn(
                     'flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all',
                     currency === cur
-                      ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_3px_0_0_#1e5000]'
+                      ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] shadow-[0_3px_0_0_var(--quest-primary)]'
                       : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] hover:border-[#6f7b64] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:text-[var(--quest-muted)]'
                   )}
                 >
@@ -253,7 +253,7 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
             <div className={cn(
               'space-y-1.5 rounded-xl border p-3 text-sm',
               gainLoss >= 0
-                ? 'border-[#58cc02] bg-[#efffe4] dark:border-[#2b6c00] dark:bg-[#1b2614]'
+                ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20'
                 : 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/20'
             )}>
               <div className="flex justify-between">
@@ -296,7 +296,7 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
             </Button>
             <Button
               type="submit"
-              className="h-11 rounded-2xl border-2 border-[#2b6c00] bg-[#58cc02] font-bold text-[#1e5000] shadow-[0_4px_0_0_#1e5000] hover:bg-[#58cc02]/95"
+              className="h-11 rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] font-bold text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)] hover:opacity-95"
             >
               {editingHolding ? 'บันทึกการแก้ไข' : 'เพิ่มหลักทรัพย์'}
             </Button>

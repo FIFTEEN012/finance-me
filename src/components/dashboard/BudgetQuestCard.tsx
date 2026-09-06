@@ -13,8 +13,8 @@ const toneStyles = {
     barClass: 'bg-[#ff9c27]',
   },
   blue: {
-    iconWrapClass: 'bg-[#2fb8ff]/15 text-[#006590]',
-    barClass: 'bg-[#58cc02]',
+    iconWrapClass: 'bg-[var(--forest-primary-container)]/15 text-[var(--forest-primary)]',
+    barClass: 'bg-[var(--forest-primary-container)]',
   },
   red: {
     iconWrapClass: 'bg-[#ba1a1a]/10 text-[#ba1a1a]',

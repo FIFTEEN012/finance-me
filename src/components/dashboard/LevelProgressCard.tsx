@@ -47,7 +47,7 @@ export function LevelProgressCard({ progress }: LevelProgressCardProps) {
               <div
                 className={cn(
                   'h-2.5 w-2.5 rounded-full border border-[var(--forest-outline-variant)]/30',
-                  dot.active && 'bg-[var(--forest-primary-container)] shadow-[0_1.5px_0_#1b4300]',
+                  dot.active && 'bg-[var(--forest-primary-container)] shadow-[0_1.5px_0_var(--forest-primary)]',
                   dot.isToday && !dot.active && 'bg-[var(--forest-surface-low)]'
                 )}
               />

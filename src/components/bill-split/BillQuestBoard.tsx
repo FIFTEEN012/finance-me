@@ -39,8 +39,8 @@ const summaryAccents = {
     shadow: '0 4px 0 0 #004666',
   },
   settled: {
-    card: 'bg-[#58cc02] text-[#1e5000] border-[#2b6c00]',
-    shadow: '0 4px 0 0 #1e5000',
+    card: 'bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] border-[var(--quest-primary)]',
+    shadow: '0 4px 0 0 var(--quest-primary)',
   },
   pending: {
     card: 'bg-[#ff9c27] text-[#683a00] border-[#8c5000]',
@@ -362,7 +362,7 @@ export function BillQuestEmptyState({ title, description, onOpenForm }: BillQues
       shadowHover="0 4px 0 0 #becbb1"
       className="border-[#becbb1] bg-[var(--quest-surface)] px-6 py-10 text-center dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:shadow-[0_6px_0_0_#0f130c]"
     >
-      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-[#becbb1] bg-[var(--quest-surface-low)] text-[#58cc02] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-[#becbb1] bg-[var(--quest-surface-low)] text-[var(--quest-primary-container)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
         <ReceiptText className="h-12 w-12" />
       </div>
       <h2 className="mt-6 font-quest-heading text-[1.7rem] font-black text-[var(--quest-foreground)]">

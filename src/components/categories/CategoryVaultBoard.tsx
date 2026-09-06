@@ -69,9 +69,9 @@ export function CategoryVaultBoard({
         </div>
 
         <div className="hidden md:flex md:justify-end">
-          <button type="button" onClick={onAddCategory} className="quest-action-button inline-flex items-center gap-2 px-6">
-            <Plus className="h-5 w-5" />
-            เพิ่มหมวดหมู่
+          <button type="button" onClick={onAddCategory} className="quest-action-button inline-flex whitespace-nowrap shrink-0 items-center justify-center gap-2 px-6">
+            <Plus className="h-5 w-5 shrink-0" />
+            <span>เพิ่มหมวดหมู่</span>
           </button>
         </div>
 
@@ -93,7 +93,7 @@ export function CategoryVaultBoard({
         <button
           type="button"
           onClick={onAddCategory}
-          className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#1f5100] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_0_#1e5000] md:hidden"
+          className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)] transition-all hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_0_var(--quest-primary)] md:hidden"
           aria-label="เพิ่มหมวดหมู่"
         >
           <Plus className="h-7 w-7 stroke-[2.8px]" />
@@ -117,7 +117,7 @@ function CategoryVaultHero({
       <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[#58cc02] shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[var(--quest-primary)] shadow-sm">
               <Tags className="h-6 w-6" />
             </div>
             <h1 className="font-quest-heading text-[2rem] font-black tracking-tight md:text-[2.35rem]">
@@ -140,10 +140,10 @@ function CategoryVaultHero({
         <button
           type="button"
           onClick={onAddCategory}
-          className="quest-action-button flex w-full items-center justify-center gap-2 px-6 md:w-auto"
+          className="quest-action-button flex w-full md:w-auto whitespace-nowrap shrink-0 items-center justify-center gap-2 px-6"
         >
-          <Plus className="h-5 w-5" />
-          เพิ่มหมวดหมู่
+          <Plus className="h-5 w-5 shrink-0" />
+          <span>เพิ่มหมวดหมู่</span>
         </button>
       </div>
     </section>
@@ -295,7 +295,7 @@ function CategoryVaultEmptyState({ onAddCategory }: { onAddCategory: () => void 
       shadowHover="0 5px 0 0 #becbb1"
       className="border-[#becbb1] bg-[var(--quest-surface)] px-6 py-14 text-center dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:shadow-[0_8px_0_0_#0f130c]"
     >
-      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-dashed border-[#becbb1] bg-[var(--quest-surface-low)] text-[#58cc02] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
+      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4 border-dashed border-[#becbb1] bg-[var(--quest-surface-low)] text-[var(--quest-primary-container)] dark:border-[#3b4630] dark:bg-[var(--quest-surface-low)]">
         <Tags className="h-11 w-11" />
       </div>
       <h2 className="mt-6 font-quest-heading text-[1.8rem] font-black text-[var(--quest-foreground)]">

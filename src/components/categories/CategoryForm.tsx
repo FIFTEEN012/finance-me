@@ -149,7 +149,7 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
                   className={cn(
                     'rounded-[1.25rem] border-2 px-4 py-3 text-left transition-all',
                     selectedType === value
-                      ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
+                      ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)]'
                       : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] shadow-[0_4px_0_0_#becbb1] dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:shadow-[0_4px_0_0_#0f130c]'
                   )}
                 >
@@ -158,7 +158,7 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
                       className={cn(
                         'flex h-10 w-10 items-center justify-center rounded-xl border-2',
                         selectedType === value
-                          ? 'border-[#1e5000] bg-white/25 text-[#1e5000]'
+                          ? 'border-white/30 bg-white/25 text-[var(--quest-on-primary-container)]'
                           : accent
                       )}
                     >
@@ -193,12 +193,12 @@ export function CategoryForm({ open, onOpenChange, editingCategory }: CategoryFo
                     className={cn(
                       'flex h-11 w-11 items-center justify-center rounded-xl border-2 transition-all',
                       active
-                        ? 'border-[#2b6c00] bg-[#58cc02] text-[#1e5000] shadow-[0_4px_0_0_#1e5000]'
+                        ? 'border-[var(--quest-primary)] bg-[var(--quest-primary-container)] text-[var(--quest-on-primary-container)] shadow-[0_4px_0_0_var(--quest-primary)]'
                         : 'border-[#becbb1] bg-[var(--quest-surface)] text-[var(--quest-muted)] shadow-[0_3px_0_0_#becbb1] hover:-translate-y-0.5 dark:border-[#3b4630] dark:bg-[var(--quest-surface)] dark:shadow-[0_3px_0_0_#0f130c]'
                     )}
                     title={icon}
                   >
-                    <CategoryIcon name={icon} className="h-5 w-5" style={{ color: active ? '#1e5000' : selectedColor }} />
+                    <CategoryIcon name={icon} className="h-5 w-5" style={{ color: active ? 'var(--quest-on-primary-container)' : selectedColor }} />
                   </button>
                 )
               })}
