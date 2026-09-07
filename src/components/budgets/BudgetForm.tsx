@@ -119,7 +119,7 @@ export function BudgetForm({ open, onOpenChange, editingBudget, defaultMonth, de
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="w-full sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{editingBudget ? 'แก้ไขงบประมาณ' : 'ตั้งงบประมาณใหม่'}</DialogTitle>
         </DialogHeader>

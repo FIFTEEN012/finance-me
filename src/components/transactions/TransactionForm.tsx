@@ -115,7 +115,7 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-full sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="border-b px-6 py-4 shrink-0">
           <DialogTitle>{editingTransaction ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</DialogTitle>
         </DialogHeader>

@@ -41,7 +41,7 @@ const SECONDARY = [
   { href: '/cycle', label: 'รอบเดือน', icon: Droplets, desc: 'ติดตามวงล้อรอบเดือน' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },
-  { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal, desc: 'หารค่าใช้จ่ายกับเพื่อน' },
+  { href: '/bill-split', label: 'แบ่งบิล & ยืม-คืน', icon: SplitSquareHorizontal, desc: 'หารบิลและติดตามหนี้สิน' },
   { href: '/categories', label: 'หมวดหมู่', icon: Tags, desc: 'จัดการหมวดหมู่รายรับจ่าย' },
   { href: '/import', label: 'นำเข้าข้อมูล', icon: FileUp, desc: 'นำเข้าไฟล์ Statement' },
   { href: '/settings', label: 'ตั้งค่า', icon: Settings, desc: 'โปรไฟล์ สกุลเงิน ธีม' },

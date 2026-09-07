@@ -71,22 +71,12 @@ export interface NetWorthSnapshot {
   netWorth: number
 }
 
-export type DebtType = 'credit_card' | 'personal_loan' | 'mortgage' | 'car_loan' | 'student_loan' | 'other'
-
-export interface Debt {
-  id:             string
-  name:           string
-  type:           DebtType
-  totalAmount:    number   // original loan / credit limit
-  currentBalance: number   // outstanding balance
-  interestRate:   number   // annual % rate
-  minPayment:     number   // minimum monthly payment
-  dueDay?:        number   // day of month payment is due (1-28)
-  color:          string
-  note?:          string
-  createdAt:      string
-  updatedAt:      string
-}
+export type {
+  DebtType,
+  DebtCategory,
+  DebtPayment,
+  DebtItem,
+} from './debt'
 
 export type RecurringFrequency = 'monthly' | 'yearly'
 

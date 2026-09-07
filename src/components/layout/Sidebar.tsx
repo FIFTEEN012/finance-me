@@ -36,7 +36,7 @@ const groupedNav = [
     title: 'Portfolio',
     items: [
       { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp },
-      { href: '/bill-split', label: 'แบ่งบิล', icon: SplitSquareHorizontal },
+      { href: '/bill-split', label: 'แบ่งบิล & ยืม-คืน', icon: SplitSquareHorizontal },
     ],
   },
   {

@@ -118,7 +118,7 @@ export function GoalForm({ open, onOpenChange, editingGoal }: GoalFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-800 shadow-[0_12px_0_0_rgba(0,0,0,0.1)] rounded-[32px] p-0 overflow-hidden">
+      <DialogContent className="w-full sm:max-w-xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-800 shadow-[0_12px_0_0_rgba(0,0,0,0.1)] rounded-[32px] p-0 overflow-hidden">
         {/* Close Button */}
         <button
           onClick={() => onOpenChange(false)}

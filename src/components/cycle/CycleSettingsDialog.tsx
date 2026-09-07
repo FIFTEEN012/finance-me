@@ -55,7 +55,7 @@ export function CycleSettingsDialog({ open, onOpenChange }: CycleSettingsDialogP
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl border-2 border-rose-200 dark:border-rose-900">
+      <DialogContent className="w-full sm:max-w-lg rounded-3xl border-2 border-rose-200 dark:border-rose-900">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-600">

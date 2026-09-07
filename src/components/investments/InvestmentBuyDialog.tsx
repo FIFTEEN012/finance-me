@@ -170,7 +170,7 @@ export function InvestmentBuyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden rounded-[1.5rem] border-2 border-[#0ea5e9] bg-[var(--quest-background)] p-0 shadow-[0_8px_0_0_#0369a1]">
+      <DialogContent className="flex max-h-[90vh] w-full sm:max-w-2xl flex-col overflow-hidden rounded-[1.5rem] border-2 border-[#0ea5e9] bg-[var(--quest-background)] p-0 shadow-[0_8px_0_0_#0369a1]">
         <DialogHeader className="shrink-0 border-b-2 border-[#bae6fd] px-6 py-4 dark:border-[#164e63]">
           <DialogTitle className="flex items-center gap-2 font-quest-heading text-2xl font-black text-[#0369a1] dark:text-[#7dd3fc]">
             <ArrowLeftRight className="h-5 w-5" />

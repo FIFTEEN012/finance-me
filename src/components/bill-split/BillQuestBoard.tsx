@@ -66,13 +66,12 @@ export function BillQuestBoard({
   const activeTotal = filter === 'all' ? totalBills : filter === 'pending' ? pendingBills : settledBills
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-8 pb-28 font-quest-body md:px-8 md:py-10 lg:pb-10">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <BillQuestHero
-          totalBills={totalBills}
-          settledBills={settledBills}
-          progressPercent={progressPercent}
-        />
+    <div className="space-y-6">
+      <BillQuestHero
+        totalBills={totalBills}
+        settledBills={settledBills}
+        progressPercent={progressPercent}
+      />
 
         <section className="grid grid-cols-3 gap-3 md:gap-4">
           <BillQuestSummaryCard
@@ -186,8 +185,7 @@ export function BillQuestBoard({
           )}
         </div>
       </div>
-    </div>
-  )
+    )
 }
 
 interface BillQuestHeroProps {
