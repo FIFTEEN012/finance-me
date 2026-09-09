@@ -19,23 +19,42 @@ export const useCategoryStore = create<CategoryStore>()(
   persist(
     (set, get) => ({
       categories: defaultCategories,
-      addCategory: (c) =>
+      addCategory: (c) => {
+        const id = crypto.randomUUID()
+        const newCat = { ...c, id, isDefault: false }
         set((s) => ({
-          categories: [
-            ...s.categories,
-            { ...c, id: crypto.randomUUID(), isDefault: false },
-          ],
-        })),
-      updateCategory: (id, c) =>
+          categories: [...s.categories, newCat],
+        }))
+        if (typeof window !== 'undefined') {
+          fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newCat),
+          }).catch(() => {})
+        }
+      },
+      updateCategory: (id, c) => {
         set((s) => ({
           categories: s.categories.map((cat) =>
             cat.id === id ? { ...cat, ...c } : cat
           ),
-        })),
-      deleteCategory: (id) =>
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/categories/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(c),
+          }).catch(() => {})
+        }
+      },
+      deleteCategory: (id) => {
         set((s) => ({
           categories: s.categories.filter((c) => c.id !== id),
-        })),
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/categories/${id}`, { method: 'DELETE' }).catch(() => {})
+        }
+      },
       getCategoriesByType: (type) =>
         get().categories.filter((c) => c.type === type),
       getCategoryById: (id) =>

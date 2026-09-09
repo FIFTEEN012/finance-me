@@ -18,20 +18,42 @@ export const useBudgetStore = create<BudgetStore>()(
   persist(
     (set, get) => ({
       budgets: [],
-      addBudget: (b) =>
+      addBudget: (b) => {
+        const id = crypto.randomUUID()
+        const newBudget = { ...b, id }
         set((s) => ({
-          budgets: [...s.budgets, { ...b, id: crypto.randomUUID() }],
-        })),
-      updateBudget: (id, b) =>
+          budgets: [...s.budgets, newBudget],
+        }))
+        if (typeof window !== 'undefined') {
+          fetch('/api/budgets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newBudget),
+          }).catch(() => {})
+        }
+      },
+      updateBudget: (id, b) => {
         set((s) => ({
           budgets: s.budgets.map((budget) =>
             budget.id === id ? { ...budget, ...b } : budget
           ),
-        })),
-      deleteBudget: (id) =>
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/budgets/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(b),
+          }).catch(() => {})
+        }
+      },
+      deleteBudget: (id) => {
         set((s) => ({
           budgets: s.budgets.filter((b) => b.id !== id),
-        })),
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/budgets/${id}`, { method: 'DELETE' }).catch(() => {})
+        }
+      },
       getBudgetsByMonth: (month, year) =>
         get().budgets.filter((b) => b.month === month && b.year === year),
       getBudget: (categoryId, month, year) =>

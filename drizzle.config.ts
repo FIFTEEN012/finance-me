@@ -1,4 +1,8 @@
+import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
+
+config({ path: ".env.local" });
+config();
 
 const localDatabaseUrl =
   "postgresql://finance_local:finance_local_dev_only@127.0.0.1:55432/finance_local";

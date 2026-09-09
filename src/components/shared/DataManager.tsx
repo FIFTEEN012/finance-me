@@ -70,6 +70,7 @@ export function DataManager() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [confirmOpen, setConfirmOpen]   = useState(false)
   const [pendingData, setPendingData]   = useState<BackupFile | null>(null)
+  const [isImporting, setIsImporting]   = useState(false)
 
   /* ── Export ── */
   const handleExport = () => {
@@ -98,13 +99,36 @@ export function DataManager() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       try {
-        const raw    = JSON.parse(ev.target?.result as string)
-        const parsed = backupSchema.safeParse(raw)
-        if (!parsed.success) {
+        const raw = JSON.parse(ev.target?.result as string)
+        let normalized: BackupFile | null = null
+
+        // Check if v2 format (has stores)
+        if (raw && typeof raw === 'object' && raw.stores && typeof raw.stores === 'object') {
+          normalized = {
+            version: raw.version || 2,
+            exportedAt: raw.exportedAt || new Date().toISOString(),
+            stores: raw.stores,
+          }
+        } else if (raw && typeof raw === 'object' && Array.isArray(raw.transactions)) {
+          // Support v1 format (root arrays)
+          normalized = {
+            version: raw.version || 1,
+            exportedAt: raw.exportedAt || new Date().toISOString(),
+            stores: {
+              'finance-transactions': { state: { transactions: raw.transactions } },
+              'finance-budgets': { state: { budgets: raw.budgets || [] } },
+              'finance-categories': { state: { categories: raw.categories || [] } },
+              'finance-goals': { state: { goals: raw.goals || [] } },
+              'finance-debts': { state: { debts: raw.debts || [] } },
+            },
+          }
+        }
+
+        if (!normalized) {
           toast.error('ไฟล์ไม่ถูกต้อง — ไม่ใช่ไฟล์ backup ของ FinanceMe')
           return
         }
-        setPendingData(parsed.data)
+        setPendingData(normalized)
         setConfirmOpen(true)
       } catch {
         toast.error('ไม่สามารถอ่านไฟล์ได้ — กรุณาตรวจสอบว่าเป็นไฟล์ JSON')
@@ -115,16 +139,50 @@ export function DataManager() {
 
   const handleConfirmImport = async () => {
     if (!pendingData) return
-    writeAllStores(pendingData.stores as Record<string, unknown>)
-    await rehydrateAllStores()
-    setConfirmOpen(false)
-    setPendingData(null)
+    setIsImporting(true)
+    try {
+      writeAllStores(pendingData.stores as Record<string, unknown>)
+      await rehydrateAllStores()
 
-    const stats = countItems(pendingData.stores as Record<string, unknown>)
-    toast.success(
-      `นำเข้าสำเร็จ — ${stats.transactions} ธุรกรรม · ${stats.goals} เป้าหมาย · ${stats.investments} หลักทรัพย์ · ${stats.debts} หนี้สิน · ${stats.subscriptions} subscriptions · ${stats.billSplits} บิล`,
-      { duration: 5000 }
-    )
+      // Extract entities from stores to push directly to Neon DB
+      const extractItems = (key: string, fieldName: string) => {
+        const blob = (pendingData.stores as any)?.[key]
+        const state = blob?.state ?? {}
+        return Array.isArray(state[fieldName]) ? state[fieldName] : []
+      }
+
+      const txs = extractItems('finance-transactions', 'transactions')
+      const cats = extractItems('finance-categories', 'categories')
+      const budgets = extractItems('finance-budgets', 'budgets')
+      const goals = extractItems('finance-goals', 'goals')
+      const debts = extractItems('finance-debts', 'debts')
+
+      // Persist directly to Neon DB
+      await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactions: txs,
+          categories: cats,
+          budgets: budgets,
+          goals: goals,
+          debts: debts,
+        }),
+      })
+
+      const stats = countItems(pendingData.stores as Record<string, unknown>)
+      toast.success(
+        `นำเข้าและบันทึกฐานข้อมูลสำเร็จ — ${stats.transactions} ธุรกรรม · ${stats.goals} เป้าหมาย · ${stats.investments} หลักทรัพย์ · ${stats.debts} หนี้สิน`,
+        { duration: 5000 }
+      )
+      setConfirmOpen(false)
+      setPendingData(null)
+    } catch (e) {
+      console.error(e)
+      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูลลงฐานข้อมูล')
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   /* ── Backup stats for confirm dialog ── */
@@ -212,8 +270,12 @@ export function DataManager() {
             <Button variant="outline" onClick={() => { setConfirmOpen(false); setPendingData(null) }}>
               ยกเลิก
             </Button>
-            <Button onClick={handleConfirmImport} className="bg-amber-600 hover:bg-amber-700">
-              ยืนยันนำเข้า
+            <Button
+              onClick={handleConfirmImport}
+              disabled={isImporting}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isImporting ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันนำเข้า'}
             </Button>
           </DialogFooter>
         </DialogContent>

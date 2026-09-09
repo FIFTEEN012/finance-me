@@ -25,28 +25,51 @@ export const useTransactionStore = create<TransactionStore>()(
       transactions: [],
       addTransaction: (t) => {
         const id = crypto.randomUUID()
+        const newTx = { ...t, id, createdAt: new Date().toISOString() }
         set((s) => ({
-          transactions: [
-            ...s.transactions,
-            { ...t, id, createdAt: new Date().toISOString() },
-          ],
+          transactions: [newTx, ...s.transactions],
         }))
+        if (typeof window !== 'undefined') {
+          fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTx),
+          }).catch(() => {})
+        }
         return id
       },
-      updateTransaction: (id, t) =>
+      updateTransaction: (id, t) => {
         set((s) => ({
           transactions: s.transactions.map((tx) =>
             tx.id === id ? { ...tx, ...t } : tx
           ),
-        })),
-      deleteTransaction: (id) =>
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/transactions/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(t),
+          }).catch(() => {})
+        }
+      },
+      deleteTransaction: (id) => {
         set((s) => ({
           transactions: s.transactions.filter((tx) => tx.id !== id),
-        })),
-      deleteTransactions: (ids) =>
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
+        }
+      },
+      deleteTransactions: (ids) => {
         set((s) => ({
           transactions: s.transactions.filter((tx) => !ids.includes(tx.id)),
-        })),
+        }))
+        if (typeof window !== 'undefined') {
+          ids.forEach((id) => {
+            fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
+          })
+        }
+      },
       recategorizeTransactions: (ids, categoryId) =>
         set((s) => ({
           transactions: s.transactions.map((tx) =>

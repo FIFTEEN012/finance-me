@@ -1,9 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { SyncButton } from '@/components/shared/SyncButton'
+import { UserMenu } from '@/components/layout/UserMenu'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -79,7 +78,7 @@ export function Topbar() {
             </kbd>
           </span>
         </button>
-        <SyncButton />
+        <UserMenu />
       </div>
     </header>
   )

@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronDown, CalendarIcon } from 'lucide-react'
+import { Plus, ChevronDown, CalendarIcon, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 
@@ -121,16 +121,40 @@ export function QuickAddTransaction() {
     setValue('categoryId', '')
   }, [type, setValue])
 
-  function onSubmit(data: FormValues) {
-    addTransaction({
-      type: data.type as TransactionType,
-      categoryId: data.categoryId,
-      amount: data.amount,
-      description: data.description,
-      date: data.date.toISOString(),
-    })
-    toast.success(`${data.type === 'INCOME' ? '💰' : '💸'} บันทึกแล้ว — ${data.description}`)
-    setOpen(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function onSubmit(data: FormValues) {
+    setSubmitting(true)
+    try {
+      const payload = {
+        type: data.type as TransactionType,
+        categoryId: data.categoryId,
+        amount: data.amount,
+        description: data.description,
+        date: data.date.toISOString().split('T')[0],
+      }
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to save')
+      }
+      const json = await res.json()
+      const createdId = json.transaction?.id || crypto.randomUUID()
+      useTransactionStore.getState().replaceTransactions([
+        { ...payload, id: createdId, createdAt: new Date().toISOString() },
+        ...useTransactionStore.getState().transactions,
+      ])
+      toast.success(`${data.type === 'INCOME' ? '💰' : '💸'} บันทึกแล้ว — ${data.description}`)
+      setOpen(false)
+    } catch (err: any) {
+      toast.error(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const isExpense = type === 'EXPENSE'
@@ -281,14 +305,22 @@ export function QuickAddTransaction() {
 
             <Button
               type="submit"
+              disabled={submitting}
               className={cn(
-                'w-full font-semibold transition-all',
+                'w-full font-semibold transition-all flex items-center justify-center gap-2',
                 isExpense
                   ? 'bg-red-500 hover:bg-red-600 text-white dark:bg-red-500/80 dark:hover:bg-red-500'
                   : 'bg-[var(--quest-primary-container)] hover:opacity-90 border-2 border-[var(--quest-primary)] text-white'
               )}
             >
-              บันทึกรายการ
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>กำลังบันทึก...</span>
+                </>
+              ) : (
+                'บันทึกรายการ'
+              )}
             </Button>
 
             <p className="text-center text-[10px] text-gray-400 dark:text-white/20">

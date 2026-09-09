@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -40,6 +40,7 @@ interface DebtStore {
   getTotalOwedToMe: () => number
   getNetDebt: () => number
   getTotalCleared: () => number
+  replaceDebts: (debts: DebtItem[]) => void
 }
 
 const DEFAULT_DEBT_COLORS: Record<DebtCategory, string> = {
@@ -54,6 +55,7 @@ export const useDebtStore = create<DebtStore>()(
   persist(
     (set, get) => ({
       debts: [],
+      replaceDebts: (debts) => set({ debts }),
 
       addDebt: (input, initialTx) => {
         const id = crypto.randomUUID()
@@ -113,6 +115,24 @@ export const useDebtStore = create<DebtStore>()(
           debts: [newDebt, ...state.debts],
         }))
 
+        if (typeof window !== 'undefined') {
+          fetch('/api/debts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id,
+              person: newDebt.personName,
+              type: newDebt.type,
+              originalAmount: newDebt.totalAmount,
+              remainingAmount: newDebt.totalAmount,
+              dueDate: newDebt.dueDate,
+              note: newDebt.note,
+              status: 'ACTIVE',
+              payments: [],
+            }),
+          }).catch(() => {})
+        }
+
         return newDebt
       },
 
@@ -132,12 +152,24 @@ export const useDebtStore = create<DebtStore>()(
             }
           }),
         }))
+
+        if (typeof window !== 'undefined') {
+          fetch(`/api/debts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+          }).catch(() => {})
+        }
       },
 
       deleteDebt: (id) => {
         set((state) => ({
           debts: state.debts.filter((d) => d.id !== id),
         }))
+
+        if (typeof window !== 'undefined') {
+          fetch(`/api/debts/${id}`, { method: 'DELETE' }).catch(() => {})
+        }
       },
 
       addPayment: (debtId, input) => {

@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
-import { supabase, isCloudEnabled } from '@/lib/supabase'
-import { pushToCloud, pullFromCloud } from '@/lib/cloudSync'
+import { authClient } from '@/lib/auth-client'
+import { pushToNeon, pullFromNeon, syncWithNeon } from '@/lib/neonSync'
 import { cn } from '@/lib/utils'
 
 interface SyncButtonProps {
@@ -38,10 +38,10 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
   const handleManualPush = async () => {
     if (!user) return
     useAuthStore.getState().setSyncStatus('syncing')
-    const result = await pushToCloud(user.id)
+    const result = await pushToNeon()
     if (result.ok) {
       useAuthStore.getState().setLastSyncAt(new Date().toISOString())
-      toast.success('ซิงค์ข้อมูลสำเร็จ')
+      toast.success('ซิงค์ข้อมูลกับ Neon สำเร็จ')
     } else {
       useAuthStore.getState().setSyncError(result.error)
       toast.error(`ซิงค์ไม่สำเร็จ: ${result.error}`)
@@ -51,19 +51,31 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
   const handlePull = async () => {
     if (!user) return
     useAuthStore.getState().setSyncStatus('syncing')
-    const result = await pullFromCloud(user.id)
+    const result = await pullFromNeon()
     if (result.ok) {
       useAuthStore.getState().setLastSyncAt(new Date().toISOString())
-      toast.success('โหลดข้อมูลจาก cloud สำเร็จ')
+      toast.success('โหลดข้อมูลจาก Neon สำเร็จ')
     } else {
       useAuthStore.getState().setSyncError(result.error)
       toast.error(`โหลดไม่สำเร็จ: ${result.error}`)
     }
   }
 
+  const handleFullSync = async () => {
+    if (!user) return
+    const result = await syncWithNeon()
+    if (result.ok) {
+      toast.success('ซิงค์ข้อมูลสองฝั่งเรียบร้อย')
+    } else {
+      toast.error(`ซิงค์ไม่สำเร็จ: ${result.error}`)
+    }
+  }
+
   const handleLogout = async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
+    try {
+      await authClient.signOut()
+    } catch {}
+    useAuthStore.getState().setUser(null)
     toast.success('ออกจากระบบแล้ว')
   }
 
@@ -71,7 +83,7 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
     ? new Date(lastSyncAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
     : null
 
-  const icon = !isCloudEnabled || !user
+  const icon = !user
     ? <CloudOff className="w-4 h-4" />
     : syncStatus === 'syncing'
       ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -94,7 +106,7 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
       <>
         <button
           onClick={() => setAuthOpen(true)}
-          title="เข้าสู่ระบบเพื่อ cloud sync"
+          title="เข้าสู่ระบบ Neon PostgreSQL"
           className={cn(
             'p-1.5 rounded-lg transition-colors',
             'text-gray-400 hover:bg-[var(--quest-primary-container)]/10 hover:text-[var(--quest-primary)] dark:text-white/30 dark:hover:bg-[var(--quest-primary-container)]/20 dark:hover:text-[var(--quest-primary-container)]',
@@ -112,7 +124,7 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          title="Cloud sync"
+          title="Neon Cloud Sync"
           className={cn(
             'p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.05]',
             color,
@@ -135,17 +147,21 @@ export function SyncButton({ triggerClassName, menuContentClassName }: SyncButto
                   ? 'ซิงค์ไม่สำเร็จ'
                   : lastSyncLabel
                     ? `ซิงค์แล้ว ${lastSyncLabel}`
-                    : 'ยังไม่ได้ซิงค์'}
+                    : 'เชื่อมต่อ Neon DB แล้ว'}
             </p>
           </div>
 
+          <DropdownMenuItem onClick={handleFullSync} className="gap-2">
+            <RefreshCw className="w-3.5 h-3.5" />
+            ซิงค์ข้อมูลกับ Neon ทันที
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleManualPush} className="gap-2">
             <CloudUpload className="w-3.5 h-3.5" />
-            อัปโหลดขึ้น cloud
+            อัปโหลดขึ้น Neon
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handlePull} className="gap-2">
             <RefreshCw className="w-3.5 h-3.5" />
-            โหลดจาก cloud
+            โหลดจาก Neon
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

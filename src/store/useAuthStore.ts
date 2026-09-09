@@ -5,14 +5,20 @@ import type { User } from '@supabase/supabase-js'
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error'
 
+export interface AuthUser {
+  id: string
+  email?: string | null
+  name?: string | null
+}
+
 interface AuthStore {
-  user:       User | null
+  user:       AuthUser | null
   loading:    boolean
   syncStatus: SyncStatus
   syncError:  string | null
   lastSyncAt: string | null   // ISO timestamp
 
-  setUser:       (user: User | null)   => void
+  setUser:       (user: AuthUser | null)   => void
   setLoading:    (loading: boolean)    => void
   setSyncStatus: (s: SyncStatus)       => void
   setSyncError:  (e: string | null)    => void

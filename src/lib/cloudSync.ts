@@ -2,6 +2,9 @@
 
 import { supabase } from './supabase'
 
+export const FINANCE_DIRTY_EVENT = 'finance:store-dirty'
+export const FINANCE_SYNC_NOW_EVENT = 'finance:sync-now'
+
 /** All localStorage keys managed by Zustand persist that we want to sync */
 export const SYNC_STORE_KEYS = [
   'finance-transactions',
@@ -27,13 +30,83 @@ const REMOVED_SYNC_STORE_KEYS = [
 
 export type SyncResult = { ok: true } | { ok: false; error: string }
 
+let isApplyingCloudData = false
+
+export function getIsApplyingCloudData(): boolean {
+  return isApplyingCloudData
+}
+
+export function setIsApplyingCloudData(val: boolean) {
+  isApplyingCloudData = val
+}
+
+export function triggerSyncNow() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(FINANCE_SYNC_NOW_EVENT))
+  }
+}
+
+export function hasUnsyncedLocalChanges(): boolean {
+  if (typeof window === 'undefined') return false
+  for (const key of SYNC_STORE_KEYS) {
+    const modTs = parseInt(localStorage.getItem(`${key}__modified_at`) || '0', 10)
+    const syncTs = parseInt(localStorage.getItem(`${key}__synced_at`) || '0', 10)
+    if (modTs > syncTs) return true
+  }
+  return false
+}
+
 function clearStoreKey(key: string) {
   localStorage.removeItem(key)
   localStorage.removeItem(`${key}__synced_at`)
+  localStorage.removeItem(`${key}__modified_at`)
 }
 
 export function clearRemovedFeatureStorage() {
   REMOVED_SYNC_STORE_KEYS.forEach(clearStoreKey)
+}
+
+/**
+ * Intelligent merger for Zustand stores.
+ * Keeps all items from cloud and merges any local items whose IDs do not yet exist in cloud.
+ */
+export function mergeStoreData(storeName: string, localData: any, cloudData: any): any {
+  if (!localData?.state) return cloudData
+  if (!cloudData?.state) return localData
+
+  const arrayProps: Record<string, string> = {
+    'finance-transactions': 'transactions',
+    'finance-budgets': 'budgets',
+    'finance-categories': 'categories',
+    'finance-goals': 'goals',
+    'finance-bill-splits': 'splits',
+    'finance-debts': 'debts',
+    'finance-investments': 'holdings',
+  }
+
+  const prop = arrayProps[storeName]
+  if (prop && Array.isArray(localData.state[prop]) && Array.isArray(cloudData.state[prop])) {
+    const localArr: any[] = localData.state[prop]
+    const cloudArr: any[] = cloudData.state[prop]
+    const cloudIdSet = new Set(cloudArr.map((item) => item?.id).filter(Boolean))
+
+    const mergedArr = [...cloudArr]
+    for (const item of localArr) {
+      if (item?.id && !cloudIdSet.has(item.id)) {
+        mergedArr.push(item)
+      }
+    }
+
+    return {
+      ...cloudData,
+      state: {
+        ...cloudData.state,
+        [prop]: mergedArr,
+      },
+    }
+  }
+
+  return cloudData
 }
 
 /**
@@ -73,8 +146,17 @@ export async function pushToCloud(userId: string): Promise<SyncResult> {
 
   // Record what we just synced so future pulls don't overwrite newer local edits
   const nowMs = new Date(now).getTime()
-  for (const key of SYNC_STORE_KEYS) {
-    localStorage.setItem(`${key}__synced_at`, String(nowMs))
+  setIsApplyingCloudData(true)
+  try {
+    for (const key of SYNC_STORE_KEYS) {
+      localStorage.setItem(`${key}__synced_at`, String(nowMs))
+      const modTs = parseInt(localStorage.getItem(`${key}__modified_at`) || '0', 10)
+      if (modTs <= nowMs) {
+        localStorage.setItem(`${key}__modified_at`, String(nowMs))
+      }
+    }
+  } finally {
+    setIsApplyingCloudData(false)
   }
 
   return { ok: true }
@@ -83,8 +165,7 @@ export async function pushToCloud(userId: string): Promise<SyncResult> {
 /**
  * Pull all store data from Supabase and write to localStorage,
  * then rehydrate all Zustand stores.
- * Uses last-write-wins: cloud row is only applied when its updated_at
- * is newer than what we have locally (stored under `<key>__synced_at`).
+ * Never overwrites local unpushed edits. Safely merges when necessary.
  */
 export async function pullFromCloud(userId: string): Promise<SyncResult> {
   if (!supabase) return { ok: false, error: 'Cloud sync not configured' }
@@ -99,21 +180,50 @@ export async function pullFromCloud(userId: string): Promise<SyncResult> {
   if (error) return { ok: false, error: error.message }
   if (!data?.length) return { ok: true }
 
-  data.forEach(({ store_name, data: storeData, updated_at }) => {
-    if (!SYNC_STORE_KEYS.includes(store_name as typeof SYNC_STORE_KEYS[number])) return
+  let needsPushBack = false
 
-    const cloudTs = updated_at ? new Date(updated_at).getTime() : 0
-    const localSyncedAt = localStorage.getItem(`${store_name}__synced_at`)
-    const localTs = localSyncedAt ? parseInt(localSyncedAt, 10) : 0
+  setIsApplyingCloudData(true)
+  try {
+    data.forEach(({ store_name, data: storeData, updated_at }) => {
+      if (!SYNC_STORE_KEYS.includes(store_name as typeof SYNC_STORE_KEYS[number])) return
 
-    // Only overwrite if cloud data is strictly newer than last known sync
-    if (cloudTs >= localTs) {
-      localStorage.setItem(store_name, JSON.stringify(storeData))
-      localStorage.setItem(`${store_name}__synced_at`, String(cloudTs))
-    }
-  })
+      const cloudTs = updated_at ? new Date(updated_at).getTime() : 0
+      const localSyncedAt = localStorage.getItem(`${store_name}__synced_at`)
+      const localTs = localSyncedAt ? parseInt(localSyncedAt, 10) : 0
+      const localModifiedAt = localStorage.getItem(`${store_name}__modified_at`)
+      const modTs = localModifiedAt ? parseInt(localModifiedAt, 10) : 0
+
+      const hasLocalEdits = modTs > localTs
+      const isCloudNewer = cloudTs > localTs
+
+      const raw = localStorage.getItem(store_name)
+      const localData = raw ? JSON.parse(raw) : null
+
+      if (hasLocalEdits) {
+        // Local has unsynced changes! Merge instead of blindly overwriting
+        const mergedData = mergeStoreData(store_name, localData, storeData)
+        localStorage.setItem(store_name, JSON.stringify(mergedData))
+        // Keep synced_at as localTs until push completes, or max timestamp
+        needsPushBack = true
+      } else if (isCloudNewer) {
+        // Cloud is strictly newer and local has no unsynced changes -> safe to apply
+        localStorage.setItem(store_name, JSON.stringify(storeData))
+        localStorage.setItem(`${store_name}__synced_at`, String(cloudTs))
+        localStorage.setItem(`${store_name}__modified_at`, String(cloudTs))
+      }
+      // If neither is newer (cloudTs <= localTs and !hasLocalEdits), do nothing!
+    })
+  } finally {
+    setIsApplyingCloudData(false)
+  }
 
   await rehydrateAllStores()
+
+  // If local had changes that were merged with cloud, push the merged state back immediately
+  if (needsPushBack) {
+    await pushToCloud(userId)
+  }
+
   return { ok: true }
 }
 

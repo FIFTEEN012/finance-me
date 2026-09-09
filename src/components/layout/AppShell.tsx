@@ -10,22 +10,27 @@ import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { OnboardingWizard } from '@/components/shared/OnboardingWizard'
 import { PwaRegister } from '@/components/shared/PwaRegister'
 import { ThemeApplier } from '@/components/shared/ThemeApplier'
+import { AuthModal } from '@/components/auth/AuthModal'
 import { useBudgetAlert } from '@/hooks/useBudgetAlert'
-import { useSupabaseSync } from '@/hooks/useSupabaseSync'
+import { useInitialData } from '@/hooks/useInitialData'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { usePortfolioSnapshot } from '@/hooks/usePortfolioSnapshot'
-import { clearRemovedFeatureStorage } from '@/lib/cloudSync'
+import { authClient } from '@/lib/auth-client'
+import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   useBudgetAlert()
-  useSupabaseSync()
+  useInitialData()
 
+  const { data: session, isPending } = authClient.useSession()
   useEffect(() => {
-    clearRemovedFeatureStorage()
-  }, [])
+    if (session?.user) {
+      useAuthStore.getState().setUser(session.user)
+    }
+  }, [session])
 
   const holdings = useInvestmentStore((state) => state.holdings)
   const portfolioValue = holdings.reduce(
@@ -40,6 +45,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const onboardingCompleted = useOnboardingStore((state) => state.completed)
   const pathname = usePathname()
   const isDashboard = pathname === '/dashboard'
+
+  const isAuthenticated = !!session?.user
 
   return (
     <div
@@ -87,9 +94,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <QuickAddTransaction />
       <GlobalSearch />
-      {hydrated && !onboardingCompleted && <OnboardingWizard />}
+      {hydrated && isAuthenticated && !onboardingCompleted && <OnboardingWizard />}
       <PwaRegister />
       <ThemeApplier />
+
+      {/* Auth Modal Guard: enforced when not authenticated */}
+      {hydrated && !isPending && !isAuthenticated && (
+        <AuthModal open={true} onOpenChange={() => {}} forced={true} />
+      )}
     </div>
   )
 }

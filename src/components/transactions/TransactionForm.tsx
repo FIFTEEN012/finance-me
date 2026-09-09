@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -93,24 +93,57 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
     }
   }, [selectedType, editingTransaction, setValue])
 
-  const onSubmit = (data: FormValues) => {
-    const payload = {
-      type: data.type as TransactionType,
-      categoryId: data.categoryId,
-      amount: data.amount,
-      description: data.description,
-      note: data.note,
-      tags: tags.length > 0 ? tags : undefined,
-      date: `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`,
+  const [submitting, setSubmitting] = useState(false)
+
+  const onSubmit = async (data: FormValues) => {
+    setSubmitting(true)
+    try {
+      const payload = {
+        type: data.type as TransactionType,
+        categoryId: data.categoryId,
+        amount: data.amount,
+        description: data.description,
+        note: data.note,
+        tags: tags.length > 0 ? tags : undefined,
+        date: `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`,
+      }
+
+      if (editingTransaction) {
+        const res = await fetch(`/api/transactions/${editingTransaction.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Failed to update transaction')
+        }
+        updateTransaction(editingTransaction.id, payload)
+        toast.success('แก้ไขรายการสำเร็จ')
+      } else {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Failed to create transaction')
+        }
+        const json = await res.json()
+        const createdId = json.transaction?.id || crypto.randomUUID()
+        useTransactionStore.getState().replaceTransactions([
+          { ...payload, id: createdId, createdAt: new Date().toISOString() },
+          ...useTransactionStore.getState().transactions,
+        ])
+        toast.success('เพิ่มรายการสำเร็จ')
+      }
+      onOpenChange(false)
+    } catch (err: any) {
+      toast.error(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+    } finally {
+      setSubmitting(false)
     }
-    if (editingTransaction) {
-      updateTransaction(editingTransaction.id, payload)
-      toast.success('แก้ไขรายการสำเร็จ')
-    } else {
-      addTransaction(payload)
-      toast.success('เพิ่มรายการสำเร็จ')
-    }
-    onOpenChange(false)
   }
 
   return (
@@ -244,7 +277,9 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
             </Button>
             <Button
               type="submit"
+              disabled={submitting}
               className={cn(
+                'gap-2',
                 selectedType === 'INCOME'
                   ? 'bg-violet-600 hover:bg-violet-700'
                   : selectedType === 'EXPENSE'
@@ -252,7 +287,16 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
                     : 'bg-sky-500 hover:bg-sky-600'
               )}
             >
-              {editingTransaction ? 'บันทึกการแก้ไข' : 'เพิ่มรายการ'}
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>กำลังบันทึก...</span>
+                </>
+              ) : editingTransaction ? (
+                'บันทึกการแก้ไข'
+              ) : (
+                'เพิ่มรายการ'
+              )}
             </Button>
           </DialogFooter>
         </form>

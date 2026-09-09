@@ -15,22 +15,46 @@ interface GoalStore {
   addSaving: (id: string, amount: number) => number[]
   /** Sync all linkedPortfolio goals with the current portfolio value. Returns map of goalId → newly crossed milestones */
   syncPortfolioGoals: (portfolioValueTHB: number) => Record<string, number[]>
+  replaceGoals: (goals: Goal[]) => void
 }
 
 export const useGoalStore = create<GoalStore>()(
   persist(
     (set, get) => ({
       goals: [],
-      addGoal: (g) =>
+      replaceGoals: (goals) => set({ goals }),
+      addGoal: (g) => {
+        const id = crypto.randomUUID()
+        const newGoal = { ...g, id, createdAt: new Date().toISOString() }
         set((s) => ({
-          goals: [...s.goals, { ...g, id: crypto.randomUUID(), createdAt: new Date().toISOString() }],
-        })),
-      updateGoal: (id, g) =>
+          goals: [...s.goals, newGoal],
+        }))
+        if (typeof window !== 'undefined') {
+          fetch('/api/goals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newGoal),
+          }).catch(() => {})
+        }
+      },
+      updateGoal: (id, g) => {
         set((s) => ({
           goals: s.goals.map((goal) => (goal.id === id ? { ...goal, ...g } : goal)),
-        })),
-      deleteGoal: (id) =>
-        set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
+        }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/goals/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(g),
+          }).catch(() => {})
+        }
+      },
+      deleteGoal: (id) => {
+        set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }))
+        if (typeof window !== 'undefined') {
+          fetch(`/api/goals/${id}`, { method: 'DELETE' }).catch(() => {})
+        }
+      },
       addSaving: (id, amount) => {
         const goal = get().goals.find((g) => g.id === id)
         if (!goal) return []

@@ -15,6 +15,13 @@
       "when": 1788269349746,
       "tag": "0001_perpetual_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788958344673,
+      "tag": "0002_yellow_cardiac",
+      "breakpoints": true
     }
   ]
 }
