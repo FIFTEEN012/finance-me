@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { InvestmentHolding, AssetClass } from '@/types'
 import { cn } from '@/lib/utils'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   THB: '฿',
@@ -38,7 +39,7 @@ const CURRENCY_FLAGS: Record<string, string> = {
 }
 
 const schema = z.object({
-  name:                z.string().min(1, 'ระบุชื่อ'),
+  name:                z.string().min(1, 'กรุณาระบุชื่อสินทรัพย์'),
   ticker:              z.string().optional(),
   assetClass:          z.enum(['stock', 'mutual_fund', 'etf', 'crypto', 'bond', 'other']),
   units:               z.number().positive('จำนวนหน่วยต้องมากกว่า 0'),
@@ -57,7 +58,10 @@ interface Props {
 
 export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
   const { addHolding, updateHolding } = useInvestmentStore()
+  const { convertToThb, rates } = useExchangeRates()
   const [currency, setCurrency] = useState('THB')
+  const [costInputMode, setCostInputMode] = useState<'unit' | 'total'>('unit')
+  const [totalCostInput, setTotalCostInput] = useState<string>('')
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -79,6 +83,8 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
     if (open) {
       if (editingHolding) {
         setCurrency(editingHolding.currency ?? 'THB')
+        const calculatedTotal = editingHolding.units * editingHolding.avgCostPerUnit
+        setTotalCostInput(calculatedTotal > 0 ? calculatedTotal.toFixed(2) : '')
         reset({
           name:                editingHolding.name,
           ticker:              editingHolding.ticker ?? '',
@@ -90,6 +96,8 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
         })
       } else {
         setCurrency('THB')
+        setTotalCostInput('')
+        setCostInputMode('unit')
         reset({ name: '', ticker: '', assetClass: 'stock', units: NaN, avgCostPerUnit: NaN, currentPricePerUnit: NaN, note: '' })
       }
     }
@@ -220,54 +228,156 @@ export function InvestmentForm({ open, onOpenChange, editingHolding }: Props) {
             {errors.units && <p className="text-xs text-red-500 mt-1">{errors.units.message}</p>}
           </div>
 
-          {/* Avg cost + Current price */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ต้นทุนเฉลี่ย/หน่วย ({sym})</Label>
-              <Input
-                {...register('avgCostPerUnit', { valueAsNumber: true })}
-                type="number" step="any" placeholder="0.00"
-                className={cn(
-                  'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
-                  errors.avgCostPerUnit && 'border-red-400'
-                )}
-              />
-              {errors.avgCostPerUnit && <p className="text-xs text-red-500 mt-1">{errors.avgCostPerUnit.message}</p>}
+          {/* Smart Cost Input & Current Price */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <Label className="block text-sm font-bold text-[var(--quest-muted)]">
+                ข้อมูลต้นทุนและราคา ({sym})
+              </Label>
+              <div className="flex items-center self-start sm:self-auto p-0.5 rounded-lg bg-gray-200/70 dark:bg-white/[0.08] text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setCostInputMode('unit')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                    costInputMode === 'unit'
+                      ? 'bg-white dark:bg-white/15 text-[var(--quest-foreground)] shadow-xs font-black'
+                      : 'text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'
+                  )}
+                >
+                  ราคาต่อหุ้น (Avg Price)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCostInputMode('total')
+                    if (units > 0 && avgCost > 0) {
+                      setTotalCostInput((units * avgCost).toFixed(2))
+                    }
+                  }}
+                  className={cn(
+                    'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                    costInputMode === 'total'
+                      ? 'bg-white dark:bg-white/15 text-[var(--quest-foreground)] shadow-xs font-black'
+                      : 'text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'
+                  )}
+                >
+                  เงินต้นทุนรวม (Total Cost)
+                </button>
+              </div>
             </div>
-            <div>
-              <Label className="mb-1.5 block text-sm font-bold text-[var(--quest-muted)]">ราคาปัจจุบัน/หน่วย ({sym})</Label>
-              <Input
-                {...register('currentPricePerUnit', { valueAsNumber: true })}
-                type="number" step="any" placeholder="0.00"
-                className={cn(
-                  'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
-                  errors.currentPricePerUnit && 'border-red-400'
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                {costInputMode === 'unit' ? (
+                  <div>
+                    <Label className="mb-1 text-xs font-semibold text-gray-500 dark:text-white/50 block">
+                      ราคาเฉลี่ยต่อ 1 หุ้น ({sym})
+                    </Label>
+                    <Input
+                      {...register('avgCostPerUnit', {
+                        valueAsNumber: true,
+                        onChange: (e) => {
+                          const val = parseFloat(e.target.value)
+                          if (!isNaN(val) && units > 0) {
+                            setTotalCostInput((val * units).toFixed(2))
+                          }
+                        },
+                      })}
+                      type="number"
+                      step="any"
+                      placeholder="เช่น 227.87"
+                      className={cn(
+                        'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                        errors.avgCostPerUnit && 'border-red-400'
+                      )}
+                    />
+                    {units > 0 && avgCost > 0 && (
+                      <p className="text-[11px] text-gray-500 dark:text-white/50 mt-1">
+                        💡 คิดเป็นต้นทุนรวม: {sym}{(units * avgCost).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="mb-1 text-xs font-semibold text-gray-500 dark:text-white/50 block">
+                      เงินลงทุนรวมทั้งหมด ({sym})
+                    </Label>
+                    <Input
+                      value={totalCostInput}
+                      onChange={(e) => {
+                        const str = e.target.value
+                        setTotalCostInput(str)
+                        const total = parseFloat(str)
+                        if (!isNaN(total) && units > 0) {
+                          setValue('avgCostPerUnit', Number((total / units).toFixed(4)), { shouldValidate: true })
+                        }
+                      }}
+                      type="number"
+                      step="any"
+                      placeholder="เช่น 182.19"
+                      className="rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]"
+                    />
+                    {units > 0 && avgCost > 0 && (
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
+                        💡 คำนวณเป็นราคาต่อหุ้น: {sym}{avgCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                      </p>
+                    )}
+                  </div>
                 )}
-              />
-              {errors.currentPricePerUnit && <p className="text-xs text-red-500 mt-1">{errors.currentPricePerUnit.message}</p>}
+                {errors.avgCostPerUnit && <p className="text-xs text-red-500 mt-1">{errors.avgCostPerUnit.message}</p>}
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs font-semibold text-gray-500 dark:text-white/50 block">
+                  ราคาปัจจุบัน/หน่วย ({sym})
+                </Label>
+                <Input
+                  {...register('currentPricePerUnit', { valueAsNumber: true })}
+                  type="number"
+                  step="any"
+                  placeholder="เช่น 222.78"
+                  className={cn(
+                    'rounded-xl border-[#becbb1] bg-[var(--quest-surface)] shadow-none dark:border-[#3b4630] dark:bg-[var(--quest-surface)]',
+                    errors.currentPricePerUnit && 'border-red-400'
+                  )}
+                />
+                {errors.currentPricePerUnit && <p className="text-xs text-red-500 mt-1">{errors.currentPricePerUnit.message}</p>}
+              </div>
             </div>
           </div>
 
           {/* Live preview */}
           {units > 0 && (avgCost > 0 || currentPrice > 0) && (
             <div className={cn(
-              'space-y-1.5 rounded-xl border p-3 text-sm',
+              'space-y-2 rounded-xl border p-3.5 text-sm',
               gainLoss >= 0
-                ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20'
-                : 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/20'
+                ? 'border-emerald-500/40 bg-emerald-500/10 dark:border-emerald-800/60 dark:bg-emerald-950/20'
+                : 'border-rose-500/40 bg-rose-500/10 dark:border-rose-900/60 dark:bg-rose-950/20'
             )}>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-white/40 text-xs">มูลค่าปัจจุบัน</span>
+              <div className="flex justify-between items-baseline">
+                <span className="text-gray-500 dark:text-white/50 text-xs">มูลค่าปัจจุบัน ({currency})</span>
                 <div className="text-right">
-                  <span className="font-bold text-gray-800 dark:text-white/80">{fmt(currentValue)}</span>
+                  <span className="font-bold text-gray-900 dark:text-white text-base">{fmt(currentValue)}</span>
+                  {currency !== 'THB' && (
+                    <span className="block text-[11px] font-medium text-gray-500 dark:text-white/40">
+                      ≈ ฿{convertToThb(currentValue, currency).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-white/40 text-xs">กำไร/ขาดทุน</span>
+
+              <div className="flex justify-between items-baseline pt-1 border-t border-gray-200/50 dark:border-white/[0.06]">
+                <span className="text-gray-500 dark:text-white/50 text-xs">กำไร/ขาดทุน</span>
                 <div className="text-right">
-                  <span className={cn('font-bold text-sm', gainLoss >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
+                  <span className={cn('font-bold text-sm', gainLoss >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
                     {gainLoss >= 0 ? '+' : ''}{fmt(gainLoss)} ({gainLoss >= 0 ? '+' : ''}{returnPct.toFixed(2)}%)
                   </span>
+                  {currency !== 'THB' && (
+                    <span className={cn('block text-[11px] font-medium', gainLoss >= 0 ? 'text-emerald-600/80 dark:text-emerald-400/80' : 'text-rose-600/80 dark:text-rose-400/80')}>
+                      ≈ {gainLoss >= 0 ? '+' : ''}฿{convertToThb(gainLoss, currency).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

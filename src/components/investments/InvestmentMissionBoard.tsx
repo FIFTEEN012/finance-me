@@ -68,6 +68,8 @@ interface InvestmentMissionBoardProps {
   totalGainLossLabel: string
   totalReturnLabel: string
   totalValueLabel: string
+  displayCurrency?: 'THB' | 'USD'
+  onCurrencyChange?: (c: 'THB' | 'USD') => void
 }
 
 const SUMMARY_STYLES: Record<SummaryStatItem['accent'], { border: string; shadow: string; text: string }> = {
@@ -91,6 +93,8 @@ export function InvestmentMissionBoard({
   totalGainLossLabel,
   totalReturnLabel,
   totalValueLabel,
+  displayCurrency = 'THB',
+  onCurrencyChange,
 }: InvestmentMissionBoardProps) {
   if (!holdingsCount) {
     return (
@@ -129,6 +133,8 @@ export function InvestmentMissionBoard({
         totalGainLossLabel={totalGainLossLabel}
         totalReturnLabel={totalReturnLabel}
         totalValueLabel={totalValueLabel}
+        displayCurrency={displayCurrency}
+        onCurrencyChange={onCurrencyChange}
       />
 
       <GrowthProgress growth={growth} />
@@ -185,11 +191,15 @@ export function PortfolioHero({
   totalGainLossLabel,
   totalReturnLabel,
   totalValueLabel,
+  displayCurrency = 'THB',
+  onCurrencyChange,
 }: {
   isPositive: boolean
   totalGainLossLabel: string
   totalReturnLabel: string
   totalValueLabel: string
+  displayCurrency?: 'THB' | 'USD'
+  onCurrencyChange?: (c: 'THB' | 'USD') => void
 }) {
   return (
     <PressCard
@@ -204,15 +214,51 @@ export function PortfolioHero({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-quest-body text-sm font-bold uppercase tracking-[0.18em] text-current/80">
-            มูลค่าพอร์ตทั้งหมด
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-quest-body text-sm font-bold uppercase tracking-[0.18em] text-current/80">
+              มูลค่าพอร์ตทั้งหมด
+            </p>
+            <span className="text-xs px-2 py-0.5 rounded-md bg-black/15 font-black">
+              {displayCurrency}
+            </span>
+          </div>
           <h1 className="mt-2 font-quest-heading text-3xl font-black tracking-tight text-current md:text-[2.2rem]">
             {totalValueLabel}
           </h1>
         </div>
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-white/30 bg-white/20 text-current">
-          <Wallet className="h-7 w-7" />
+
+        <div className="flex items-center gap-2.5">
+          {onCurrencyChange && (
+            <div className="flex items-center rounded-xl border-2 border-white/40 bg-black/15 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => onCurrencyChange('THB')}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 transition-all cursor-pointer font-bold',
+                  displayCurrency === 'THB'
+                    ? 'bg-white text-[#2b6c00] shadow-sm font-black'
+                    : 'text-current/80 hover:text-current'
+                )}
+              >
+                ฿ THB
+              </button>
+              <button
+                type="button"
+                onClick={() => onCurrencyChange('USD')}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 transition-all cursor-pointer font-bold',
+                  displayCurrency === 'USD'
+                    ? 'bg-white text-[#2b6c00] shadow-sm font-black'
+                    : 'text-current/80 hover:text-current'
+                )}
+              >
+                $ USD
+              </button>
+            </div>
+          )}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-white/30 bg-white/20 text-current">
+            <Wallet className="h-6 w-6" />
+          </div>
         </div>
       </div>
 

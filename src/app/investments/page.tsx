@@ -9,6 +9,7 @@ import { InvestmentMissionBoard, type GrowthProgressModel, type MissionSectionIt
 import { UpdatePriceDialog } from '@/components/investments/UpdatePriceDialog'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { AssetClass, InvestmentHolding } from '@/types'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
 
 // Map a holding's ticker + currency + assetClass to a Yahoo Finance symbol
 function getYahooSymbol(h: InvestmentHolding): string | null {
@@ -27,6 +28,9 @@ function getYahooSymbol(h: InvestmentHolding): string | null {
 
 export default function InvestmentsPage() {
   const { holdings, deleteHolding, updatePrice } = useInvestmentStore()
+  const { convertToThb, convert } = useExchangeRates()
+  const [displayCurrency, setDisplayCurrency] = useState<'THB' | 'USD'>('THB')
+
   const [formOpen, setFormOpen] = useState(false)
   const [buyOpen, setBuyOpen] = useState(false)
   const [editingHolding, setEditingHolding] = useState<InvestmentHolding | null>(null)
@@ -80,16 +84,26 @@ export default function InvestmentsPage() {
     setIsSyncingAll(false)
   }
 
-  // Compute totals
+  // Compute totals with currency conversion
   const { totalCost, totalValue, totalGainLoss, totalReturn, allocationData, groupedHoldings } = useMemo(() => {
-    const totalCost = holdings.reduce((s, h) => s + h.units * h.avgCostPerUnit, 0)
-    const totalValue = holdings.reduce((s, h) => s + h.units * h.currentPricePerUnit, 0)
+    const getConverted = (h: InvestmentHolding, isCost = false) => {
+      const cur = h.currency ?? 'THB'
+      const raw = h.units * (isCost ? h.avgCostPerUnit : h.currentPricePerUnit)
+      if (displayCurrency === 'THB') {
+        return convertToThb(raw, cur)
+      } else {
+        return convert(raw, cur, 'USD')
+      }
+    }
+
+    const totalCost = holdings.reduce((s, h) => s + getConverted(h, true), 0)
+    const totalValue = holdings.reduce((s, h) => s + getConverted(h, false), 0)
     const totalGainLoss = totalValue - totalCost
     const totalReturn = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0
 
     const classMap = new Map<string, number>()
     holdings.forEach((h) => {
-      const val = h.units * h.currentPricePerUnit
+      const val = getConverted(h, false)
       classMap.set(h.assetClass, (classMap.get(h.assetClass) ?? 0) + val)
     })
     const allocationData = Array.from(classMap.entries()).map(([cls, value]) => ({
@@ -106,10 +120,11 @@ export default function InvestmentsPage() {
     })
 
     return { totalCost, totalValue, totalGainLoss, totalReturn, allocationData, groupedHoldings: grouped }
-  }, [holdings])
+  }, [holdings, displayCurrency, convertToThb, convert])
 
+  const currencySymbol = displayCurrency === 'THB' ? '฿' : '$'
   const fmt = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const formatSignedThb = (n: number) => `${n >= 0 ? '+' : '-'}฿${fmt(Math.abs(n))}`
+  const formatSignedCurrency = (n: number) => `${n >= 0 ? '+' : '-'}${currencySymbol}${fmt(Math.abs(n))}`
   const formatSignedPercent = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
   const isPositive = totalGainLoss >= 0
 
@@ -127,7 +142,7 @@ export default function InvestmentsPage() {
   }
 
   const growth: GrowthProgressModel = useMemo(() => {
-    const levelStep = 30_000
+    const levelStep = displayCurrency === 'THB' ? 30_000 : 1_000
     const levelBase = Math.floor(totalValue / levelStep) * levelStep
     const nextThreshold = levelBase + levelStep
     const progressPercent = totalValue > 0 ? ((totalValue - levelBase) / levelStep) * 100 : 0
@@ -135,26 +150,30 @@ export default function InvestmentsPage() {
     return {
       level: Math.floor(totalValue / levelStep) + 1,
       progressPercent,
-      remainingLabel: `฿${fmt(Math.max(0, nextThreshold - totalValue))}`,
+      remainingLabel: `${currencySymbol}${fmt(Math.max(0, nextThreshold - totalValue))}`,
     }
-  }, [totalValue])
+  }, [totalValue, displayCurrency, currencySymbol])
 
   const summaryCards: SummaryStatItem[] = useMemo(() => [
-    { accent: 'orange', label: 'ต้นทุนทั้งหมด', value: `฿${fmt(totalCost)}` },
-    { accent: 'blue', label: 'มูลค่าปัจจุบัน', value: `฿${fmt(totalValue)}` },
-    { accent: 'green', label: 'กำไร/ขาดทุน', value: formatSignedThb(totalGainLoss) },
-  ], [totalCost, totalValue, totalGainLoss])
+    { accent: 'orange', label: 'ต้นทุนทั้งหมด', value: `${currencySymbol}${fmt(totalCost)}` },
+    { accent: 'blue', label: 'มูลค่าปัจจุบัน', value: `${currencySymbol}${fmt(totalValue)}` },
+    { accent: 'green', label: 'กำไร/ขาดทุน', value: formatSignedCurrency(totalGainLoss) },
+  ], [totalCost, totalValue, totalGainLoss, currencySymbol])
 
   const missionSections: MissionSectionItem[] = (Object.keys(ASSET_CLASS_META) as AssetClass[])
     .filter((assetClass) => groupedHoldings.has(assetClass))
     .map((assetClass, index) => {
       const items = groupedHoldings.get(assetClass) ?? []
-      const classValue = items.reduce((sum, holding) => sum + holding.units * holding.currentPricePerUnit, 0)
+      const classValue = items.reduce((sum, holding) => {
+        const cur = holding.currency ?? 'THB'
+        const raw = holding.units * holding.currentPricePerUnit
+        return sum + (displayCurrency === 'THB' ? convertToThb(raw, cur) : convert(raw, cur, 'USD'))
+      }, 0)
 
       return {
         assetClass,
         stage: index + 1,
-        totalValueLabel: `฿${fmt(classValue)}`,
+        totalValueLabel: `${currencySymbol}${fmt(classValue)}`,
         holdings: items.map((holding) => {
           const currency = holding.currency ?? 'THB'
           const symbol = CURRENCY_SYMBOLS[currency] ?? currency
@@ -165,9 +184,13 @@ export default function InvestmentsPage() {
           const isSyncing = syncingIds.has(holding.id)
           const canSync = getYahooSymbol(holding) !== null
 
+          const isForeign = currency !== 'THB'
+          const convertedThbValue = isForeign ? convertToThb(valueNative, currency) : null
+
           return {
             canSync,
             currentValueLabel: `${symbol}${fmt(valueNative)}`,
+            currentValueNativeLabel: convertedThbValue ? `≈ ฿${fmt(convertedThbValue)}` : undefined,
             gainLossLabel: `${gainLoss >= 0 ? '+' : '-'}${symbol}${fmt(Math.abs(gainLoss))}`,
             id: holding.id,
             isPositive: gainLoss >= 0,
@@ -216,9 +239,11 @@ export default function InvestmentsPage() {
         sections={missionSections}
         summaryCards={summaryCards}
         syncingAll={isSyncingAll}
-        totalGainLossLabel={formatSignedThb(totalGainLoss)}
+        totalGainLossLabel={formatSignedCurrency(totalGainLoss)}
         totalReturnLabel={formatSignedPercent(totalReturn)}
-        totalValueLabel={`฿${fmt(totalValue)}`}
+        totalValueLabel={`${currencySymbol}${fmt(totalValue)}`}
+        displayCurrency={displayCurrency}
+        onCurrencyChange={setDisplayCurrency}
       />
 
       <InvestmentForm
