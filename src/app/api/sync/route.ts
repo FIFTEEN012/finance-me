@@ -9,6 +9,7 @@ import {
   financeDebts,
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { normalizeDebt } from "@/lib/debtRecord";
 
 export const dynamic = "force-dynamic";
 
@@ -96,17 +97,7 @@ export async function GET() {
       color: g.color,
     }));
 
-    const formattedDebts = debts.map((d) => ({
-      id: d.id,
-      person: d.person,
-      type: d.type,
-      originalAmount: Number(d.originalAmount),
-      remainingAmount: Number(d.remainingAmount),
-      dueDate: d.dueDate || undefined,
-      note: d.note || undefined,
-      status: d.status,
-      payments: (d.payments as any[]) || [],
-    }));
+    const formattedDebts = debts.map((d) => normalizeDebt(d));
 
     return NextResponse.json({
       transactions: formattedTransactions,
@@ -292,33 +283,41 @@ export async function POST(request: Request) {
     // 5. Debts
     if (Array.isArray(debts)) {
       for (const d of debts) {
-        if (!d.person || !d.originalAmount) continue;
+        const person = d.personName || d.person;
+        const originalAmount = Number(d.totalAmount ?? d.originalAmount);
+        const paidAmount = Number(d.paidAmount ?? 0);
+        if (!person || !Number.isFinite(originalAmount) || originalAmount <= 0 ||
+          !Number.isFinite(paidAmount) || paidAmount < 0) continue;
+        const remainingAmount = d.totalAmount !== undefined
+          ? Math.max(0, originalAmount - paidAmount)
+          : Number(d.remainingAmount ?? originalAmount);
+        if (!Number.isFinite(remainingAmount) || remainingAmount < 0) continue;
         const dId = d.id || crypto.randomUUID();
         await db
           .insert(financeDebts)
           .values({
             id: dId,
             ownerId: user.id,
-            person: d.person,
+            person,
             type: d.type || "I_OWE",
-            originalAmount: String(d.originalAmount),
-            remainingAmount: String(d.remainingAmount || d.originalAmount),
+            originalAmount: String(originalAmount),
+            remainingAmount: String(remainingAmount),
             dueDate: d.dueDate || null,
             note: d.note || null,
-            status: d.status || "ACTIVE",
+            status: d.isSettled || remainingAmount === 0 ? "SETTLED" : d.status || "ACTIVE",
             payments: d.payments || [],
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
             target: financeDebts.id,
             set: {
-              person: d.person,
+              person,
               type: d.type || "I_OWE",
-              originalAmount: String(d.originalAmount),
-              remainingAmount: String(d.remainingAmount || d.originalAmount),
+              originalAmount: String(originalAmount),
+              remainingAmount: String(remainingAmount),
               dueDate: d.dueDate || null,
               note: d.note || null,
-              status: d.status || "ACTIVE",
+              status: d.isSettled || remainingAmount === 0 ? "SETTLED" : d.status || "ACTIVE",
               payments: d.payments || [],
               updatedAt: new Date(),
             },

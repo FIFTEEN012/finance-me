@@ -5,6 +5,16 @@ import { persist } from 'zustand/middleware'
 import { DebtItem, DebtPayment, DebtType, DebtCategory } from '@/types/debt'
 import { useTransactionStore } from './useTransactionStore'
 import { useCategoryStore } from './useCategoryStore'
+import { debtToDatabasePayload, normalizeDebt } from '@/lib/debtRecord'
+
+function saveDebt(id: string, debt: DebtItem) {
+  if (typeof window === 'undefined') return
+  fetch(`/api/debts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(debtToDatabasePayload(debt)),
+  }).catch(() => {})
+}
 
 export interface CreateDebtInput {
   personName: string
@@ -55,7 +65,7 @@ export const useDebtStore = create<DebtStore>()(
   persist(
     (set, get) => ({
       debts: [],
-      replaceDebts: (debts) => set({ debts }),
+      replaceDebts: (debts) => set({ debts: debts.map((debt) => normalizeDebt(debt as unknown as Record<string, unknown>)) }),
 
       addDebt: (input, initialTx) => {
         const id = crypto.randomUUID()
@@ -153,13 +163,8 @@ export const useDebtStore = create<DebtStore>()(
           }),
         }))
 
-        if (typeof window !== 'undefined') {
-          fetch(`/api/debts/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates),
-          }).catch(() => {})
-        }
+        const updated = get().getDebtById(id)
+        if (updated) saveDebt(id, updated)
       },
 
       deleteDebt: (id) => {
@@ -236,6 +241,8 @@ export const useDebtStore = create<DebtStore>()(
             }
           }),
         }))
+        const updated = get().getDebtById(debtId)
+        if (updated) saveDebt(debtId, updated)
       },
 
       deletePayment: (debtId, paymentId) => {
@@ -254,6 +261,8 @@ export const useDebtStore = create<DebtStore>()(
             }
           }),
         }))
+        const updated = get().getDebtById(debtId)
+        if (updated) saveDebt(debtId, updated)
       },
 
       getDebtById: (id) => get().debts.find((d) => d.id === id),
@@ -277,6 +286,16 @@ export const useDebtStore = create<DebtStore>()(
     }),
     {
       name: 'finance-debts',
+      merge: (persisted, current) => {
+        const state = persisted as Partial<DebtStore> | undefined
+        return {
+          ...current,
+          ...state,
+          debts: Array.isArray(state?.debts)
+            ? state.debts.map((debt) => normalizeDebt(debt as unknown as Record<string, unknown>))
+            : current.debts,
+        }
+      },
     }
   )
 )

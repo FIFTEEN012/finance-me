@@ -26,6 +26,16 @@ The server-side backend selector is legacy-safe:
 
 Selecting PostgreSQL does not silently change the frontend or authentication. Replacing frontend cloud sync, replacing authentication, and importing old data are future, approval-gated phases.
 
+## Gemini quick add
+
+The quick-add dialog can turn short text such as `กาแฟ 85 บาทเมื่อวาน` into editable transaction rows. Create an API key in [Google AI Studio](https://aistudio.google.com/app/apikey), then set `GEMINI_API_KEY` in `.env.local` for local use and in the Vercel project's server-side environment variables for deployment. Restart the development server after setting the key. Do not prefix the variable with `NEXT_PUBLIC_`.
+
+The feature uses `gemini-3.5-flash-lite` and sends the text entered in its AI box, the current date, category names/IDs, and existing tag names to Google. It suggests existing or new tags for each row; tags are added only when selected. It never saves Gemini's suggestions automatically; review the rows and press Save. Google's [unpaid API terms](https://ai.google.dev/gemini-api/terms) advise against submitting sensitive or personal information on the free tier.
+
+## Import portfolio holdings from a screenshot
+
+On the Investments page, **นำเข้าจากภาพ** accepts one PNG, JPEG, or WebP screenshot up to 8 MB. Large images are compressed in the browser to fit Vercel's Function request limit. The image is sent to Gemini for extraction but is not stored in the portfolio. Review, correct, or skip each detected holding before saving. Existing matching holdings are updated to the quantities and prices shown in the image; missing values must be entered manually. This imports a snapshot of holdings and does not create purchase orders or financial transactions.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
