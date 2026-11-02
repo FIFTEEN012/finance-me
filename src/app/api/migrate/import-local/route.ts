@@ -46,7 +46,7 @@ export async function POST(request: Request) {
           color: cat.color || "#7c3aed",
           isDefault: !!cat.isDefault,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing({ target: [financeCategories.ownerId, financeCategories.id] });
       importedCategories++;
     }
   }
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
           source: "import-local",
           sourceMessageId: "migration",
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing({ target: [financeTransactions.ownerId, financeTransactions.id] });
       importedTransactions++;
     }
   }
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
           year: b.year,
           allowRollover: !!b.allowRollover,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing({ target: [financeBudgets.ownerId, financeBudgets.id] });
       importedBudgets++;
     }
   }
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
           icon: g.icon || "Target",
           color: g.color || "#10b981",
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing({ target: [financeGoals.ownerId, financeGoals.id] });
       importedGoals++;
     }
   }
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
           status: d.status || "ACTIVE",
           payments: d.payments || [],
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing({ target: [financeDebts.ownerId, financeDebts.id] });
       importedDebts++;
     }
   }

@@ -131,6 +131,9 @@ export async function POST(request: Request) {
     const { transactions, categories, budgets, goals, debts } = body;
     const db = getDatabase();
 
+    // Rows are keyed by (owner_id, id): every upsert below conflicts on that
+    // pair, so a client-supplied id can only ever match the caller's own row,
+    // and no `set` clause touches ownerId.
     const isValidUUID = (id: any) =>
       typeof id === "string" &&
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -154,7 +157,7 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
-            target: financeCategories.id,
+            target: [financeCategories.ownerId, financeCategories.id],
             set: {
               name: cat.name,
               type: catType,
@@ -199,7 +202,7 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
-            target: financeTransactions.id,
+            target: [financeTransactions.ownerId, financeTransactions.id],
             set: {
               transactionType: txType,
               amount: String(amountNum),
@@ -235,7 +238,7 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
-            target: financeBudgets.id,
+            target: [financeBudgets.ownerId, financeBudgets.id],
             set: {
               amount: String(b.amount),
               allowRollover: !!b.allowRollover,
@@ -265,7 +268,7 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
-            target: financeGoals.id,
+            target: [financeGoals.ownerId, financeGoals.id],
             set: {
               name: g.name,
               targetAmount: String(g.targetAmount),
@@ -309,7 +312,7 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
-            target: financeDebts.id,
+            target: [financeDebts.ownerId, financeDebts.id],
             set: {
               person,
               type: d.type || "I_OWE",
