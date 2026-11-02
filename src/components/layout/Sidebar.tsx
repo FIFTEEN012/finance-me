@@ -39,11 +39,6 @@ const groupedNav = [
     ],
   },
   {
-    title: 'Wellness',
-    items: [
-    ],
-  },
-  {
     title: 'System',
     items: [
       { href: '/categories', label: 'หมวดหมู่', icon: Tags },
