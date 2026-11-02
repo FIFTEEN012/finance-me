@@ -6,6 +6,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -45,6 +46,8 @@ export const financeTransactions = pgTable(
   "finance_transactions",
   {
     ...identityAndAuditColumns,
+    // Keyed by (owner_id, id) below, so the shared id column is not the PK here.
+    id: uuid("id").defaultRandom().notNull(),
     transactionType: text("transaction_type").notNull(),
     amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
     currency: text("currency").default("THB").notNull(),
@@ -60,70 +63,87 @@ export const financeTransactions = pgTable(
     date: text("date"),
   },
   (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
     check("finance_transactions_amount_positive", sql`${table.amount} > 0`),
   ],
 );
 
 /* ─── Categories ─── */
-export const financeCategories = pgTable("finance_categories", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  householdId: uuid("household_id"),
-  name: text("name").notNull(),
-  type: text("type").notNull(),
-  icon: text("icon").notNull(),
-  color: text("color").notNull(),
-  isDefault: boolean("is_default").default(false).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const financeCategories = pgTable(
+  "finance_categories",
+  {
+    id: text("id").notNull(),
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id"),
+    name: text("name").notNull(),
+    type: text("type").notNull(),
+    icon: text("icon").notNull(),
+    color: text("color").notNull(),
+    isDefault: boolean("is_default").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+);
 
 /* ─── Budgets ─── */
-export const financeBudgets = pgTable("finance_budgets", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  householdId: uuid("household_id"),
-  categoryId: text("category_id").notNull(),
-  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
-  month: integer("month").notNull(),
-  year: integer("year").notNull(),
-  allowRollover: boolean("allow_rollover").default(false).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const financeBudgets = pgTable(
+  "finance_budgets",
+  {
+    id: text("id").notNull(),
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id"),
+    categoryId: text("category_id").notNull(),
+    amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+    month: integer("month").notNull(),
+    year: integer("year").notNull(),
+    allowRollover: boolean("allow_rollover").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+);
 
 /* ─── Goals ─── */
-export const financeGoals = pgTable("finance_goals", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  householdId: uuid("household_id"),
-  name: text("name").notNull(),
-  targetAmount: numeric("target_amount", { precision: 18, scale: 2 }).notNull(),
-  savedAmount: numeric("saved_amount", { precision: 18, scale: 2 }).default("0").notNull(),
-  targetDate: text("target_date").notNull(),
-  description: text("description"),
-  icon: text("icon").notNull(),
-  color: text("color").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const financeGoals = pgTable(
+  "finance_goals",
+  {
+    id: text("id").notNull(),
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id"),
+    name: text("name").notNull(),
+    targetAmount: numeric("target_amount", { precision: 18, scale: 2 }).notNull(),
+    savedAmount: numeric("saved_amount", { precision: 18, scale: 2 }).default("0").notNull(),
+    targetDate: text("target_date").notNull(),
+    description: text("description"),
+    icon: text("icon").notNull(),
+    color: text("color").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+);
 
 /* ─── Debts ─── */
-export const financeDebts = pgTable("finance_debts", {
-  id: text("id").primaryKey(),
-  ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  householdId: uuid("household_id"),
-  person: text("person").notNull(),
-  type: text("type").notNull(),
-  originalAmount: numeric("original_amount", { precision: 18, scale: 2 }).notNull(),
-  remainingAmount: numeric("remaining_amount", { precision: 18, scale: 2 }).notNull(),
-  dueDate: text("due_date"),
-  note: text("note"),
-  status: text("status").default("ACTIVE").notNull(),
-  payments: jsonb("payments").default([]).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const financeDebts = pgTable(
+  "finance_debts",
+  {
+    id: text("id").notNull(),
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id"),
+    person: text("person").notNull(),
+    type: text("type").notNull(),
+    originalAmount: numeric("original_amount", { precision: 18, scale: 2 }).notNull(),
+    remainingAmount: numeric("remaining_amount", { precision: 18, scale: 2 }).notNull(),
+    dueDate: text("due_date"),
+    note: text("note"),
+    status: text("status").default("ACTIVE").notNull(),
+    payments: jsonb("payments").default([]).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+);
 
 /* ─── Settings ─── */
 export const financeSettings = pgTable("finance_settings", {

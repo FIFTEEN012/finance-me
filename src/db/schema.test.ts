@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   agentIngestionEvents,
+  financeBudgets,
+  financeCategories,
+  financeDebts,
+  financeGoals,
   financeTransactions,
   mealLogs,
   runningLogs,
@@ -26,6 +30,16 @@ const expectedTableNames = [
   "agent_ingestion_events",
 ];
 
+const ownerScopedTables = [
+  financeCategories,
+  financeBudgets,
+  financeGoals,
+  financeDebts,
+  financeTransactions,
+];
+
+const singleIdKeyTables = [mealLogs, workoutLogs, runningLogs, agentIngestionEvents];
+
 function columnNames(table: (typeof tables)[number]) {
   return getTableConfig(table).columns.map((column) => column.name);
 }
@@ -35,23 +49,47 @@ describe("local PostgreSQL schema contract", () => {
     expect(tables.map(getTableName)).toEqual(expectedTableNames);
   });
 
-  it.each(tables)("gives $name a UUID primary key and audit columns", (table) => {
-    const config = getTableConfig(table);
-    const id = config.columns.find((column) => column.name === "id");
+  it.each(tables.map((table) => [getTableName(table), table] as const))(
+    "gives %s a defaulted UUID id and audit columns",
+    (_name, table) => {
+      const config = getTableConfig(table);
+      const id = config.columns.find((column) => column.name === "id");
 
-    expect(id?.getSQLType()).toBe("uuid");
-    expect(id?.primary).toBe(true);
-    expect(id?.hasDefault).toBe(true);
-    expect(columnNames(table)).toEqual(
-      expect.arrayContaining([
-        "owner_id",
-        "source",
-        "source_message_id",
-        "created_at",
-        "updated_at",
-      ]),
-    );
-  });
+      expect(id?.getSQLType()).toBe("uuid");
+      expect(id?.notNull).toBe(true);
+      expect(id?.hasDefault).toBe(true);
+      expect(columnNames(table)).toEqual(
+        expect.arrayContaining([
+          "owner_id",
+          "source",
+          "source_message_id",
+          "created_at",
+          "updated_at",
+        ]),
+      );
+    },
+  );
+
+  it.each(ownerScopedTables.map((table) => [getTableName(table), table] as const))(
+    "keys %s by (owner_id, id)",
+    (_name, table) => {
+      const config = getTableConfig(table);
+
+      expect(config.primaryKeys).toHaveLength(1);
+      expect(config.primaryKeys[0].columns.map((c) => c.name)).toEqual(["owner_id", "id"]);
+      expect(config.columns.find((column) => column.name === "id")?.primary).toBe(false);
+    },
+  );
+
+  it.each(singleIdKeyTables.map((table) => [getTableName(table), table] as const))(
+    "keeps a single-column id primary key on %s",
+    (_name, table) => {
+      const config = getTableConfig(table);
+
+      expect(config.primaryKeys).toHaveLength(0);
+      expect(config.columns.filter((column) => column.primary).map((c) => c.name)).toEqual(["id"]);
+    },
+  );
 
   it("enforces owner-scoped ingestion idempotency", () => {
     const config = getTableConfig(agentIngestionEvents);
