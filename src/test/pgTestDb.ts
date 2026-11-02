@@ -14,18 +14,44 @@ export type TestDb = {
   close(): Promise<void>;
 };
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+/**
+ * Throws unless `url` is safe to wipe: a postgres(ql):// URL on a loopback
+ * host, with no query string (postgres.js reads connection options such as
+ * `host` from it), whose database name ends with `_test`.
+ */
+export function assertSafeTestDatabaseUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Refusing to reset database: TEST_DATABASE_URL is not a valid URL");
+  }
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    throw new Error(`Refusing to reset database: unsupported protocol "${parsed.protocol}"`);
+  }
+  if (!LOOPBACK_HOSTS.has(parsed.hostname.toLowerCase())) {
+    throw new Error(`Refusing to reset database on host "${parsed.hostname}": host must be loopback`);
+  }
+  if (parsed.search !== "") {
+    throw new Error("Refusing to reset database: TEST_DATABASE_URL must not have query parameters");
+  }
+  const dbName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  if (!dbName.endsWith("_test")) {
+    throw new Error(`Refusing to reset database "${dbName}": name must end with "_test"`);
+  }
+}
+
 /**
  * Connects to TEST_DATABASE_URL, wipes it, and applies the SQL migrations in
  * drizzle/ (journal order, up to `upToIdx` inclusive). Refuses to run unless
- * the database name ends with `_test`.
+ * `assertSafeTestDatabaseUrl` accepts the URL.
  */
 export async function createTestDb(opts: { upToIdx?: number } = {}): Promise<TestDb> {
   const url = integrationDbUrl();
   if (!url) throw new Error("TEST_DATABASE_URL is not set");
-  const dbName = decodeURIComponent(new URL(url).pathname.replace(/^\//, ""));
-  if (!dbName.endsWith("_test")) {
-    throw new Error(`Refusing to reset database "${dbName}": name must end with "_test"`);
-  }
+  assertSafeTestDatabaseUrl(url);
 
   const sql = postgres(url, { max: 4, onnotice: () => {} });
   try {
