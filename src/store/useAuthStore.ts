@@ -1,13 +1,12 @@
 'use client'
 
 import { create } from 'zustand'
-import type { User } from '@supabase/supabase-js'
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error'
 
 export interface AuthUser {
   id: string
-  email?: string | null
+  email: string
   name?: string | null
 }
 
