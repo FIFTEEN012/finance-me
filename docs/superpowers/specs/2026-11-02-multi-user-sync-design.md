@@ -62,7 +62,7 @@ Date: 2026-11-02 · Status: **Draft for owner review** (no code changes made yet
 
 Usage and AI targets are set after one month of data (no baseline exists today).
 
-**Cleanup, in order:** (1) `.gitattributes` forcing LF + one dedicated renormalize commit; (2) delete dead Supabase code (`useSupabaseSync.ts`; verify `supabase.ts` use in `useAuthStore`; move `rehydrateAllStores` into the new sync module; remove `@supabase/supabase-js` and `supabase-schema.sql` if unused); (3) CI (`tsc`, `vitest`, `next build`); (4) remove `any` only in sync/auth files being rewritten; (5) split `settings/page.tsx` when adding delete-account/export/quota UI; (6) rewrite README and `.env.local.example`; (7) add `.playwright-cli/` to `.gitignore` (`rklb-zones.html` left for the owner to decide).
+**Cleanup, in order:** (1) `.gitattributes` forcing LF (`* text=auto eol=lf`); no renormalize commit was needed. On Windows with `core.autocrlf=true` (expected, not verified) line endings are not a problem; the noisy diffs seen on 2026-11-01 came from running Git inside a Linux sandbox, and `.gitattributes` makes behaviour identical everywhere; (2) delete dead Supabase code (`useSupabaseSync.ts`; verify `supabase.ts` use in `useAuthStore`; move `rehydrateAllStores` into the new sync module; remove `@supabase/supabase-js` and `supabase-schema.sql` if unused); (3) CI (`tsc`, `vitest`, `next build`); (4) remove `any` only in sync/auth files being rewritten; (5) split `settings/page.tsx` when adding delete-account/export/quota UI; (6) rewrite README and `.env.local.example`; (7) add `.playwright-cli/` to `.gitignore` (`rklb-zones.html` left for the owner to decide).
 
 ## 7. Phases and launch gate
 
