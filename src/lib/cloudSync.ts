@@ -17,7 +17,6 @@ export const SYNC_STORE_KEYS = [
   'finance-dashboard-layout',
   'finance-onboarding',
   'finance-bill-splits',
-  'finance-cycle',
   'finance-debts',
 ] as const
 
@@ -26,6 +25,7 @@ const REMOVED_SYNC_STORE_KEYS = [
   'finance-routines',
   'finance-reading',
   'finance-health-quests',
+  'finance-cycle',
 ] as const
 
 export type SyncResult = { ok: true } | { ok: false; error: string }
@@ -243,7 +243,6 @@ export async function rehydrateAllStores() {
     { useDashboardStore },
     { useOnboardingStore },
     { useBillSplitStore },
-    { useCycleStore },
     { useDebtStore },
   ] = await Promise.all([
     import('@/store/useTransactionStore'),
@@ -256,7 +255,6 @@ export async function rehydrateAllStores() {
     import('@/store/useDashboardStore'),
     import('@/store/useOnboardingStore'),
     import('@/store/useBillSplitStore'),
-    import('@/store/useCycleStore'),
     import('@/store/useDebtStore'),
   ])
 
@@ -273,7 +271,6 @@ export async function rehydrateAllStores() {
     useDashboardStore,
     useOnboardingStore,
     useBillSplitStore,
-    useCycleStore,
     useDebtStore,
   ]
 

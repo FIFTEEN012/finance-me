@@ -13,7 +13,6 @@ import {
   Settings,
   SplitSquareHorizontal,
   FileUp,
-  Droplets,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataManager } from '@/components/shared/DataManager'
@@ -42,7 +41,6 @@ const groupedNav = [
   {
     title: 'Wellness',
     items: [
-      { href: '/cycle', label: 'รอบเดือน', icon: Droplets },
     ],
   },
   {

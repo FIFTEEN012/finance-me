@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeStoreData } from './cloudSync'
+import { mergeStoreData, SYNC_STORE_KEYS } from './cloudSync'
 
 describe('cloudSync - mergeStoreData', () => {
   it('merges transactions from local that are not yet in cloud without duplicates', () => {
@@ -72,5 +72,11 @@ describe('cloudSync - mergeStoreData', () => {
     expect(merged.state.budgets).toHaveLength(2)
     const ids = merged.state.budgets.map((b: any) => b.id)
     expect(ids).toEqual(['b-2', 'b-1'])
+  })
+})
+
+describe('cloudSync - SYNC_STORE_KEYS', () => {
+  it('does not sync the removed cycle store', () => {
+    expect(SYNC_STORE_KEYS as readonly string[]).not.toContain('finance-cycle')
   })
 })

@@ -17,7 +17,6 @@ import {
   Settings,
   SplitSquareHorizontal,
   FileUp,
-  Droplets,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -38,7 +37,6 @@ const PRIMARY_RIGHT = [
 // All sub-features accessible via "More" (เพิ่มเติม) sheet
 const SECONDARY = [
   { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
-  { href: '/cycle', label: 'รอบเดือน', icon: Droplets, desc: 'ติดตามวงล้อรอบเดือน' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },
   { href: '/bill-split', label: 'แบ่งบิล & ยืม-คืน', icon: SplitSquareHorizontal, desc: 'หารบิลและติดตามหนี้สิน' },
