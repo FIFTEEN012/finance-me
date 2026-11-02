@@ -23,7 +23,7 @@ Date: 2026-11-02 · Status: **Draft for owner review** (no code changes made yet
 
 1. Every synced table has primary key **`(owner_id, id)`** (transactions, categories, budgets, goals, debts). All upserts target that key.
 2. Add **`deleted_at`** (tombstone) to every synced table; deletes are soft and propagate.
-3. **`updated_at` is set by the server** (client clocks are not trusted); it is the sync cursor.
+3. **`updated_at` is set by the server** (client clocks are not trusted); it is the sync cursor. **It changes only when the row's content actually changes** (`… DO UPDATE SET … WHERE (cols) IS DISTINCT FROM (excluded.cols)`); otherwise every sync would mark every row as changed and delta sync would save nothing. Evidence: on 2026-11-02 08:20 UTC the 14 default categories of the first production account were re-stamped within 6 seconds although unchanged, because the current code writes `updated_at = now()` on every upsert.
 4. New table **`finance_documents`** `(owner_id, store, key, data jsonb, updated_at, deleted_at)`, PK `(owner_id, store, key)`, for: investments (one document per holding/order), settings, bill-splits, monthly expense logs. `dashboard-layout` and `onboarding` stay device-local.
 5. Migration **`0003`** changes PKs without data loss. **Back up (Neon branch/snapshot) before running.**
 6. Account deletion removes all rows in one DB transaction (`finance_transactions` and agent tables have no FK to `user` by design).
@@ -78,9 +78,19 @@ Usage and AI targets are set after one month of data (no baseline exists today).
 
 ## 8. Existing production data (2 accounts)
 
-- Before Phase 1: take a Neon snapshot/branch and have both users export their data (Settings → export).
-- Check: `SELECT owner_id, count(*) FROM finance_categories GROUP BY 1;` — if one account has no categories, its default categories were absorbed by the other; migration `0003` must re-create them per owner from `defaultCategories`.
-- Until Phase 1 ships, do not invite further users. Optional interim hotfix (needs owner approval): `emailAndPassword.disableSignUp: true`.
+Queried by the owner in Neon on 2026-11-02 (`finance_categories`):
+
+- Account A (owner): 17 rows = the 14 default categories (`cat-income-1..4`, `cat-expense-1..9`, `cat-transfer-1`) + 3 custom categories with UUID ids.
+- Account B: **1 row**, a custom category with a UUID id (created 2026-10-02). **B has no default categories on the server**; the 14 default ids are held by A. This confirms the id-collision bug (finding 1).
+- Custom (UUID-id) rows are correctly separated between accounts.
+- `updated_at` on A's default rows cannot show who synced or whether content was overwritten (see §4.3). Names of the checked default rows match `defaultCategories`; icons and colors were not compared.
+- Not yet checked: row counts per owner in `finance_transactions`, `finance_budgets`, `finance_goals`, `finance_debts` (ids are random UUIDs, so collisions are not expected).
+
+Actions:
+
+1. Before Phase 1: Neon snapshot/branch; both users export their data (Settings → export); B must not clear browser data until Phase 1 is done (her local store is currently her only complete copy of categories).
+2. Migration `0003` (or its accompanying data step) **backfills the 14 default categories for account B** from `defaultCategories`, keeping the same ids under owner B, so her existing transactions keep valid category references.
+3. Do not invite further users until Phase 1 ships. Optional interim hotfix (needs owner approval): `emailAndPassword.disableSignUp: true`.
 
 ## 9. Open items
 
