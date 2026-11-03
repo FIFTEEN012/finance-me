@@ -5,7 +5,8 @@
 
 > **สถานะการทดสอบ (พูดตรง ๆ):** SQL ใน 0003 ทดสอบกับ Postgres บนเครื่อง dev เท่านั้น
 > (embedded Postgres 18 ใน sandbox + integration tests ของ repo) ส่วน Neon อาจเป็น Postgres คนละเวอร์ชัน
-> จึงต้องซ้อมบน Neon branch ก่อนถ้าทำได้ (ขั้นที่ 0.3) และต้องมี snapshot `pre-0003` ก่อนแตะ production เสมอ
+> **ยังไม่เคยรันบน Neon เลย รวมถึง Neon branch ด้วย** จึง**แนะนำอย่างยิ่ง (ไม่ใช่ทางเลือก)** ให้ซ้อมทั้งขั้นที่ 0-3 บน Neon branch ทิ้งขว้างที่แยกออกมาจาก production ก่อน
+> (ใช้ connection string ของ branch นั้น) แล้วค่อยแตะ production หลัก และต้องมี snapshot `pre-0003` ก่อนแตะ production เสมอ
 
 ## สรุป 8 บรรทัด
 
@@ -29,6 +30,12 @@
 | รัน 0003 ซ้ำหลังที่ **สำเร็จไปแล้ว** | **ไม่ปลอดภัย / จะ error** (`finance_*_pkey` ไม่มีแล้ว) ไม่ต้องรันซ้ำ ให้ไปขั้นตรวจผล |
 | รันทีละ statement แยกกันโดยไม่มี `BEGIN` | **ห้าม** ถ้าหยุดกลางทางจะเหลือสถานะครึ่ง ๆ กลาง ๆ (ตารางไม่มี PK) |
 | Restore snapshot | ย้อนข้อมูลกลับไปจุด snapshot ข้อมูลที่เขียนหลังจากนั้นหาย |
+
+---
+
+## คำเตือนเรื่อง connection string (ความลับ)
+
+`DATABASE_URL` ของ production มีรหัสผ่านอยู่ในตัว: **ห้าม commit ลงไฟล์ `.env*` ใด ๆ**, ห้ามวางในแชท/issue/เอกสารที่แชร์ และหลังใช้เสร็จให้ลบ environment variable ทันที (ดูขั้นที่ 1 ทาง A) ถ้าเผลอหลุดไปที่ใดที่หนึ่ง ให้ reset รหัสผ่านใน Neon
 
 ---
 
@@ -76,7 +83,7 @@ ORDER BY 1;
 
 **ผลที่คาดหวัง / Expected:** คอลัมน์ `null_owner` เป็น **0 ทุกแถว** (ถ้าไม่ใช่ 0 หยุด: PRIMARY KEY ไม่ยอมให้ owner_id เป็น NULL) และ **จดคอลัมน์ `rows` ทั้ง 5 ค่าไว้** (จะเทียบหลัง migrate) สำหรับ `finance_categories` ตามข้อมูลเดือน 2026-11 ควรได้ 18 (A 17 + B 1)
 
-ถ้าอยากซ้อมก่อน: สร้าง Neon branch ใหม่จาก production (แยกจาก `pre-0003`) แล้วทำขั้นที่ 1-2 บน branch นั้นด้วย connection string ของ branch ก่อน แล้วค่อยทำจริง
+**ต้องซ้อมก่อน (แนะนำอย่างยิ่ง):** สร้าง Neon branch ใหม่จาก production (แยกจาก `pre-0003`) แล้วทำขั้นที่ 0.2 ถึง 3.3 บน branch นั้นด้วย connection string ของ branch ก่อน แล้วค่อยทำจริงกับ production หลัก
 
 ### 0.4 ตรวจว่าเคยใช้ drizzle migrator บน production ไหม
 
@@ -84,9 +91,24 @@ ORDER BY 1;
 SELECT count(*) FROM drizzle.__drizzle_migrations;
 ```
 
-**ผลที่คาดหวัง / Expected:**
-- ได้ตัวเลข (เช่น 3) = ตาราง migrations มีอยู่ ใช้ **ทาง A** (`npm run db:migrate`) ในขั้นที่ 1
-- error `relation "drizzle.__drizzle_migrations" does not exist` = ไม่เคยใช้ migrator ใช้ **ทาง B** (Neon SQL editor) ในขั้นที่ 1 และอ่าน "ข้อควรระวังหลังจากนี้" ท้ายเอกสาร
+ถ้าได้ตัวเลข ให้รันต่อ:
+
+```sql
+SELECT max(created_at) FROM drizzle.__drizzle_migrations;
+```
+
+(ค่า `created_at` คือค่า `when` ใน `drizzle/meta/_journal.json`: 0002 = `1788958344673`, 0003 = `1793632177056`)
+
+**กฎตัดสินใจ:**
+
+| ผลที่ได้ | ทำอย่างไร |
+|---|---|
+| `count = 3` **และ** `max(created_at) = 1788958344673` | ใช้ **ทาง A** (`npm run db:migrate`) |
+| มีแถวของ 0003 อยู่แล้ว (`max(created_at) = 1793632177056`) | 0003 ถูก apply ไปแล้ว **ข้ามไปขั้นตรวจผล** (ขั้นที่ 3) ห้ามรันซ้ำ |
+| ตารางมีอยู่แต่ว่าง (`count = 0`) หรือค่าอื่นที่ไม่ตรง | **หยุด** แล้วส่งผลให้ผู้พัฒนา (`db:migrate` จะพยายามรัน 0000 ซ้ำและ fail อย่างปลอดภัย แต่คุณจะติดค้าง) |
+| error `relation "drizzle.__drizzle_migrations" does not exist` / schema ไม่มี | ใช้ **ทาง B** (Neon SQL editor) และอ่าน "ข้อควรระวังหลังจากนี้" ท้ายเอกสาร |
+
+หมายเหตุ: `db:migrate` ที่ fail ต่อ production อาจทิ้ง schema/ตาราง `drizzle` ว่างเปล่าไว้ (ไม่เป็นอันตราย แต่จะเปลี่ยนผลของขั้นนี้ จึงให้จดผลขั้น 0.4 ไว้ก่อนลงมือรันอะไร)
 
 ---
 
@@ -94,19 +116,35 @@ SELECT count(*) FROM drizzle.__drizzle_migrations;
 
 **ก่อนเริ่มขั้นนี้:** ตกลงเวลากับอีกคนว่าไม่ใช้แอป และเตรียมพร้อม deploy code ใหม่ (ขั้นที่ 2) ให้เสร็จทันที ช่วงที่ตารางเปลี่ยนแล้วแต่ code เก่ายังรันอยู่ คือช่วงอันตราย
 
-### ทาง A: ตาราง migrations มีอยู่ (แนะนำ)
+### ทาง A: ตาราง migrations มีอยู่ และผ่านกฎใน 0.4 (แนะนำ)
 
-ในโฟลเดอร์โปรเจกต์ ใช้ `DATABASE_URL` ของ production (drizzle-kit อ่านจาก `.env.local` แล้ว `.env` หรือ environment variable; ถ้าไม่มีเลยมันจะ fallback ไปยัง Postgres local พอร์ต 55432 ซึ่ง**ไม่ใช่ production** ต้องตรวจให้แน่ใจว่าชี้ production จริง)
+ลำดับความสำคัญของ `DATABASE_URL` ที่ drizzle-kit ใช้ (dotenv ไม่ override ค่าที่มีอยู่แล้ว):
+**ตัวแปรใน shell > `.env.local` > `.env` > fallback ใน `drizzle.config.ts` คือ Postgres local `127.0.0.1:55432` (ไม่ใช่ production)**
+ดังนั้นถ้าตั้งค่าไม่สำเร็จ migrate อาจรันใส่ DB local แทน จึงมีขั้นตรวจบังคับด้านล่าง
+
+PowerShell (Windows):
+
+```powershell
+$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require"
+npm run db:migrate
+Remove-Item Env:DATABASE_URL
+```
+
+ใน PowerShell `set X=...` (แบบ cmd) **ใช้ไม่ได้** และรูปแบบ bash `X=... npm run db:migrate` จะเป็น parse error
+
+bash (macOS/Linux):
 
 ```bash
 DATABASE_URL='postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require' npm run db:migrate
 ```
 
-(แทนค่าด้วย connection string จริงจาก Neon; ใช้ single quote ครอบ)
+(แทนค่าด้วย connection string จริงจาก Neon; อย่าใส่ลงไฟล์ `.env*`)
 
 drizzle จะรัน migration ที่ยังไม่เคยรัน (ที่นี่คือ 0003) ใน transaction เดียว ถ้า fail จะ rollback ทั้งหมด
 
-**ผลที่คาดหวัง / Expected:** จบโดยไม่มี error และไม่มีข้อความ fail; ไปขั้นที่ 2 ทันที ถ้ามี error: ไม่มีอะไรเปลี่ยน อ่านข้อความ error แล้วส่งให้ผู้พัฒนา ห้ามรันซ้ำจนกว่าจะรู้สาเหตุ
+**ผลที่คาดหวัง / Expected:** จบโดยไม่มี error และไม่มีข้อความ fail ถ้ามี error: ไม่มีอะไรเปลี่ยน อ่านข้อความ error แล้วส่งให้ผู้พัฒนา ห้ามรันซ้ำจนกว่าจะรู้สาเหตุ
+
+**ตรวจบังคับก่อน deploy:** กลับไปที่ Neon SQL editor (production) แล้วรัน query ชื่อ constraint ของข้อ 0.2 ซ้ำ ต้องเห็น 5 ชื่อ `*_owner_id_id_pk` ถ้าไม่ใช่ **ห้าม deploy** (migrate อาจไปรันโดนฐานข้อมูล local หรือผิดตัว) ให้ส่งผลให้ผู้พัฒนา
 
 ### ทาง B: ไม่มีตาราง migrations → Neon SQL editor
 
@@ -160,15 +198,16 @@ ON CONFLICT ("owner_id", "id") DO NOTHING;
 COMMIT;
 ```
 
-ถ้าใช้ `psql` แทน editor ให้ใช้ single transaction: บันทึกก้อน SQL เดิม **โดยไม่ต้องมี BEGIN/COMMIT** ลงไฟล์ แล้วรัน `psql "$DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f 0003.sql`
+ถ้าใช้ `psql` แทน editor ให้ใช้ single transaction: บันทึกก้อน SQL เดิม **โดยไม่ต้องมี BEGIN/COMMIT** ลงไฟล์ แล้วรัน `psql "$DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f 0003.sql` (PowerShell ใช้ `$env:DATABASE_URL`)
+หรือใช้ไฟล์จริงโดยตรง (ไม่ต้องคัดลอก): `psql "$DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f drizzle/0003_multi_user_composite_pk.sql`
 
 **ผลที่คาดหวัง / Expected:** statements สำเร็จทั้งหมด (`COMMIT` สุดท้าย) ถ้า error กลางทาง ให้ใส่ `ROLLBACK;` แล้วตรวจว่าสถานะกลับเป็นเดิม (รันขั้น 0.2 อีกครั้งต้องได้ `*_pkey` 5 ตัวเหมือนเดิม) ส่ง error ให้ผู้พัฒนา
 
-> **ถ้าตาราง `drizzle.__drizzle_migrations` มีอยู่ แต่คุณเลือกทาง B:** drizzle จะไม่รู้ว่า 0003 ถูกรันแล้ว และ `npm run db:migrate` ครั้งถัดไปจะพยายามรัน 0003 อีก (แล้ว error) วิธีที่แนะนำคือ **ใช้ทาง A แทน** ถ้าจำเป็นต้องใช้ editor จริง ๆ มี 2 ทางเลือก: (1) ไม่รัน `db:migrate` อีกจนกว่าจะแก้ให้ตรงกัน หรือ (2) บันทึก migration ลงตารางเอง โดยคำนวณ hash ด้วย `sha256sum drizzle/0003_multi_user_composite_pk.sql` แล้วรัน
+> **ถ้าตาราง `drizzle.__drizzle_migrations` มีอยู่ แต่คุณเลือกทาง B:** drizzle จะไม่รู้ว่า 0003 ถูกรันแล้ว และ `npm run db:migrate` ครั้งถัดไปจะพยายามรัน 0003 อีก (แล้ว error) วิธีที่แนะนำคือ **ใช้ทาง A แทน** ถ้าจำเป็นต้องใช้ editor จริง ๆ มี 2 ทางเลือก: (1) ไม่รัน `db:migrate` อีกจนกว่าจะแก้ให้ตรงกัน หรือ (2) บันทึก migration ลงตารางเอง โดยคำนวณ hash (PowerShell: `(Get-FileHash drizzle\0003_multi_user_composite_pk.sql -Algorithm SHA256).Hash.ToLower()`; bash: `sha256sum`) แล้วรัน (drizzle ไม่เคยเอา hash นี้มาเทียบซ้ำ ใช้เป็นแค่บันทึก)
 >
 > ```sql
 > INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-> VALUES ('<ค่า sha256 จาก sha256sum>', 1793632177056);
+> VALUES ('<ค่า sha256 ที่คำนวณได้>', 1793632177056);
 > ```
 >
 > (`1793632177056` คือค่า `when` ของ 0003 ใน `drizzle/meta/_journal.json`) ขั้นนี้ขึ้นกับพฤติกรรมของ drizzle-kit เวอร์ชันที่ใช้ ถ้าไม่แน่ใจ อย่าทำเอง ให้ถามผู้พัฒนา
@@ -181,7 +220,7 @@ COMMIT;
 
 ลำดับ: ทั้งสองคนไม่ใช้งาน, รัน migration (ขั้นที่ 1), deploy code ใหม่, ตรวจ (ขั้นที่ 3) แอปแบบ local-first จะ retry การ sync เองเมื่อ deploy เสร็จ ข้อมูลที่ยังไม่ sync อยู่ในเบราว์เซอร์ ไม่หาย
 
-**รู้ได้อย่างไรว่า code ใหม่ขึ้นแล้ว:** เปิดหน้า deployments ของ host ที่ใช้ deploy (ตามปกติของคุณ) ดูว่า deployment ล่าสุดเป็น commit `29a21ce` หรือใหม่กว่า สถานะ Ready/สำเร็จ แล้วเปิดแอปที่ deployment URL ที่ใช้เป็นประจำ (hard refresh) ล็อกอินและกด sync (หรือเพิ่มรายการทดสอบหนึ่งรายการ) ถ้า sync สำเร็จโดยไม่ error แปลว่า code ใหม่ทำงาน (ซึ่ง code เก่าทำไม่ได้หลัง 0003) ใน Network tab ของเบราว์เซอร์ POST `/api/sync` ต้องตอบ 200
+**รู้ได้อย่างไรว่า code ใหม่ขึ้นแล้ว:** เปิดหน้า deployments ของ host ที่ใช้ deploy (ตามปกติของคุณ) ดูว่า deployment ล่าสุดเป็น commit `29a21ce` หรือใหม่กว่า สถานะ Ready/สำเร็จ แล้วเปิดแอปที่ deployment URL ที่ใช้เป็นประจำ (hard refresh) ล็อกอินและดูข้อมูลของตัวเอง **(ขั้นนี้อ่านอย่างเดียว ห้ามเพิ่ม/แก้รายการ เพื่อไม่ให้จำนวนแถวเปลี่ยนก่อนขั้น 3.3)** ถ้าหน้าแอปโหลดได้ปกติและ deployment เป็น commit ใหม่ ถือว่า code ใหม่ขึ้นแล้ว การทดสอบเขียนข้อมูลจริงให้ทำที่ขั้น 3.4 หลังตรวจจำนวนแถวเสร็จ
 
 ---
 
@@ -248,8 +287,12 @@ ORDER BY tablename;
 
 ### 3.4 ทดสอบใช้งานจริง
 
+ทำขั้นนี้ **หลัง** 3.1-3.3 เสร็จแล้วเท่านั้น (เพราะมีการเขียนข้อมูล)
+
 1. ล็อกอินบัญชี A (เบราว์เซอร์/โปรไฟล์ของ A): เห็นข้อมูลของตัวเอง ไม่เห็นข้อมูลของ B, กด sync ได้
 2. ล็อกอินบัญชี B (**เบราว์เซอร์/โปรไฟล์แยกกัน** ดู launch gate ข้อ i): เห็นข้อมูลของตัวเอง ไม่เห็นของ A, มีหมวดหมู่ default ครบ, รายการเดิมยังผูกกับหมวดหมู่ถูกต้อง, sync ได้
+
+3. (ทางเลือก) เพิ่มรายการทดสอบ 1 รายการในบัญชีหนึ่งแล้ว sync ใน Network tab POST `/api/sync` ต้องตอบ 200 และ `finance_transactions` ใน DB จะเพิ่ม **+1** จากตัวเลขใน 3.3 แล้ว **ลบรายการทดสอบนั้นในแอป** และ sync อีกครั้ง (การเทียบ "จำนวนแถวเท่าเดิม" ของ 3.3 ต้องทำก่อนขั้นนี้เท่านั้น)
 
 **ผลที่คาดหวัง / Expected:** ทั้งสองบัญชีเห็นเฉพาะข้อมูลของตัวเอง และ sync สำเร็จ
 
@@ -265,6 +308,7 @@ ORDER BY tablename;
 4. รัน query ขั้น 0.2 และ 0.3 อีกครั้ง ต้องได้สถานะเดิมก่อนเริ่ม
 
 **ข้อควรรู้:**
+- หลัง restore แล้ว code เก่าของ `/api/sync` ใช้ `ON CONFLICT (id) DO UPDATE` โดยไม่ผูกกับ owner **บั๊กเขียนทับข้ามบัญชีจึงกลับมา** หลัง rollback บัญชี B **ห้ามใช้หรือ sync แอป** (และเบราว์เซอร์ของ B มี default id 14 ตัวที่ดึงมาตอนใช้ code ใหม่) จนกว่าจะ apply การแก้ไขอีกครั้ง ให้ใช้แอปได้เพียงบัญชีเดียวเท่านั้น
 - ข้อมูลที่ถูกเขียนระหว่างเวลา snapshot ถึงเวลา rollback **จะหายไป** จึงควรให้ช่วงนี้สั้นและไม่มีคนใช้ (ข้อมูลที่ยังอยู่ในเบราว์เซอร์จะ sync ใหม่ได้)
 - Backfill ใน 0003 จะ **สร้าง default category ที่ผู้ใช้เคยลบไปกลับคืนมา** (ถ้าผู้ใช้ลบ default ออกจากบัญชีตัวเอง) ตอนนี้ทั้งสองบัญชีไม่ได้รับผลกระทบ แต่ถ้าในอนาคตต้องรัน logic แบบนี้ซ้ำ ให้รู้ไว้
 
