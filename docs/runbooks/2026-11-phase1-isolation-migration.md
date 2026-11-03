@@ -15,7 +15,7 @@
 3. ตรวจก่อนรัน: ชื่อ primary key ต้องเป็น `<table>_pkey` ครบ 5 ตาราง และต้องไม่มี `owner_id` เป็น NULL; จดจำนวนแถวทุกตารางไว้เทียบ
 4. ถ้าตรวจไม่ผ่านแม้ข้อเดียว **หยุด** แล้วส่งผล query มาขอความช่วยเหลือ (ยังไม่ได้แก้อะไรเลย ปลอดภัย)
 5. รัน migration แบบ transaction เดียว (`npm run db:migrate` หรือ `BEGIN; ... COMMIT;`): ถ้า error อะไรก็ตาม จะไม่มีการเปลี่ยนแปลงเลย
-6. หลัง migrate แล้ว **code เก่าจะ sync ไม่ได้** (POST `/api/sync` ล้มเหลว) ต้อง deploy code ใหม่ (commit `29a21ce` ขึ้นไป) ทันที ทำตอนทั้งสองคนไม่ได้ใช้งาน
+6. หลัง migrate แล้ว **code เก่าจะ sync ไม่ได้** (POST `/api/sync` ล้มเหลว) ต้อง deploy code ใหม่ (commit เดียวกับที่ใช้รัน migrate คือ `42a556a` ขึ้นไป) ทันที ทำตอนทั้งสองคนไม่ได้ใช้งาน
 7. ตรวจผล: จำนวนหมวดหมู่ต่อ owner (A = 17, B = 15 ตามข้อมูล 2026-11), PK เป็น `(owner_id, id)`, จำนวนแถวก่อน/หลังเท่ากัน, ล็อกอินทั้งสองบัญชีดูข้อมูลของตัวเอง
 8. ถ้าผิดพลาด: restore snapshot `pre-0003` (ข้อมูลที่เขียนหลัง snapshot จะหาย จึงต้องให้ช่วงเวลานี้สั้นและไม่มีคนใช้)
 
@@ -116,6 +116,18 @@ SELECT max(created_at) FROM drizzle.__drizzle_migrations;
 
 **ก่อนเริ่มขั้นนี้:** ตกลงเวลากับอีกคนว่าไม่ใช้แอป และเตรียมพร้อม deploy code ใหม่ (ขั้นที่ 2) ให้เสร็จทันที ช่วงที่ตารางเปลี่ยนแล้วแต่ code เก่ายังรันอยู่ คือช่วงอันตราย
 
+**รัน migrate จาก commit ที่ถูกต้องเท่านั้น (บังคับ):** รัน `npm run db:migrate` (หรือ `psql -f drizzle/...` ของทาง B) **จาก checkout ของ branch `feat/multi-user-isolation` ที่ commit `42a556a` หรือใหม่กว่า (หรือผลที่ merge แล้ว) เท่านั้น** ก่อนรันให้ตรวจว่าไฟล์ 0003 มี backfill อยู่ท้ายไฟล์:
+
+```powershell
+Select-String -Path drizzle\0003_multi_user_composite_pk.sql -Pattern 'INSERT INTO "finance_categories"'
+```
+
+(bash: `grep -c 'INSERT INTO "finance_categories"' drizzle/0003_multi_user_composite_pk.sql`)
+
+**ผลที่คาดหวัง / Expected:** เจอ **1 match** (บรรทัด `INSERT INTO "finance_categories" ...` ใกล้ท้ายไฟล์) ถ้าไม่เจอ **หยุด ห้ามรัน migrate** ให้ `git checkout feat/multi-user-isolation` แล้ว `git pull` ก่อน
+
+**ทำไม:** commit เก่า `29a21ce` มีไฟล์ 0003 ที่ **ยังไม่มี backfill** (มีแค่การเปลี่ยน primary key) ถ้ารัน migrate จาก commit นั้น drizzle จะบันทึกว่า 0003 ถูก apply แล้ว และ backfill default category ของบัญชี B **จะไม่ถูกรันอีกเลย** (การรัน migrate ครั้งหลังจะข้าม 0003 เพราะถือว่าทำไปแล้ว)
+
 ### ทาง A: ตาราง migrations มีอยู่ และผ่านกฎใน 0.4 (แนะนำ)
 
 ลำดับความสำคัญของ `DATABASE_URL` ที่ drizzle-kit ใช้ (dotenv ไม่ override ค่าที่มีอยู่แล้ว):
@@ -125,12 +137,12 @@ SELECT max(created_at) FROM drizzle.__drizzle_migrations;
 PowerShell (Windows):
 
 ```powershell
-$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require"
+$env:DATABASE_URL = 'postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require'
 npm run db:migrate
 Remove-Item Env:DATABASE_URL
 ```
 
-ใน PowerShell `set X=...` (แบบ cmd) **ใช้ไม่ได้** และรูปแบบ bash `X=... npm run db:migrate` จะเป็น parse error
+ใช้ single quote `'...'` เสมอ (ถ้ารหัสผ่านมี `$` เครื่องหมาย double quote จะทำให้ PowerShell แปลงค่าผิด) ใน PowerShell `set X=...` (แบบ cmd) **ใช้ไม่ได้** และรูปแบบ bash `X=... npm run db:migrate` จะเป็น parse error
 
 bash (macOS/Linux):
 
@@ -216,11 +228,11 @@ COMMIT;
 
 ## ขั้นที่ 2: deploy code ใหม่ทันที (ช่วงอันตราย)
 
-หลัง 0003 สำเร็จ code เก่าใช้ `ON CONFLICT (id)` ซึ่งไม่มี unique constraint บน `id` อีกแล้ว ดังนั้น **POST `/api/sync` ของ code เก่าจะ error 500** (อ่านข้อมูลยังได้ แต่บันทึกไม่ได้) ต้อง deploy code ใหม่ (branch `feat/multi-user-isolation`, commit `29a21ce` ขึ้นไป ซึ่งใช้ `ON CONFLICT (owner_id, id)`) ให้เร็วที่สุด
+หลัง 0003 สำเร็จ code เก่าใช้ `ON CONFLICT (id)` ซึ่งไม่มี unique constraint บน `id` อีกแล้ว ดังนั้น **POST `/api/sync` ของ code เก่าจะ error 500** (อ่านข้อมูลยังได้ แต่บันทึกไม่ได้) ต้อง deploy code ใหม่ ให้เร็วที่สุด โดย **deploy commit เดียวกับที่ใช้รัน migrate ในขั้นที่ 1** (branch `feat/multi-user-isolation`, commit `42a556a` ขึ้นไป หรือผลที่ merge แล้ว ซึ่งใช้ `ON CONFLICT (owner_id, id)` และมีการป้องกันข้อมูล local ข้ามบัญชีฝั่ง client) อย่า deploy commit ที่เก่ากว่าที่ใช้ migrate
 
 ลำดับ: ทั้งสองคนไม่ใช้งาน, รัน migration (ขั้นที่ 1), deploy code ใหม่, ตรวจ (ขั้นที่ 3) แอปแบบ local-first จะ retry การ sync เองเมื่อ deploy เสร็จ ข้อมูลที่ยังไม่ sync อยู่ในเบราว์เซอร์ ไม่หาย
 
-**รู้ได้อย่างไรว่า code ใหม่ขึ้นแล้ว:** เปิดหน้า deployments ของ host ที่ใช้ deploy (ตามปกติของคุณ) ดูว่า deployment ล่าสุดเป็น commit `29a21ce` หรือใหม่กว่า สถานะ Ready/สำเร็จ แล้วเปิดแอปที่ deployment URL ที่ใช้เป็นประจำ (hard refresh) ล็อกอินและดูข้อมูลของตัวเอง **(ขั้นนี้อ่านอย่างเดียว ห้ามเพิ่ม/แก้รายการ เพื่อไม่ให้จำนวนแถวเปลี่ยนก่อนขั้น 3.3)** ถ้าหน้าแอปโหลดได้ปกติและ deployment เป็น commit ใหม่ ถือว่า code ใหม่ขึ้นแล้ว การทดสอบเขียนข้อมูลจริงให้ทำที่ขั้น 3.4 หลังตรวจจำนวนแถวเสร็จ
+**รู้ได้อย่างไรว่า code ใหม่ขึ้นแล้ว:** เปิดหน้า deployments ของ host ที่ใช้ deploy (ตามปกติของคุณ) ดูว่า deployment ล่าสุดเป็น commit เดียวกับที่ใช้ migrate (`42a556a` หรือใหม่กว่า) สถานะ Ready/สำเร็จ แล้วเปิดแอปที่ deployment URL ที่ใช้เป็นประจำ (hard refresh) ล็อกอินและดูข้อมูลของตัวเอง **(ขั้นนี้อ่านอย่างเดียว ห้ามเพิ่ม/แก้รายการ เพื่อไม่ให้จำนวนแถวเปลี่ยนก่อนขั้น 3.3)** ถ้าหน้าแอปโหลดได้ปกติและ deployment เป็น commit ใหม่ ถือว่า code ใหม่ขึ้นแล้ว การทดสอบเขียนข้อมูลจริงให้ทำที่ขั้น 3.4 หลังตรวจจำนวนแถวเสร็จ
 
 ---
 
@@ -289,6 +301,8 @@ ORDER BY tablename;
 
 ทำขั้นนี้ **หลัง** 3.1-3.3 เสร็จแล้วเท่านั้น (เพราะมีการเขียนข้อมูล)
 
+> **การป้องกันใหม่ฝั่ง client:** code ใหม่จดว่าข้อมูล local ในเบราว์เซอร์เป็นของบัญชีไหน (key `finance-owner-id` ใน localStorage) ถ้าบัญชีอื่นล็อกอินบนเบราว์เซอร์นั้น ข้อมูล local ของบัญชีเดิมจะถูกล้างก่อนอัปโหลด **แต่เบราว์เซอร์เก่าที่ยังไม่มี marker (legacy) จะเก็บข้อมูล local ไว้ตามเดิมและยังเสี่ยงอยู่ 1 ครั้ง** ดังนั้นให้ทั้งสองบัญชี **ล็อกอินครั้งแรกบนเบราว์เซอร์/โปรไฟล์ของตัวเองก่อน** (ข้อ 1 และ 2 ด้านล่าง) เพื่อให้ marker ถูกเขียน และ **ห้ามใช้เบราว์เซอร์/โปรไฟล์ร่วมกันก่อนหน้านั้น**
+
 1. ล็อกอินบัญชี A (เบราว์เซอร์/โปรไฟล์ของ A): เห็นข้อมูลของตัวเอง ไม่เห็นข้อมูลของ B, กด sync ได้
 2. ล็อกอินบัญชี B (**เบราว์เซอร์/โปรไฟล์แยกกัน** ดู launch gate ข้อ i): เห็นข้อมูลของตัวเอง ไม่เห็นของ A, มีหมวดหมู่ default ครบ, รายการเดิมยังผูกกับหมวดหมู่ถูกต้อง, sync ได้
 
@@ -325,7 +339,7 @@ ORDER BY tablename;
 
 ยังไม่ควรเปิดสมัครสาธารณะจนกว่าข้อเหล่านี้จะเสร็จ:
 
-1. **localStorage แชร์ต่อเบราว์เซอร์ ไม่ใช่ต่อ user** ถ้าสองบัญชีใช้เบราว์เซอร์/โปรไฟล์เดียวกัน ข้อมูล local ของคนแรกอาจถูกอัปโหลดเข้าบัญชีของคนที่สองตอน sync **อย่าให้สองบัญชีใช้เบราว์เซอร์/โปรไฟล์เดียวกัน** จนกว่าจะแก้ (ฝั่ง client ยังไม่ได้แก้ในงานนี้) นอกจากนี้ข้อมูลเก่า `finance-cycle` ยังค้างอยู่ใน localStorage ของเบราว์เซอร์ (ไม่มี UI ลบ) ต้องล้างเองหรือรอ Phase 4
+1. **localStorage แชร์ต่อเบราว์เซอร์ ไม่ใช่ต่อ user** ถ้าสองบัญชีใช้เบราว์เซอร์/โปรไฟล์เดียวกัน ข้อมูล local ของคนแรกอาจถูกอัปโหลดเข้าบัญชีของคนที่สองตอน sync **อย่าให้สองบัญชีใช้เบราว์เซอร์/โปรไฟล์เดียวกัน** จนกว่าแต่ละบัญชีจะล็อกอินบนเบราว์เซอร์ของตัวเองแล้วอย่างน้อยหนึ่งครั้ง (code ใหม่มี owner marker `finance-owner-id` ที่ล้างข้อมูล local ของบัญชีเดิมเมื่อบัญชีอื่นล็อกอิน แต่เบราว์เซอร์ legacy ที่ยังไม่มี marker จะยังเสี่ยง 1 ครั้ง ดูขั้น 3.4; การล้างข้อมูลตอน sign-out ยังไม่ได้ทำ) นอกจากนี้ข้อมูลเก่า `finance-cycle` ยังค้างอยู่ใน localStorage ของเบราว์เซอร์ (ไม่มี UI ลบ) ต้องล้างเองหรือรอ Phase 4
 2. **ยังไม่มี email verification และ AI quota/rate limit** (อยู่ใน Phase 3)
 3. **Gemini billing และ budget alert** ต้องตั้งค่าก่อน
 4. **ซ้อม backup/restore** อย่างน้อยหนึ่งครั้ง (ทำ restore จาก snapshot จริงบน branch ทดสอบ) ก่อนมีผู้ใช้เพิ่ม
