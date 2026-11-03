@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-client'
 import { migrateLocalDataToNeon } from '@/lib/migrateLocalData'
 import { pullFromNeon } from '@/lib/neonSync'
+import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
 import { useAuthStore } from '@/store/useAuthStore'
 
 const schema = z.object({
@@ -59,6 +60,8 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
 
         if (res.data?.user) {
           useAuthStore.getState().setUser(res.data.user)
+          // Drop another account's local data before anything is uploaded
+          ensureLocalDataBelongsTo(res.data.user.id)
           // Auto migrate local items to Neon if any exist
           await migrateLocalDataToNeon()
           // Pull and sync latest records
@@ -78,6 +81,8 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
 
         if (res.data?.user) {
           useAuthStore.getState().setUser(res.data.user)
+          // Drop another account's local data before anything is uploaded
+          ensureLocalDataBelongsTo(res.data.user.id)
           const migrateRes = await migrateLocalDataToNeon()
           await pullFromNeon()
           if (migrateRes.ok && migrateRes.count) {

@@ -9,6 +9,7 @@ import { useBudgetStore } from '@/store/useBudgetStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { rehydrateAllStores } from '@/lib/cloudSync'
+import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
 import { debtToDatabasePayload, normalizeDebt } from '@/lib/debtRecord'
 
 export function useInitialData() {
@@ -148,6 +149,8 @@ export function useInitialData() {
     if (!isPending) {
       if (session?.user) {
         setUser(session.user)
+        // Drop another account's local data before any upload decision
+        ensureLocalDataBelongsTo(session.user.id)
         refreshData()
       } else {
         setUser(null)
