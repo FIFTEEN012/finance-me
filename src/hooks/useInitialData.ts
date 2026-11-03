@@ -9,6 +9,8 @@ import { useBudgetStore } from '@/store/useBudgetStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { rehydrateAllStores } from '@/lib/cloudSync'
+import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
+import { debtToDatabasePayload, normalizeDebt } from '@/lib/debtRecord'
 
 export function useInitialData() {
   const { data: session, isPending } = authClient.useSession()
@@ -96,7 +98,22 @@ export function useInitialData() {
       if (Array.isArray(data.debts)) {
         const serverDebtIds = new Set(data.debts.map((d: any) => d.id))
         unpushedDebts = localDebts.filter((d) => !serverDebtIds.has(d.id))
-        useDebtStore.getState().replaceDebts([...data.debts, ...unpushedDebts])
+        const localById = new Map(localDebts.map((debt) => [debt.id, debt]))
+        const mergedDebts = data.debts.map((debt: any) => {
+          const local = localById.get(debt.id)
+          const merged = normalizeDebt(debt, local as unknown as Record<string, unknown> | undefined)
+          // Repayments from older versions existed only in localStorage.
+          if (local?.payments?.length && merged.payments === local.payments &&
+            merged.payments.length > (debt.payments?.length ?? 0)) {
+            fetch(`/api/debts/${debt.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(debtToDatabasePayload(merged)),
+            }).catch(() => {})
+          }
+          return merged
+        })
+        useDebtStore.getState().replaceDebts([...mergedDebts, ...unpushedDebts])
       }
 
       // If there were any unpushed items locally, persist them to Neon in background
@@ -132,6 +149,8 @@ export function useInitialData() {
     if (!isPending) {
       if (session?.user) {
         setUser(session.user)
+        // Drop another account's local data before any upload decision
+        ensureLocalDataBelongsTo(session.user.id)
         refreshData()
       } else {
         setUser(null)

@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { InvestmentHolding, PortfolioSnapshot, DividendRecord, InvestmentOrder, AssetClass } from '@/types'
+import { applyInvestmentImport, type InvestmentImportAction } from '@/lib/investmentImageImport'
 
 interface InvestmentStore {
   holdings: InvestmentHolding[]
@@ -11,6 +12,7 @@ interface InvestmentStore {
   orders: InvestmentOrder[]
 
   addHolding: (h: Omit<InvestmentHolding, 'id' | 'createdAt' | 'lastPriceUpdate'>) => string
+  importHoldings: (actions: InvestmentImportAction[]) => void
   updateHolding: (id: string, h: Partial<Omit<InvestmentHolding, 'id' | 'createdAt'>>) => void
   deleteHolding: (id: string) => void
   updatePrice: (id: string, newPrice: number) => void
@@ -63,6 +65,10 @@ export const useInvestmentStore = create<InvestmentStore>()(
           ],
         }))
         return id
+      },
+      importHoldings: (actions) => {
+        const now = new Date().toISOString()
+        set((s) => ({ holdings: applyInvestmentImport(s.holdings, actions, now, () => crypto.randomUUID()) }))
       },
 
       updateHolding: (id, h) =>

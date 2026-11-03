@@ -16,6 +16,7 @@ import { CsvImportDialog }        from '@/components/transactions/CsvImportDialo
 import { ExportDialog }           from '@/components/transactions/ExportDialog'
 import { useTransactionStore }    from '@/store/useTransactionStore'
 import { useCategoryStore }       from '@/store/useCategoryStore'
+import { useQuickAddStore }       from '@/store/useQuickAddStore'
 import { Transaction }            from '@/types'
 import { formatCurrency, cn }     from '@/lib/utils'
 import { PressCard }              from '@/components/ui/PressCard'
@@ -75,6 +76,7 @@ export default function TransactionsPage() {
   const [editing, setEditing]       = useState<Transaction | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const searchRef                   = useRef<HTMLInputElement>(null)
+  const openQuickAdd = useQuickAddStore((state) => state.setOpen)
 
   const allTags = getAllTags()
   const presets = buildPresets()
@@ -108,7 +110,6 @@ export default function TransactionsPage() {
   const totalTransfer = filtered.filter((t) => t.type === 'TRANSFER').reduce((s, t) => s + t.amount, 0)
   const net          = totalIncome - totalExpense
 
-  const handleOpenAdd = () => { setEditing(null); setFormOpen(true) }
   const handleEdit    = (t: Transaction) => { setEditing(t); setFormOpen(true) }
 
   return (
@@ -135,10 +136,10 @@ export default function TransactionsPage() {
           
           <div className="flex gap-2.5 w-full md:w-auto">
             <button
-              onClick={handleOpenAdd}
+              onClick={() => openQuickAdd(true)}
               className="flex-1 md:flex-none font-black text-sm px-6 py-3 rounded-2xl bg-white text-[var(--quest-primary)] border-2 border-[var(--quest-primary)] border-b-4 shadow-[0_3px_0_0_var(--quest-primary)] transform transition-all active:translate-y-[2px] active:border-b-2 hover:bg-slate-50 flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4 stroke-[3px]" /> เพิ่มธุรกรรม
+              <Plus className="w-4 h-4 stroke-[3px]" /> เพิ่มรายการด่วน
             </button>
           </div>
         </div>
@@ -438,10 +439,10 @@ export default function TransactionsPage() {
                 </p>
               </div>
               <button
-                onClick={handleOpenAdd}
+                onClick={() => openQuickAdd(true)}
                 className="font-black text-xs px-4 py-2.5 rounded-2xl bg-[var(--quest-primary-container)] text-white border-2 border-[var(--quest-primary)] border-b-4 shadow-[0_2px_0_0_var(--quest-primary)] active:translate-y-[2px] active:border-b-2 hover:opacity-95 flex items-center gap-1.5 transition-all select-none"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[3px]" /> เริ่มบันทึกธุรกรรม
+                <Plus className="w-3.5 h-3.5 stroke-[3px]" /> เพิ่มรายการด่วน
               </button>
             </div>
           )}

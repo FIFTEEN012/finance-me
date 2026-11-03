@@ -13,6 +13,7 @@ import { ASSET_CLASS_META, CURRENCY_SYMBOLS } from '@/components/investments/Inv
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
 import { cn } from '@/lib/utils'
 import type { AssetClass, InvestmentHolding } from '@/types'
 
@@ -36,6 +37,7 @@ export function InvestmentBuyDialog({
   const { addTransaction, updateTransaction } = useTransactionStore()
   const { categories } = useCategoryStore()
   const { recordBuyOrder } = useInvestmentStore()
+  const { convertToThb, rates } = useExchangeRates()
   const [mode, setMode] = useState<'existing' | 'new'>('existing')
   const [holdingId, setHoldingId] = useState('')
   const [name, setName] = useState('')
@@ -47,6 +49,8 @@ export function InvestmentBuyDialog({
   const [fee, setFee] = useState(0)
   const [date, setDate] = useState(getDateKey())
   const [note, setNote] = useState('')
+  const [customThbAmount, setCustomThbAmount] = useState('')
+  const [isThbOverridden, setIsThbOverridden] = useState(false)
 
   const transferCategory = useMemo(
     () =>
@@ -61,6 +65,11 @@ export function InvestmentBuyDialog({
   const selectedHolding = holdings.find((holding) => holding.id === holdingId)
   const totalInvestment = Math.max(0, units) * Math.max(0, pricePerUnit)
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency
+
+  const autoThbAmount = useMemo(() => {
+    if (currency === 'THB') return totalInvestment
+    return convertToThb(totalInvestment, currency)
+  }, [currency, totalInvestment, convertToThb])
 
   useEffect(() => {
     if (!open) return
@@ -77,13 +86,22 @@ export function InvestmentBuyDialog({
     setFee(0)
     setDate(getDateKey())
     setNote('')
+    setCustomThbAmount('')
+    setIsThbOverridden(false)
   }, [holdings, open])
 
   useEffect(() => {
     if (!selectedHolding || mode !== 'existing') return
     setCurrency(selectedHolding.currency ?? 'THB')
     setPricePerUnit(selectedHolding.currentPricePerUnit)
+    setIsThbOverridden(false)
   }, [mode, selectedHolding])
+
+  useEffect(() => {
+    if (!isThbOverridden) {
+      setCustomThbAmount(autoThbAmount > 0 ? autoThbAmount.toFixed(2) : '')
+    }
+  }, [autoThbAmount, isThbOverridden])
 
   function handleSubmit() {
     const trimmedName = name.trim()
@@ -107,14 +125,34 @@ export function InvestmentBuyDialog({
       return
     }
 
+    const isForeign = currency !== 'THB'
+    const parsedCustom = parseFloat(customThbAmount)
+    const finalThbAmount =
+      isForeign && isThbOverridden && !isNaN(parsedCustom) && parsedCustom > 0
+        ? parsedCustom
+        : autoThbAmount
+
     const orderId = crypto.randomUUID()
-    const description = `ซื้อ ${targetName}`
+    const formattedForeign = `${symbol}${totalInvestment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const description = isForeign
+      ? `ซื้อ ${targetName} (${units} หน่วย @ ${symbol}${pricePerUnit} = ${formattedForeign})`
+      : `ซื้อ ${targetName}`
+
+    const noteDetails = isForeign
+      ? [
+          note.trim(),
+          `[ชำระ ${formattedForeign} · อัตราแลกเปลี่ยน ~${(rates[currency] ?? 1).toFixed(2)} THB/${currency} · ยอดตัดบัญชี ฿${finalThbAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}]`,
+        ]
+          .filter(Boolean)
+          .join('\n')
+      : note.trim() || undefined
+
     const transferTransactionId = addTransaction({
       type: 'TRANSFER',
       categoryId: transferCategory.id,
-      amount: totalInvestment,
+      amount: finalThbAmount,
       description,
-      note: note.trim() || undefined,
+      note: noteDetails,
       tags: ['investment'],
       linkedInvestmentOrderId: orderId,
       transferKind: 'investment_buy',
@@ -287,18 +325,67 @@ export function InvestmentBuyDialog({
             </div>
           </div>
 
-          <div className="rounded-2xl border-2 border-sky-200 bg-sky-50 p-4 text-sm font-bold text-sky-900 dark:border-sky-900 dark:bg-sky-500/10 dark:text-sky-100">
+          <div className="rounded-2xl border-2 border-sky-200 bg-sky-50 p-4 text-sm font-bold text-sky-900 dark:border-sky-900 dark:bg-sky-500/10 dark:text-sky-100 space-y-3">
             <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Transfer เข้าพอร์ต
-            </span>
-              <span>
+              <span className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                มูลค่าสินทรัพย์ที่ซื้อ ({currency})
+              </span>
+              <span className="text-base font-black">
                 {symbol}{totalInvestment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
+
+            {currency !== 'THB' && (
+              <div className="border-t border-sky-200/80 pt-2.5 dark:border-sky-800/60 space-y-2">
+                <div className="flex items-center justify-between text-xs text-sky-700 dark:text-sky-300">
+                  <span>อัตราแลกเปลี่ยนอ้างอิง:</span>
+                  <span className="font-semibold">1 {currency} ≈ {(rates[currency] ?? 1).toFixed(2)} บาท</span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <div>
+                    <span className="block text-xs font-bold text-sky-950 dark:text-sky-100">
+                      ยอดตัดบัญชีเงินบาท (THB)
+                    </span>
+                    <span className="text-[11px] font-medium text-sky-600 dark:text-sky-400">
+                      บันทึกลงหน้าธุรกรรม (ปรับแก้ตามจริงได้)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative w-36">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">฿</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={customThbAmount}
+                        onChange={(e) => {
+                          setIsThbOverridden(true)
+                          setCustomThbAmount(e.target.value)
+                        }}
+                        className="h-9 pl-6 text-right font-black bg-white dark:bg-slate-900 text-sky-900 dark:text-sky-100 rounded-xl"
+                      />
+                    </div>
+                    {isThbOverridden && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsThbOverridden(false)
+                          setCustomThbAmount(autoThbAmount > 0 ? autoThbAmount.toFixed(2) : '')
+                        }}
+                        className="text-[11px] underline text-sky-600 hover:text-sky-800 dark:text-sky-400 cursor-pointer"
+                        title="รีเซ็ตกลับเป็นเรทคำนวณอัตโนมัติ"
+                      >
+                        รีเซ็ต
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {fee > 0 && (
-              <div className="mt-2 flex items-center justify-between gap-3 text-rose-700 dark:text-rose-200">
+              <div className="mt-2 flex items-center justify-between gap-3 text-rose-700 dark:text-rose-200 border-t border-sky-200/80 pt-2 dark:border-sky-800/60">
                 <span>Expense ค่าธรรมเนียม</span>
                 <span>฿{fee.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>

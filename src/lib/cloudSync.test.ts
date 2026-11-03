@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { mergeStoreData } from './cloudSync'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { mergeStoreData, SYNC_STORE_KEYS, clearRemovedFeatureStorage } from './cloudSync'
 
 describe('cloudSync - mergeStoreData', () => {
   it('merges transactions from local that are not yet in cloud without duplicates', () => {
@@ -72,5 +72,37 @@ describe('cloudSync - mergeStoreData', () => {
     expect(merged.state.budgets).toHaveLength(2)
     const ids = merged.state.budgets.map((b: any) => b.id)
     expect(ids).toEqual(['b-2', 'b-1'])
+  })
+})
+
+describe('cloudSync - SYNC_STORE_KEYS', () => {
+  it('does not sync the removed cycle store', () => {
+    expect(SYNC_STORE_KEYS as readonly string[]).not.toContain('finance-cycle')
+  })
+})
+
+describe('cloudSync - clearRemovedFeatureStorage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('removes leftover finance-cycle data and its sync markers', () => {
+    const data = new Map<string, string>([
+      ['finance-cycle', '{"state":{}}'],
+      ['finance-cycle__synced_at', '1'],
+      ['finance-cycle__modified_at', '2'],
+      ['finance-transactions', '{"state":{}}'],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => data.get(k) ?? null,
+      removeItem: (k: string) => void data.delete(k),
+    })
+
+    clearRemovedFeatureStorage()
+
+    expect(data.has('finance-cycle')).toBe(false)
+    expect(data.has('finance-cycle__synced_at')).toBe(false)
+    expect(data.has('finance-cycle__modified_at')).toBe(false)
+    expect(data.has('finance-transactions')).toBe(true)
   })
 })

@@ -1,14 +1,17 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { AlertCircle, ImagePlus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { InvestmentBuyDialog } from '@/components/investments/InvestmentBuyDialog'
+import { InvestmentImageImportDialog } from '@/components/investments/InvestmentImageImportDialog'
 import { InvestmentForm, ASSET_CLASS_META, CURRENCY_SYMBOLS } from '@/components/investments/InvestmentForm'
 import { InvestmentMissionBoard, type GrowthProgressModel, type MissionSectionItem, type SummaryStatItem } from '@/components/investments/InvestmentMissionBoard'
 import { UpdatePriceDialog } from '@/components/investments/UpdatePriceDialog'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
-import { AssetClass, InvestmentHolding } from '@/types'
+import { useTransactionStore } from '@/store/useTransactionStore'
+import { AssetClass, InvestmentHolding, InvestmentOrder, Transaction } from '@/types'
 import { useExchangeRates } from '@/hooks/useExchangeRates'
 
 // Map a holding's ticker + currency + assetClass to a Yahoo Finance symbol
@@ -27,12 +30,14 @@ function getYahooSymbol(h: InvestmentHolding): string | null {
 }
 
 export default function InvestmentsPage() {
-  const { holdings, deleteHolding, updatePrice } = useInvestmentStore()
+  const { holdings, deleteHolding, updatePrice, orders } = useInvestmentStore()
+  const { transactions, updateTransaction } = useTransactionStore()
   const { convertToThb, convert } = useExchangeRates()
   const [displayCurrency, setDisplayCurrency] = useState<'THB' | 'USD'>('THB')
 
   const [formOpen, setFormOpen] = useState(false)
   const [buyOpen, setBuyOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editingHolding, setEditingHolding] = useState<InvestmentHolding | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingHolding, setUpdatingHolding] = useState<InvestmentHolding | null>(null)
@@ -40,6 +45,63 @@ export default function InvestmentsPage() {
   const [isSyncingAll, setIsSyncingAll] = useState(false)
 
   const syncableHoldings = holdings.filter((h) => getYahooSymbol(h) !== null)
+
+  const unConvertedTransactions = useMemo(() => {
+    const list: Array<{
+      transaction: Transaction
+      order: InvestmentOrder
+      suggestedThbAmount: number
+      foreignAmount: number
+      holdingName: string
+    }> = []
+
+    for (const order of orders) {
+      if (order.currency && order.currency !== 'THB') {
+        const tx = transactions.find(
+          (t) => t.id === order.transactionId || t.linkedInvestmentOrderId === order.id
+        )
+        if (tx) {
+          const rawForeignCost = order.units * order.pricePerUnit
+          const expectedThb = convertToThb(rawForeignCost, order.currency)
+          if (
+            Math.abs(tx.amount - rawForeignCost) <= 1 ||
+            (rawForeignCost > 0 && tx.amount < expectedThb * 0.75)
+          ) {
+            const holding = holdings.find((h) => h.id === order.holdingId)
+            list.push({
+              transaction: tx,
+              order,
+              suggestedThbAmount: expectedThb,
+              foreignAmount: rawForeignCost,
+              holdingName: holding?.name || holding?.ticker || 'สินทรัพย์ต่างประเทศ',
+            })
+          }
+        }
+      }
+    }
+    return list
+  }, [orders, transactions, holdings, convertToThb])
+
+  function handleFixTransaction(item: (typeof unConvertedTransactions)[0]) {
+    const symbol = CURRENCY_SYMBOLS[item.order.currency] ?? item.order.currency
+    const formattedForeign = `${symbol}${item.foreignAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const noteText = [
+      item.transaction.note?.trim(),
+      `[อัปเดตยอดเงินบาทตามเรทจริง: ชำระ ${formattedForeign} · ปรับยอดตัดบัญชีเป็น ฿${item.suggestedThbAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}]`,
+    ]
+      .filter(Boolean)
+      .join('\n')
+
+    updateTransaction(item.transaction.id, {
+      amount: item.suggestedThbAmount,
+      note: noteText,
+    })
+    toast.success(`อัปเดตยอดธุรกรรมของ ${item.holdingName} เป็น ฿${item.suggestedThbAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} เรียบร้อยแล้ว`)
+  }
+
+  function handleFixAllTransactions() {
+    unConvertedTransactions.forEach(handleFixTransaction)
+  }
 
   // Fetch price for a single holding from Yahoo Finance via API route
   async function fetchPrice(h: InvestmentHolding): Promise<boolean> {
@@ -222,6 +284,50 @@ export default function InvestmentsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-8 pb-28 font-quest-body md:px-10 md:py-10 lg:pb-10">
+      <div className="mb-5 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setImportOpen(true)}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border-2 border-[#6f7b64] bg-[var(--quest-surface)] px-4 py-2 text-sm font-bold text-[var(--quest-foreground)] shadow-[0_4px_0_0_#6f7b64] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none dark:border-[#5f6e52]"
+        >
+          <ImagePlus className="size-4" /> นำเข้าจากภาพ
+        </button>
+      </div>
+      {unConvertedTransactions.length > 0 && (
+        <div className="mb-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">
+                  พบรายการซื้อหุ้นต่างประเทศ {unConvertedTransactions.length} รายการที่บันทึกเป็นยอดดอลลาร์ในหน้าธุรกรรม
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  {unConvertedTransactions
+                    .map(
+                      (u) =>
+                        `${u.holdingName} (${CURRENCY_SYMBOLS[u.order.currency] ?? u.order.currency}${u.foreignAmount.toFixed(2)} บันทึกไว้เป็น ฿${u.transaction.amount.toFixed(2)})`
+                    )
+                    .join(', ')}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleFixAllTransactions}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer shrink-0"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              ปรับเป็นเงินบาทอัตโนมัติ (~฿
+              {unConvertedTransactions
+                .reduce((s, u) => s + u.suggestedThbAmount, 0)
+                .toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              )
+            </button>
+          </div>
+        </div>
+      )}
+
       <InvestmentMissionBoard
         allocationData={allocationData}
         canSyncAll={syncableHoldings.length > 0}
@@ -251,6 +357,8 @@ export default function InvestmentsPage() {
         onOpenChange={(o) => { setFormOpen(o); if (!o) setEditingHolding(null) }}
         editingHolding={editingHolding}
       />
+
+      <InvestmentImageImportDialog open={importOpen} onOpenChange={setImportOpen} holdings={holdings} />
 
       <InvestmentBuyDialog
         open={buyOpen}
