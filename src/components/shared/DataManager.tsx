@@ -55,7 +55,7 @@ function countItems(stores: Record<string, unknown>) {
     goals:          len('finance-goals'),
     investments:    len('finance-investments'),
     debts:          len('finance-debts'),
-    recurrings:     len('finance-recurrings'),
+    recurrings:     len('finance-recurring-rules'),
     subscriptions:  len('finance-subscriptions'),
     bankAccounts:   len('finance-bank-accounts'),
     billSplits:     len('finance-bill-splits'),

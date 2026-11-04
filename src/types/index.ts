@@ -78,19 +78,18 @@ export type {
   DebtItem,
 } from './debt'
 
-export type RecurringFrequency = 'monthly' | 'yearly'
+export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
 
 export interface RecurringTransaction {
   id: string
   categoryId: string
-  type: TransactionType
+  type: 'INCOME' | 'EXPENSE'
   amount: number
   description: string
   note?: string
   frequency: RecurringFrequency
-  dayOfMonth: number // 1-28
-  startDate: string  // ISO date — เริ่มสร้างตั้งแต่เดือนนี้
-  lastGeneratedDate?: string // ISO date ของ transaction ล่าสุดที่สร้าง
+  startDate: string  // YYYY-MM-DD — วันแรกที่บันทึก และเป็นตัวกำหนดรอบถัดไป
+  lastGeneratedDate?: string // YYYY-MM-DD ของรอบล่าสุดที่บันทึกแล้ว
   isActive: boolean
   createdAt: string
 }

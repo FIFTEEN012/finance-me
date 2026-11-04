@@ -7,6 +7,7 @@ import { Transaction, TransactionType } from '@/types'
 interface TransactionStore {
   transactions: Transaction[]
   addTransaction: (t: Omit<Transaction, 'id' | 'createdAt'>) => string
+  addGeneratedTransactions: (transactions: Transaction[]) => void
   updateTransaction: (id: string, t: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => void
   deleteTransaction: (id: string) => void
   deleteTransactions: (ids: string[]) => void
@@ -37,6 +38,17 @@ export const useTransactionStore = create<TransactionStore>()(
           }).catch(() => {})
         }
         return id
+      },
+      addGeneratedTransactions: (transactions) => {
+        set((s) => ({ transactions: [...transactions, ...s.transactions] }))
+        if (typeof window !== 'undefined') {
+          // /api/sync upserts by id. If this fails, useInitialData pushes the unsynced rows on next load.
+          fetch('/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactions }),
+          }).catch(() => {})
+        }
       },
       updateTransaction: (id, t) => {
         set((s) => ({

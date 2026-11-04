@@ -16,6 +16,7 @@ export const SYNC_STORE_KEYS = [
   'finance-onboarding',
   'finance-bill-splits',
   'finance-debts',
+  'finance-recurring-rules',
 ] as const
 
 const REMOVED_SYNC_STORE_KEYS = [
@@ -122,6 +123,7 @@ export async function rehydrateAllStores() {
     { useOnboardingStore },
     { useBillSplitStore },
     { useDebtStore },
+    { useRecurringStore },
   ] = await Promise.all([
     import('@/store/useTransactionStore'),
     import('@/store/useBudgetStore'),
@@ -134,6 +136,7 @@ export async function rehydrateAllStores() {
     import('@/store/useOnboardingStore'),
     import('@/store/useBillSplitStore'),
     import('@/store/useDebtStore'),
+    import('@/store/useRecurringStore'),
   ])
 
   type WithPersist = { persist?: { rehydrate?: () => void | Promise<void> } }
@@ -150,6 +153,7 @@ export async function rehydrateAllStores() {
     useOnboardingStore,
     useBillSplitStore,
     useDebtStore,
+    useRecurringStore,
   ]
 
   stores.forEach((store) => {

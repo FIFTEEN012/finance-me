@@ -12,6 +12,7 @@ import { Transaction } from '@/types'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
 import { formatCurrency, cn } from '@/lib/utils'
+import { summarizeByDay, toLocalDateKey } from '@/lib/dailySummary'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { TagInput } from '@/components/shared/TagInput'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -30,15 +31,6 @@ function parseLocalDate(dateStr: string): Date {
   // Parse "YYYY-MM-DD" as local time (not UTC) to avoid timezone offset issues
   const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number)
   return new Date(year, month - 1, day)
-}
-
-/** Convert any date string (UTC ISO or YYYY-MM-DD) to local "YYYY-MM-DD" key */
-function toLocalDateKey(dateStr: string): string {
-  const d = new Date(dateStr)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${dd}`
 }
 
 function dateLabelFor(dateStr: string): string {
@@ -88,6 +80,9 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
   }, [transactions, visibleCount])
 
   const hasMore = transactions.length > visibleCount
+
+  /* Totals use every transaction, so a day cut off by paging still shows its full sums */
+  const dailySummaries = useMemo(() => summarizeByDay(transactions), [transactions])
 
   /* ── Selection helpers ── */
   const toggleOne = useCallback((id: string) => {
@@ -201,21 +196,13 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
         className,
       )}>
         {groups.map(([dateKey, txs], gi) => {
-          const dailyTotal = txs.reduce((sum, tx) => {
-            if (tx.type === 'INCOME') return sum + tx.amount
-            if (tx.type === 'TRANSFER') return sum
-            return sum - tx.amount
-          }, 0)
-
-          const isPositive = dailyTotal > 0
-          const isNegative = dailyTotal < 0
-          const absTotal = Math.abs(dailyTotal)
+          const summary = dailySummaries.get(dateKey) ?? { income: 0, expense: 0, remaining: 0 }
 
           return (
             <div key={dateKey}>
               {/* Date group header */}
               <div className={cn(
-                'px-5 py-2.5 flex items-center justify-between',
+                'px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1',
                 'border-b border-gray-100 dark:border-white/[0.05]',
                 gi > 0 && 'border-t border-gray-100 dark:border-white/[0.05]',
                 'bg-gray-50/60 dark:bg-white/[0.015]',
@@ -223,14 +210,17 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
                 <span className="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-widest">
                   {dateLabelFor(txs[0].date)}
                 </span>
-                <span className={cn(
-                  'text-[11px] font-bold num tabular-nums tracking-wide',
-                  isPositive
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-gray-500 dark:text-white/40'
-                )}>
-                  {isPositive ? '+' : isNegative ? '-' : ''}{formatCurrency(absTotal)}
-                </span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-bold num tabular-nums tracking-wide">
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    รับ {formatCurrency(summary.income)}
+                  </span>
+                  <span className="text-red-500 dark:text-red-400">
+                    จ่าย {formatCurrency(summary.expense)}
+                  </span>
+                  <span className="text-gray-600 dark:text-white/60">
+                    คงเหลือ {summary.remaining < 0 ? '-' : ''}{formatCurrency(Math.abs(summary.remaining))}
+                  </span>
+                </div>
               </div>
 
             {/* Transaction rows */}
