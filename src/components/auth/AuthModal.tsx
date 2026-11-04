@@ -15,6 +15,7 @@ import { authClient } from '@/lib/auth-client'
 import { migrateLocalDataToNeon } from '@/lib/migrateLocalData'
 import { pullFromNeon } from '@/lib/neonSync'
 import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
+import { SIGNUP_ENABLED } from '@/lib/signupConfig'
 import { useAuthStore } from '@/store/useAuthStore'
 
 const schema = z.object({
@@ -201,12 +202,18 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
             {loading ? 'กำลังดำเนินการ...' : mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
           </Button>
 
-          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-            {mode === 'login' ? 'ยังไม่มีบัญชี?' : 'มีบัญชีอยู่แล้ว?'}{' '}
-            <button type="button" onClick={toggle} className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
-              {mode === 'login' ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}
-            </button>
-          </p>
+          {SIGNUP_ENABLED ? (
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              {mode === 'login' ? 'ยังไม่มีบัญชี?' : 'มีบัญชีอยู่แล้ว?'}{' '}
+              <button type="button" onClick={toggle} className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                {mode === 'login' ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}
+              </button>
+            </p>
+          ) : (
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              ขณะนี้ปิดรับสมัครสมาชิกใหม่ชั่วคราว
+            </p>
+          )}
         </form>
       </DialogContent>
     </Dialog>
