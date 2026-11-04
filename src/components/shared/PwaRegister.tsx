@@ -16,9 +16,18 @@ export function PwaRegister() {
   useEffect(() => {
     /* Register service worker */
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .catch((err) => console.warn('[SW] registration failed:', err))
+      if (process.env.NODE_ENV === 'production') {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .catch((err) => console.warn('[SW] registration failed:', err))
+      } else {
+        // Dev chunks keep their names between edits, so a cache-first worker would serve old code
+        navigator.serviceWorker.getRegistrations()
+          .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
+          .then(() => caches.keys())
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .catch((err) => console.warn('[SW] cleanup failed:', err))
+      }
     }
 
     /* Capture install prompt */
