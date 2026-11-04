@@ -51,3 +51,6 @@ __pycache__/
 # temporary design files
 /stitch_downloads/
 scratch/
+
+# playwright cli output
+/.playwright-cli/
