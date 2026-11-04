@@ -13,6 +13,7 @@ import { ThemeApplier } from '@/components/shared/ThemeApplier'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useBudgetAlert } from '@/hooks/useBudgetAlert'
 import { useInitialData } from '@/hooks/useInitialData'
+import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
@@ -23,7 +24,8 @@ import { cn } from '@/lib/utils'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   useBudgetAlert()
-  useInitialData()
+  const { dataLoaded } = useInitialData()
+  useRecurringTransactions(dataLoaded)
 
   const { data: session, isPending } = authClient.useSession()
   useEffect(() => {
