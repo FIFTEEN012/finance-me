@@ -14,6 +14,7 @@ import {
   SplitSquareHorizontal,
   FileUp,
   Repeat,
+  Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataManager } from '@/components/shared/DataManager'
@@ -28,6 +29,7 @@ const groupedNav = [
       { href: '/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
       { href: '/transactions', label: 'ธุรกรรม', icon: ArrowLeftRight },
       { href: '/recurring', label: 'รายการประจำ', icon: Repeat },
+      { href: '/supplies', label: 'ของใช้', icon: Package },
       { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
       { href: '/reports', label: 'รายงาน', icon: BarChart3 },
       { href: '/goals', label: 'เป้าหมาย', icon: Target },
