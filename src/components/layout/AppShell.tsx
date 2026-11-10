@@ -9,6 +9,7 @@ import { QuickAddTransaction } from '@/components/shared/QuickAddTransaction'
 import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { OnboardingWizard } from '@/components/shared/OnboardingWizard'
 import { PwaRegister } from '@/components/shared/PwaRegister'
+import { NativeBridge } from '@/components/shared/NativeBridge'
 import { ThemeApplier } from '@/components/shared/ThemeApplier'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useBudgetAlert } from '@/hooks/useBudgetAlert'
@@ -98,6 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <GlobalSearch />
       {hydrated && isAuthenticated && !onboardingCompleted && <OnboardingWizard />}
       <PwaRegister />
+      <NativeBridge />
       <ThemeApplier />
 
       {/* Auth Modal Guard: enforced when not authenticated */}

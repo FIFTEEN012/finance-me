@@ -89,6 +89,8 @@ function clearPreviousOwnerData() {
     safeRemove(key)
     safeRemove(`${key}__synced_at`)
     safeRemove(`${key}__modified_at`)
+    // docSync's record of what the server holds (DOC_SHADOW_SUFFIX)
+    safeRemove(`${key}__doc_shadow`)
   }
   safeRemove(MIGRATED_FLAG_KEY)
 
