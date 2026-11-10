@@ -29,6 +29,13 @@
       "when": 1793632177056,
       "tag": "0003_multi_user_composite_pk",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794315226079,
+      "tag": "0004_store_docs",
+      "breakpoints": true
     }
   ]
 }

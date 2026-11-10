@@ -63,7 +63,7 @@ export function BottomNav() {
       {/* Unified Symmetrical Floating Capsule BottomNav (Mobile Only) */}
       <nav
         className={cn(
-          'fixed bottom-4 inset-x-0 mx-auto w-[92%] max-w-lg z-40 lg:hidden',
+          'fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] inset-x-0 mx-auto w-[92%] max-w-lg z-40 lg:hidden',
           'h-18 rounded-3xl border-2 border-slate-200 dark:border-slate-800',
           'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md',
           'shadow-[0_8px_20px_-4px_rgba(0,0,0,0.15),0_6px_0_0_#e5e5e5] dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.4),0_6px_0_0_#020617]',

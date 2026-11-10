@@ -68,6 +68,7 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
       data.set(key, '{"state":{},"version":0}')
       data.set(`${key}__synced_at`, '1')
       data.set(`${key}__modified_at`, '2')
+      data.set(`${key}__doc_shadow`, '{}')
     }
     data.set('finance-migrated-to-neon', 'true')
     data.set('theme', 'dark')
@@ -78,6 +79,7 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
     for (const key of SYNC_STORE_KEYS) {
       expect(data.has(key), key).toBe(false)
       expect(data.has(`${key}__synced_at`), key).toBe(false)
+      expect(data.has(`${key}__doc_shadow`), key).toBe(false)
       expect(data.has(`${key}__modified_at`), key).toBe(false)
     }
     expect(data.has('finance-migrated-to-neon')).toBe(false)

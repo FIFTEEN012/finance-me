@@ -19,6 +19,7 @@ import { bulkTransactionSchema } from '@/lib/bulkTransactionSchema'
 import { quickAddAiResultSchema } from '@/lib/quickAddAiSchema'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Transaction, TransactionType } from '@/types'
+import { hapticSuccess } from '@/lib/native'
 
 type Entry = {
   key: string
@@ -293,6 +294,7 @@ export function QuickAddTransaction() {
       const store = useTransactionStore.getState()
       store.replaceTransactions([...created, ...store.transactions])
       toast.success(`บันทึกแล้ว ${created.length} รายการ`)
+      hapticSuccess()
       close()
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
