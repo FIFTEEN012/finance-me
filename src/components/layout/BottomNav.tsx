@@ -18,6 +18,7 @@ import {
   SplitSquareHorizontal,
   FileUp,
   Repeat,
+  Package,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -38,6 +39,7 @@ const PRIMARY_RIGHT = [
 // All sub-features accessible via "More" (เพิ่มเติม) sheet
 const SECONDARY = [
   { href: '/recurring', label: 'รายการประจำ', icon: Repeat, desc: 'บันทึกรายจ่าย-รายรับประจำอัตโนมัติ' },
+  { href: '/supplies', label: 'ของใช้', icon: Package, desc: 'นับวันใช้ของจนหมด' },
   { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },

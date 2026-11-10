@@ -94,6 +94,18 @@ export interface RecurringTransaction {
   createdAt: string
 }
 
+export interface SupplyItem {
+  id: string
+  name: string
+  startDate: string     // YYYY-MM-DD — วันที่ซื้อหรือเริ่มใช้
+  finishedDate?: string // YYYY-MM-DD — วันที่ใช้หมด
+  price?: number
+  quantity?: number     // ปริมาณต่อชิ้น เช่น 200
+  unit?: string         // หน่วยของ quantity เช่น ml
+  note?: string
+  createdAt: string
+}
+
 export type AssetClass = 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'bond' | 'other'
 
 export interface PortfolioSnapshot {

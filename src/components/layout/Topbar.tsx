@@ -15,6 +15,7 @@ const pageTitles: Record<string, string> = {
   '/categories': 'หมวดหมู่',
   '/goals': 'เป้าหมายการออม',
   '/recurring': 'รายการประจำ',
+  '/supplies': 'ของใช้',
   '/bill-split': 'แบ่งบิล & ยืม-คืน',
   '/settings': 'ตั้งค่า',
   '/investments': 'พอร์ตลงทุน',

@@ -56,6 +56,7 @@ function countItems(stores: Record<string, unknown>) {
     investments:    len('finance-investments'),
     debts:          len('finance-debts'),
     recurrings:     len('finance-recurring-rules'),
+    supplies:       len('finance-supplies'),
     subscriptions:  len('finance-subscriptions'),
     bankAccounts:   len('finance-bank-accounts'),
     billSplits:     len('finance-bill-splits'),
@@ -252,6 +253,7 @@ export function DataManager() {
                   { label: 'หลักทรัพย์',     value: stats.investments },
                   { label: 'หนี้สิน',         value: stats.debts },
                   { label: 'รายการประจำ',    value: stats.recurrings },
+                  { label: 'ของใช้',         value: stats.supplies },
                   { label: 'Net Worth items', value: stats.netWorthItems },
                   { label: 'บิลแบ่งจ่าย',    value: stats.billSplits    },
                 ].map(({ label, value }) => (
