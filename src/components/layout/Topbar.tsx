@@ -16,7 +16,7 @@ const pageTitles: Record<string, string> = {
   '/goals': 'เป้าหมายการออม',
   '/recurring': 'รายการประจำ',
   '/supplies': 'ของใช้',
-  '/nutrition': 'แคลอรี่ & น้ำ',
+  '/nutrition': 'แคลอรี่ น้ำ & ออกกำลัง',
   '/bill-split': 'แบ่งบิล & ยืม-คืน',
   '/settings': 'ตั้งค่า',
   '/investments': 'พอร์ตลงทุน',

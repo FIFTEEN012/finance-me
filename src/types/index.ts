@@ -124,6 +124,30 @@ export interface WaterEntry {
   createdAt: string
 }
 
+export interface ExerciseEntry {
+  id: string
+  date: string      // YYYY-MM-DD
+  activity: string  // key from EXERCISES, or 'other'
+  name: string      // shown label, free text for 'other'
+  minutes: number
+  kcal: number      // estimated or typed calories burned
+  createdAt: string
+}
+
+export type Sex = 'male' | 'female'
+export type DailyActivity = 'sedentary' | 'light' | 'active' | 'very_active'
+export type BodyGoal = 'lose' | 'maintain' | 'gain'
+
+export interface HealthProfile {
+  sex: Sex
+  age: number
+  heightCm: number
+  weightKg: number
+  activity: DailyActivity
+  goal: BodyGoal
+  updatedAt: string
+}
+
 export type AssetClass = 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'bond' | 'other'
 
 export interface PortfolioSnapshot {
