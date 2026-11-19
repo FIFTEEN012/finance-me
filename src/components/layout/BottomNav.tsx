@@ -19,6 +19,7 @@ import {
   FileUp,
   Repeat,
   Package,
+  Apple,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -40,6 +41,7 @@ const PRIMARY_RIGHT = [
 const SECONDARY = [
   { href: '/recurring', label: 'รายการประจำ', icon: Repeat, desc: 'บันทึกรายจ่าย-รายรับประจำอัตโนมัติ' },
   { href: '/supplies', label: 'ของใช้', icon: Package, desc: 'นับวันใช้ของจนหมด' },
+  { href: '/nutrition', label: 'แคลอรี่ & น้ำ', icon: Apple, desc: 'บันทึกอาหารและการดื่มน้ำ' },
   { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },
