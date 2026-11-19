@@ -57,6 +57,10 @@ function countItems(stores: Record<string, unknown>) {
     debts:          len('finance-debts'),
     recurrings:     len('finance-recurring-rules'),
     supplies:       len('finance-supplies'),
+    nutrition: (() => {
+      const s = (stores['finance-nutrition'] as StoreBlob | undefined)?.state ?? {}
+      return ((s.food as unknown[])?.length ?? 0) + ((s.water as unknown[])?.length ?? 0)
+    })(),
     subscriptions:  len('finance-subscriptions'),
     bankAccounts:   len('finance-bank-accounts'),
     billSplits:     len('finance-bill-splits'),
@@ -254,6 +258,7 @@ export function DataManager() {
                   { label: 'หนี้สิน',         value: stats.debts },
                   { label: 'รายการประจำ',    value: stats.recurrings },
                   { label: 'ของใช้',         value: stats.supplies },
+                  { label: 'อาหาร & น้ำ',    value: stats.nutrition },
                   { label: 'Net Worth items', value: stats.netWorthItems },
                   { label: 'บิลแบ่งจ่าย',    value: stats.billSplits    },
                 ].map(({ label, value }) => (

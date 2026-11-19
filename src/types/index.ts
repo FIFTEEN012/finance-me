@@ -106,6 +106,24 @@ export interface SupplyItem {
   createdAt: string
 }
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface FoodEntry {
+  id: string
+  date: string      // YYYY-MM-DD
+  meal: MealType
+  name: string
+  kcal: number
+  createdAt: string
+}
+
+export interface WaterEntry {
+  id: string
+  date: string      // YYYY-MM-DD
+  ml: number
+  createdAt: string
+}
+
 export type AssetClass = 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'bond' | 'other'
 
 export interface PortfolioSnapshot {
