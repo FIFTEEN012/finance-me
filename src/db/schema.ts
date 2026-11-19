@@ -145,6 +145,31 @@ export const financeDebts = pgTable(
   (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
 );
 
+/* ─── Synced client store documents ───
+ * Generic last-write-wins store for the zustand stores that have no typed
+ * table (investments, settings, supplies, ...). Each store's persisted state
+ * is split into documents: one per array item that has an id
+ * ("items#<id>"), one for each array's order ("items@order") and one per
+ * other top-level field ("theme"). `updatedAt` is the client edit time used
+ * for last-write-wins; `serverUpdatedAt` is when the server stored it.
+ * Deleted documents stay as tombstones (deleted = true, data = null) so a
+ * stale device cannot bring them back. Store keys starting with "deleted:"
+ * hold tombstones for rows of the typed tables (transactions, budgets, ...).
+ */
+export const financeStoreDocs = pgTable(
+  "finance_store_docs",
+  {
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    storeKey: text("store_key").notNull(),
+    docId: text("doc_id").notNull(),
+    data: jsonb("data"),
+    deleted: boolean("deleted").default(false).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    serverUpdatedAt: timestamp("server_updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerId, table.storeKey, table.docId] })],
+);
+
 /* ─── Settings ─── */
 export const financeSettings = pgTable("finance_settings", {
   id: text("id").primaryKey(),
@@ -245,6 +270,7 @@ export const schema = {
   financeGoals,
   financeDebts,
   financeSettings,
+  financeStoreDocs,
   mealLogs,
   workoutLogs,
   runningLogs,

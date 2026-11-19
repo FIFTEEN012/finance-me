@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { normalizeDebt } from "@/lib/debtRecord";
+import { listTombstones } from "@/lib/tombstones";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function GET() {
   try {
     const db = getDatabase();
 
-    const [transactions, categories, budgets, goals, debts] = await Promise.all([
+    const [transactions, categories, budgets, goals, debts, deleted] = await Promise.all([
       db
         .select()
         .from(financeTransactions)
@@ -52,6 +53,7 @@ export async function GET() {
         .select()
         .from(financeDebts)
         .where(eq(financeDebts.ownerId, user.id)),
+      listTombstones(db, user.id),
     ]);
 
     // Format transactions to match client store format if needed
@@ -105,6 +107,8 @@ export async function GET() {
       budgets: formattedBudgets,
       goals: formattedGoals,
       debts: formattedDebts,
+      // Ids deleted on some device; clients drop their local copies.
+      deleted,
       syncedAt: new Date().toISOString(),
     });
   } catch (error: any) {
@@ -131,6 +135,17 @@ export async function POST(request: Request) {
     const { transactions, categories, budgets, goals, debts } = body;
     const db = getDatabase();
 
+    // Rows deleted on another device must not be uploaded again by a device
+    // that still holds a stale copy.
+    const deleted = await listTombstones(db, user.id);
+    const deletedSets = {
+      transactions: new Set(deleted.transactions),
+      categories: new Set(deleted.categories),
+      budgets: new Set(deleted.budgets),
+      goals: new Set(deleted.goals),
+      debts: new Set(deleted.debts),
+    };
+
     // Rows are keyed by (owner_id, id): every upsert below conflicts on that
     // pair, so a client-supplied id can only ever match the caller's own row,
     // and no `set` clause touches ownerId.
@@ -141,7 +156,7 @@ export async function POST(request: Request) {
     // 1. Categories
     if (Array.isArray(categories)) {
       for (const cat of categories) {
-        if (!cat.name) continue;
+        if (!cat.name || deletedSets.categories.has(cat.id)) continue;
         const catId = cat.id || crypto.randomUUID();
         const catType = (cat.type || "EXPENSE").toUpperCase();
         await db
@@ -175,6 +190,7 @@ export async function POST(request: Request) {
       for (const tx of transactions) {
         const amountNum = Math.abs(Number(tx.amount));
         if (!amountNum || isNaN(amountNum) || amountNum <= 0) continue;
+        if (deletedSets.transactions.has(tx.id)) continue;
         const txType = (tx.type || tx.transactionType || "EXPENSE").toUpperCase();
         const occurredAt = new Date(
           tx.date && String(tx.date).length <= 10 ? `${tx.date}T12:00:00Z` : tx.date || new Date()
@@ -224,6 +240,7 @@ export async function POST(request: Request) {
     if (Array.isArray(budgets)) {
       for (const b of budgets) {
         if (!b.categoryId || !b.amount || !b.month || !b.year) continue;
+        if (deletedSets.budgets.has(b.id)) continue;
         const bId = b.id || crypto.randomUUID();
         await db
           .insert(financeBudgets)
@@ -251,7 +268,7 @@ export async function POST(request: Request) {
     // 4. Goals
     if (Array.isArray(goals)) {
       for (const g of goals) {
-        if (!g.name || !g.targetAmount) continue;
+        if (!g.name || !g.targetAmount || deletedSets.goals.has(g.id)) continue;
         const gId = g.id || crypto.randomUUID();
         await db
           .insert(financeGoals)
@@ -286,6 +303,7 @@ export async function POST(request: Request) {
     // 5. Debts
     if (Array.isArray(debts)) {
       for (const d of debts) {
+        if (deletedSets.debts.has(d.id)) continue;
         const person = d.personName || d.person;
         const originalAmount = Number(d.totalAmount ?? d.originalAmount);
         const paidAmount = Number(d.paidAmount ?? 0);

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeBudgets } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { recordTombstones } from "@/lib/tombstones";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,9 @@ export async function DELETE(
       )
     )
     .returning();
+
+  // Even when the row never reached the server, other devices may hold it.
+  await recordTombstones(db, user.id, "budgets", [id]);
 
   if (!deleted) {
     return NextResponse.json({ error: "Budget not found" }, { status: 404 });

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FinanceMe</string>
+    <string name="title_activity_main">FinanceMe</string>
+    <string name="package_name">com.financeme.app</string>
+    <string name="custom_url_scheme">com.financeme.app</string>
+</resources>

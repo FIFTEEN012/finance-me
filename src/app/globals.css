@@ -143,6 +143,15 @@
 }
 
 /* ── Glassmorphism utilities ── */
+/* Notch, status bar and home indicator (iOS/Android app, installed PWA).
+ * env() is 0 in a normal browser tab, so desktop and mobile web are unchanged. */
+.app-content {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @layer utilities {
   .glass {
     background: rgba(255, 255, 255, 0.04);
