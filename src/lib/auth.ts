@@ -4,6 +4,7 @@ import { getDatabase } from "@/db/client";
 import * as schema from "@/db/schema";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { SIGNUP_ENABLED } from "@/lib/signupConfig";
 
 function getAdapterDb() {
   if (process.env.DATABASE_URL?.trim()) {
@@ -27,6 +28,7 @@ export const auth = betterAuth({
   ),
   emailAndPassword: {
     enabled: true,
+    disableSignUp: !SIGNUP_ENABLED,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
