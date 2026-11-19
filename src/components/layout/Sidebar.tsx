@@ -31,7 +31,7 @@ const groupedNav = [
       { href: '/transactions', label: 'ธุรกรรม', icon: ArrowLeftRight },
       { href: '/recurring', label: 'รายการประจำ', icon: Repeat },
       { href: '/supplies', label: 'ของใช้', icon: Package },
-      { href: '/nutrition', label: 'แคลอรี่ & น้ำ', icon: Apple },
+      { href: '/nutrition', label: 'แคลอรี่ น้ำ & ออกกำลัง', icon: Apple },
       { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
       { href: '/reports', label: 'รายงาน', icon: BarChart3 },
       { href: '/goals', label: 'เป้าหมาย', icon: Target },
