@@ -44,22 +44,44 @@ export interface FoodDraft {
   name: string
   kcal: string
   meal: MealType
+  /** Macros carried over from a Photo Draft (not typed in the expense form). */
+  proteinG?: number
+  carbsG?: number
+  fatG?: number
+}
+
+type FoodDraftInput = Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>
+
+const MACRO_KEYS = ['proteinG', 'carbsG', 'fatG'] as const
+
+function macrosOf(source: Partial<Record<(typeof MACRO_KEYS)[number], number>>) {
+  const out: Partial<Record<(typeof MACRO_KEYS)[number], number>> = {}
+  for (const k of MACRO_KEYS) if (source[k] !== undefined) out[k] = source[k]
+  return out
 }
 
 export function newFoodDraft(now: Date = new Date()): FoodDraft {
   return { key: crypto.randomUUID(), name: '', kcal: '', meal: mealForHour(now.getHours()) }
 }
 
+/** Food Entry inputs (e.g. the ticked rows of a Photo Draft) → rows in the expense form, macros kept. */
+export function foodDraftsFromInputs(inputs: FoodDraftInput[]): FoodDraft[] {
+  return inputs.map((input) => ({
+    key: crypto.randomUUID(),
+    name: input.name,
+    kcal: String(input.kcal),
+    meal: input.meal,
+    ...macrosOf(input),
+  }))
+}
+
 /** Typed rows → Food Entry inputs for `date`. Rows without a name are skipped; a blank kcal counts as 0. */
-export function foodInputsFromDrafts(
-  drafts: FoodDraft[],
-  date: string,
-): Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal'>[] {
+export function foodInputsFromDrafts(drafts: FoodDraft[], date: string): FoodDraftInput[] {
   return drafts.flatMap((d) => {
     const name = d.name.trim().replace(/\s+/g, ' ')
     if (!name) return []
     const kcal = Math.max(0, Math.round(Number(d.kcal) || 0))
-    return [{ date, meal: d.meal, name, kcal }]
+    return [{ date, meal: d.meal, name, kcal, ...macrosOf(d) }]
   })
 }
 

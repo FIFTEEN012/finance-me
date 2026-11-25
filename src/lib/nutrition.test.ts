@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   averageOfLogged,
+  foodDraftsFromInputs,
   foodInputsFromDrafts,
   formatMl,
   kcalByMeal,
@@ -169,6 +170,21 @@ describe('foodInputsFromDrafts', () => {
     expect(inputs).toEqual([
       { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600 },
       { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 0 },
+    ])
+  })
+})
+
+describe('photo items in the expense form', () => {
+  it('keep their macros from the Photo Draft through to the saved Food Entries', () => {
+    const drafts = foodDraftsFromInputs([
+      { date: '2026-11-24', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 25, carbsG: 70, fatG: 20 },
+      { date: '2026-11-24', meal: 'snack', name: 'ชาเย็น', kcal: 250 },
+    ])
+    expect(drafts.map((d) => [d.name, d.kcal, d.meal])).toEqual([['ข้าวมันไก่', '600', 'lunch'], ['ชาเย็น', '250', 'snack']])
+
+    expect(foodInputsFromDrafts(drafts, '2026-11-25')).toEqual([
+      { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 25, carbsG: 70, fatG: 20 },
+      { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 250 },
     ])
   })
 })
