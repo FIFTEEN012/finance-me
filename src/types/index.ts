@@ -105,6 +105,10 @@ export interface SupplyItem {
   quantity?: number     // ปริมาณต่อชิ้น เช่น 200
   unit?: string         // หน่วยของ quantity เช่น ml
   note?: string
+  /** Absent on items saved before shapes existed; guess it from the name. */
+  shape?: SupplyShape
+  /** The user's own guess at how many days it lasts, used until the Product has history. */
+  expectedDays?: number
   createdAt: string
 }
 
@@ -123,6 +127,8 @@ export interface FoodEntry {
   proteinG?: number
   carbsG?: number
   fatG?: number
+  /** Id of the Food Expense (expense Transaction) this entry was bought with, if any. */
+  foodExpenseId?: string
   createdAt: string
 }
 

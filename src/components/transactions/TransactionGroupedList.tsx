@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState, useCallback } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Scissors, CheckSquare, Tags, X } from 'lucide-react'
+import Link from 'next/link'
+import { MoreHorizontal, Pencil, Trash2, Scissors, CheckSquare, Tags, X, Flame } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -11,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Transaction } from '@/types'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
+import { useNutritionStore } from '@/store/useNutritionStore'
+import { kcalByExpenseId } from '@/lib/nutrition'
 import { formatCurrency, cn } from '@/lib/utils'
 import { summarizeByDay, toLocalDateKey } from '@/lib/dailySummary'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
@@ -49,6 +52,8 @@ const PAGE_SIZE = 60
 export function TransactionGroupedList({ transactions, onEdit, className }: Props) {
   const { deleteTransaction, deleteTransactions, recategorizeTransactions, bulkAddTag, getAllTags } = useTransactionStore()
   const { categories, getCategoryById } = useCategoryStore()
+  const food = useNutritionStore((s) => s.food)
+  const kcalByExpense = useMemo(() => kcalByExpenseId(food), [food])
 
   const [deletingId, setDeletingId]           = useState<string | null>(null)
   const [splittingTx, setSplittingTx]         = useState<Transaction | null>(null)
@@ -272,6 +277,17 @@ export function TransactionGroupedList({ transactions, onEdit, className }: Prop
                           {tx.description}
                         </span>
                         <span className="text-xs text-gray-400 dark:text-white/35 leading-tight">
+                          {kcalByExpense.has(tx.id) && (
+                            <Link
+                              href={`/nutrition?date=${tx.date.slice(0, 10)}`}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="ดูอาหารที่ผูกกับรายการนี้"
+                              className="inline-flex items-center gap-0.5 mr-1.5 px-1.5 rounded-full bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300 hover:underline"
+                            >
+                              <Flame className="w-3 h-3" />
+                              {kcalByExpense.get(tx.id)!.toLocaleString('th-TH')} kcal
+                            </Link>
+                          )}
                           {cat?.name ?? '—'}
                           {tx.tags && tx.tags.length > 0 && (
                             <span className="ml-1.5 text-violet-500 dark:text-violet-400">

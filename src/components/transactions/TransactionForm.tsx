@@ -22,6 +22,10 @@ import { useCategoryStore } from '@/store/useCategoryStore'
 import { Transaction, TransactionType } from '@/types'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { TagInput } from '@/components/shared/TagInput'
+import { FoodEntriesSection } from '@/components/nutrition/FoodEntriesSection'
+import { useNutritionStore } from '@/store/useNutritionStore'
+import { isFoodCategory } from '@/lib/foodCategory'
+import { FoodDraft, foodInputsFromDrafts } from '@/lib/nutrition'
 
 const schema = z.object({
   type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
@@ -44,6 +48,8 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
   const { addTransaction, updateTransaction, getAllTags } = useTransactionStore()
   const { categories } = useCategoryStore()
   const [tags, setTags] = useState<string[]>([])
+  const [foodDrafts, setFoodDrafts] = useState<FoodDraft[]>([])
+  const foodHistory = useNutritionStore((s) => s.food)
   const allTags = getAllTags()
 
   const {
@@ -68,6 +74,9 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
   const selectedCategoryId = watch('categoryId')
 
   const filteredCategories = categories.filter((c) => c.type === selectedType)
+  // Food Entries are typed only when creating a Food Expense.
+  const showFoodEntries =
+    !editingTransaction && isFoodCategory(categories.find((c) => c.id === selectedCategoryId))
 
   useEffect(() => {
     if (editingTransaction) {
@@ -83,6 +92,7 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
     } else {
       reset({ type: 'EXPENSE', date: new Date(), description: '', note: '', categoryId: '', amount: 0 })
       setTags([])
+      setFoodDrafts([])
     }
   }, [editingTransaction, reset, open])
 
@@ -136,7 +146,15 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
           { ...payload, id: createdId, createdAt: new Date().toISOString() },
           ...useTransactionStore.getState().transactions,
         ])
-        toast.success('เพิ่มรายการสำเร็จ')
+        // Only after the Food Expense is saved: link the typed Food Entries to it.
+        const foodInputs = showFoodEntries ? foodInputsFromDrafts(foodDrafts, payload.date) : []
+        if (foodInputs.length > 0) {
+          useNutritionStore.getState().addFoodForExpense(createdId, foodInputs)
+          const kcal = foodInputs.reduce((sum, f) => sum + f.kcal, 0)
+          toast.success(`เพิ่มรายการสำเร็จ พร้อมอาหาร ${foodInputs.length} รายการ ${kcal.toLocaleString('th-TH')} kcal`)
+        } else {
+          toast.success('เพิ่มรายการสำเร็จ')
+        }
       }
       onOpenChange(false)
     } catch (err: any) {
@@ -256,6 +274,10 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
               </PopoverContent>
             </Popover>
           </div>
+
+          {showFoodEntries && (
+            <FoodEntriesSection value={foodDrafts} onChange={setFoodDrafts} history={foodHistory} />
+          )}
 
           {/* Note */}
           <div>

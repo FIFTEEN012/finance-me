@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   averageOfLogged,
+  foodInputsFromDrafts,
   formatMl,
   kcalByMeal,
   kcalOn,
@@ -154,5 +155,20 @@ describe('waterBottle', () => {
   it('does not break when the target is 0', () => {
     expect(waterBottle(0, 0)).toEqual({ level: 0, over: 0 })
     expect(waterBottle(250, 0)).toEqual({ level: 0, over: 250 })
+  })
+})
+
+describe('foodInputsFromDrafts', () => {
+  it('turns typed rows into Food Entries for the expense date, skipping blank rows', () => {
+    const inputs = foodInputsFromDrafts([
+      { key: 'a', name: '  ข้าวมันไก่ ', kcal: '600', meal: 'lunch' },
+      { key: 'b', name: '', kcal: '', meal: 'lunch' },
+      { key: 'c', name: 'ชาเย็น', kcal: '', meal: 'snack' },
+    ], '2026-11-25')
+
+    expect(inputs).toEqual([
+      { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600 },
+      { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 0 },
+    ])
   })
 })
