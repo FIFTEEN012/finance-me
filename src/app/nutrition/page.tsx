@@ -30,7 +30,7 @@ import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDia
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
-import { savePhotoDraft } from '@/store/photoDraftExpense'
+import { savePhotoDraft } from '@/lib/photoDraftExpense'
 import { DEFAULT_FOOD_CATEGORY_ID, foodCategories } from '@/lib/foodCategory'
 import { formatCurrency } from '@/lib/utils'
 import { todayKey } from '@/lib/recurring'
@@ -166,7 +166,7 @@ export default function NutritionPage() {
     setFoodFormOpen(false)
   }
 
-  const handlePhotoDraftSave = (entries: FoodInput[]) => {
+  const handlePhotoDraftSave = async (entries: FoodInput[]) => {
     if (entries.length === 0) return
     const withExpense = photoExpense.on && foodCats.length > 0
     const amount = photoExpenseAmount(photoExpense)
@@ -174,10 +174,18 @@ export default function NutritionPage() {
       setPhotoExpenseErrors(true)
       return false
     }
-    const { foodIds, expenseId } = savePhotoDraft(
-      entries,
-      withExpense && amount !== null ? { amount, categoryId: photoExpenseCategoryId } : null,
-    )
+    let saved: Awaited<ReturnType<typeof savePhotoDraft>>
+    try {
+      saved = await savePhotoDraft(
+        entries,
+        withExpense && amount !== null ? { amount, categoryId: photoExpenseCategoryId } : null,
+      )
+    } catch {
+      // Nothing was saved: keep the Photo Draft open so the user can try again.
+      toast.error('บันทึกรายจ่ายไม่สำเร็จ ยังไม่ได้บันทึกอาหาร ลองใหม่อีกครั้ง')
+      return false
+    }
+    const { foodIds, expenseId } = saved
     const total = entries.reduce((sum, e) => sum + e.kcal, 0)
     const undo = () => {
       foodIds.forEach((id) => store.deleteFood(id))

@@ -13,8 +13,11 @@ import type { FoodInput } from '@/store/useNutritionStore'
 
 interface Props {
   date: string
-  /** Receives the Food Entries the user ticked in the Photo Draft. Return false to keep the draft open. */
-  onSave: (entries: FoodInput[]) => boolean | void
+  /**
+   * Receives the Food Entries the user ticked in the Photo Draft. Return (or resolve to)
+   * false to keep the draft open; the draft shows as saving while a returned promise settles.
+   */
+  onSave: (entries: FoodInput[]) => boolean | void | Promise<boolean | void>
   /** Extra controls in the Photo Draft above its save button. */
   footer?: ReactNode
   saveLabel?: (count: number) => string
@@ -34,6 +37,17 @@ export function FoodPhotoButton({ date, onSave, footer, saveLabel, onClose, size
   const [error, setError] = useState('')
   const [items, setItems] = useState<FoodPhotoItem[] | null>(null)
   const [draftKey, setDraftKey] = useState(0)
+
+  const [saving, setSaving] = useState(false)
+
+  const save = async (entries: FoodInput[]) => {
+    setSaving(true)
+    try {
+      if ((await onSave(entries)) !== false) close()
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const close = () => {
     abortRef.current?.abort()
@@ -136,7 +150,8 @@ export function FoodPhotoButton({ date, onSave, footer, saveLabel, onClose, size
               onCancel={close}
               footer={footer}
               saveLabel={saveLabel}
-              onSave={(entries) => { if (onSave(entries) !== false) close() }}
+              saving={saving}
+              onSave={save}
             />
           )}
         </DialogContent>
