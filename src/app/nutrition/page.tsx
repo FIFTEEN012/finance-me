@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { PressCard } from '@/components/ui/PressCard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { FoodForm } from '@/components/nutrition/FoodForm'
+import { FoodPhotoButton } from '@/components/nutrition/FoodPhotoButton'
 import { ExerciseForm } from '@/components/nutrition/ExerciseForm'
 import { ProfileDialog } from '@/components/nutrition/ProfileDialog'
 import { AdviceCard } from '@/components/nutrition/AdviceCard'
@@ -150,7 +151,16 @@ export default function NutritionPage() {
     setFoodFormOpen(false)
   }
 
-  const handleExerciseSubmit = (input: ExerciseInput) => {
+  const handlePhotoDraftSave = (entries: FoodInput[]) => {
+    if (entries.length === 0) return
+    const ids = entries.map((input) => store.addFood(input))
+    const total = entries.reduce((sum, e) => sum + e.kcal, 0)
+    toast.success(`บันทึก ${entries.length} รายการ ${n(total)} kcal แล้ว`, {
+      action: { label: 'ยกเลิก', onClick: () => ids.forEach((id) => store.deleteFood(id)) },
+    })
+  }
+
+  const handleExerciseSubmit =(input: ExerciseInput) => {
     if (editingExercise) {
       store.updateExercise(editingExercise.id, input)
       toast.success('แก้ไขแล้ว')
@@ -264,6 +274,7 @@ export default function NutritionPage() {
           <Button onClick={() => { setEditingFood(null); setFoodFormOpen(true) }} className="w-full gap-1.5">
             <Plus className="w-4 h-4" /> บันทึกอาหาร
           </Button>
+          <FoodPhotoButton date={date} onSave={handlePhotoDraftSave} />
         </PressCard>
 
         <PressCard {...cardShadow} className={cardClass}>
