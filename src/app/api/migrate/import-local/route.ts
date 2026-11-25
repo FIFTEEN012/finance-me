@@ -45,6 +45,7 @@ export async function POST(request: Request) {
           icon: cat.icon || "Folder",
           color: cat.color || "#7c3aed",
           isDefault: !!cat.isDefault,
+          isFood: typeof cat.isFood === "boolean" ? cat.isFood : null,
         })
         .onConflictDoNothing({ target: [financeCategories.ownerId, financeCategories.id] });
       importedCategories++;

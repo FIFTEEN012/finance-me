@@ -11,7 +11,7 @@ import { useTransactionStore } from '@/store/useTransactionStore'
 import { Category } from '@/types'
 
 export default function CategoriesPage() {
-  const { categories, deleteCategory } = useCategoryStore()
+  const { categories, deleteCategory, updateCategory } = useCategoryStore()
   const { transactions } = useTransactionStore()
   const { budgets } = useBudgetStore()
 
@@ -78,6 +78,7 @@ export default function CategoriesPage() {
         onAddCategory={() => setFormOpen(true)}
         onEditCategory={handleEdit}
         onDeleteCategory={handleDeleteClick}
+        onToggleFood={(category, isFood) => updateCategory(category.id, { isFood })}
       />
 
       <CategoryForm
