@@ -2,8 +2,9 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { SessionMove, WorkoutPlan } from '@/types'
+import type { ExerciseEntry, SessionMove, WorkoutPlan } from '@/types'
 import { exerciseLabel } from '@/lib/fitness'
+import { planFromSession } from '@/lib/workoutPlan'
 import { useNutritionStore } from '@/store/useNutritionStore'
 
 /** A Workout Plan being done now, with which sets are ticked off. */
@@ -38,6 +39,11 @@ interface WorkoutPlanStore {
   setDraft: (plan: WorkoutPlan | null) => void
   /** Starts `plan` as the one in-progress plan, replacing any other, and clears the draft. */
   startPlan: (plan: WorkoutPlan) => void
+  /**
+   * Starts a new Workout Plan like a logged Workout Session (replacing any
+   * active plan; ask first). False, and nothing changes, when it has no Moves to repeat.
+   */
+  repeatSession: (entry: ExerciseEntry) => boolean
   /** Ticks or un-ticks one set of the active plan. */
   toggleSet: (moveIndex: number, setIndex: number) => void
   /** Logs the active plan as a Workout Session (ticked sets only) and clears it. */
@@ -61,6 +67,12 @@ export const useWorkoutPlanStore = create<WorkoutPlanStore>()(
             done: plan.moves.map((m) => Array.from({ length: m.sets }, () => false)),
           },
         }),
+      repeatSession: (entry) => {
+        const plan = planFromSession(entry)
+        if (!plan) return false
+        get().startPlan(plan)
+        return true
+      },
       toggleSet: (moveIndex, setIndex) =>
         set((s) => {
           if (!s.active) return s

@@ -24,6 +24,7 @@ import { FoodPhotoButton } from '@/components/nutrition/FoodPhotoButton'
 import { ExerciseForm } from '@/components/nutrition/ExerciseForm'
 import { ProfileDialog } from '@/components/nutrition/ProfileDialog'
 import { AdviceCard } from '@/components/nutrition/AdviceCard'
+import { SessionMoveList } from '@/components/workouts/SessionMoveList'
 import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDialogs'
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
@@ -354,7 +355,8 @@ export default function NutritionPage() {
           <h3 className="text-sm font-bold text-slate-600 dark:text-slate-300">การออกกำลัง{date === today ? 'วันนี้' : ''}</h3>
           <ul className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 divide-y divide-slate-100 dark:divide-slate-800">
             {dayExercise.map((e) => (
-              <li key={e.id} className="flex items-center gap-2 py-1.5 pl-1">
+              <li key={e.id} className="space-y-1 py-1.5 pl-1">
+                <div className="flex items-center gap-2">
                 <p className="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-100 break-words">
                   {e.name} <span className="text-slate-500 dark:text-slate-400">· {e.minutes} นาที</span>
                 </p>
@@ -365,6 +367,8 @@ export default function NutritionPage() {
                 <Button variant="ghost" size="icon" aria-label={`ลบ ${e.name}`} onClick={() => setDeletingExercise(e)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
+                </div>
+                <SessionMoveList entry={e} />
               </li>
             ))}
           </ul>
