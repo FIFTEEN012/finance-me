@@ -141,6 +141,29 @@ export interface ExerciseEntry {
   minutes: number
   kcal: number      // estimated or typed calories burned
   createdAt: string
+  /** Moves done in this Workout Session; absent for a quick log such as "run 30 min". */
+  moves?: SessionMove[]
+}
+
+/** One Move as done in a Workout Session. */
+export interface SessionMove {
+  moveId: string    // Move.id from @/lib/moves
+  sets: number      // sets completed
+  count: number     // reps or seconds per set, read with the Move's countMode
+}
+
+/** One Move in a Workout Plan, with the sets, reps/seconds and rest intended. */
+export interface PlanMove {
+  moveId: string
+  sets: number
+  count: number
+  restSeconds: number
+}
+
+/** The Moves intended for a session; finishing it logs a Workout Session of `activity`. */
+export interface WorkoutPlan {
+  activity: string  // Session Type key from EXERCISES; sets the MET for kcal
+  moves: PlanMove[]
 }
 
 export type Sex = 'male' | 'female'

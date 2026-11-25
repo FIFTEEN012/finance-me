@@ -6,7 +6,7 @@ import { ExerciseEntry, FoodEntry, HealthProfile, WaterEntry } from '@/types'
 import { DEFAULT_CALORIE_GOAL, DEFAULT_WATER_GOAL } from '@/lib/nutrition'
 
 export type FoodInput = Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>
-export type ExerciseInput = Pick<ExerciseEntry, 'date' | 'activity' | 'name' | 'minutes' | 'kcal'>
+export type ExerciseInput = Pick<ExerciseEntry, 'date' | 'activity' | 'name' | 'minutes' | 'kcal' | 'moves'>
 export type ProfileInput = Omit<HealthProfile, 'updatedAt'>
 
 interface NutritionStore {
