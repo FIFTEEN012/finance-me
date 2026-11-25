@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MOVES } from './moves'
-import { planMinutes } from './workoutPlan'
+import { planFromSession, planMinutes } from './workoutPlan'
+import type { ExerciseEntry } from '@/types'
 
 const repsMove = MOVES.find((m) => m.countMode === 'reps')!
 const holdMove = MOVES.find((m) => m.countMode === 'seconds')!
@@ -27,5 +28,40 @@ describe('planMinutes', () => {
 
   it('is 0 for an empty plan', () => {
     expect(planMinutes({ activity: 'weights', moves: [] })).toBe(0)
+  })
+})
+
+const session = (moves?: ExerciseEntry['moves']): ExerciseEntry => ({
+  id: 's1', date: '2026-11-20', activity: 'hiit', name: 'HIIT', minutes: 20, kcal: 150, createdAt: '2026-11-20T08:00:00Z', moves,
+})
+
+describe('planFromSession', () => {
+  it('copies the Session Type and each Move with its sets and count, resting as the Move recommends', () => {
+    const plan = planFromSession(session([
+      { moveId: 'push-up', sets: 2, count: 8 },
+      { moveId: 'forearm-plank', sets: 1, count: 40 },
+    ]))
+    // push-up recommends 60 s rest, forearm-plank 45 s
+    expect(plan).toEqual({
+      activity: 'hiit',
+      moves: [
+        { moveId: 'push-up', sets: 2, count: 8, restSeconds: 60 },
+        { moveId: 'forearm-plank', sets: 1, count: 40, restSeconds: 45 },
+      ],
+    })
+  })
+
+  it('leaves out a Move no longer in the library', () => {
+    const plan = planFromSession(session([
+      { moveId: 'retired-move', sets: 3, count: 10 },
+      { moveId: 'push-up', sets: 2, count: 8 },
+    ]))
+    expect(plan?.moves.map((m) => m.moveId)).toEqual(['push-up'])
+  })
+
+  it('is null for a quick log with no Moves, or when none of its Moves still exist', () => {
+    expect(planFromSession(session())).toBeNull()
+    expect(planFromSession(session([]))).toBeNull()
+    expect(planFromSession(session([{ moveId: 'retired-move', sets: 3, count: 10 }]))).toBeNull()
   })
 })
