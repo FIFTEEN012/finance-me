@@ -21,12 +21,17 @@ import { PressCard } from '@/components/ui/PressCard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { FoodForm } from '@/components/nutrition/FoodForm'
 import { FoodPhotoButton } from '@/components/nutrition/FoodPhotoButton'
+import { PhotoExpenseFields, photoExpenseAmount, type PhotoExpenseValue } from '@/components/nutrition/PhotoExpenseFields'
 import { ExerciseForm } from '@/components/nutrition/ExerciseForm'
 import { ProfileDialog } from '@/components/nutrition/ProfileDialog'
 import { AdviceCard } from '@/components/nutrition/AdviceCard'
+import { SessionMoveList } from '@/components/workouts/SessionMoveList'
 import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDialogs'
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
 import { useTransactionStore } from '@/store/useTransactionStore'
+import { useCategoryStore } from '@/store/useCategoryStore'
+import { savePhotoDraft } from '@/store/photoDraftExpense'
+import { DEFAULT_FOOD_CATEGORY_ID, foodCategories } from '@/lib/foodCategory'
 import { formatCurrency } from '@/lib/utils'
 import { todayKey } from '@/lib/recurring'
 import { addDays } from '@/lib/supplies'
@@ -73,6 +78,16 @@ export default function NutritionPage() {
   const [date, setDate] = useState(today)
   const transactions = useTransactionStore((s) => s.transactions)
   const expenseById = useMemo(() => new Map(transactions.map((t) => [t.id, t])), [transactions])
+  const categories = useCategoryStore((s) => s.categories)
+  const foodCats = useMemo(() => foodCategories(categories), [categories])
+  const defaultFoodCategoryId =
+    foodCats.find((c) => c.id === DEFAULT_FOOD_CATEGORY_ID)?.id ?? foodCats[0]?.id ?? ''
+  const [photoExpense, setPhotoExpense] = useState<PhotoExpenseValue>({ on: false, amount: '', categoryId: '' })
+  const [photoExpenseErrors, setPhotoExpenseErrors] = useState(false)
+  // Keep the chosen category valid when Food Categories change.
+  const photoExpenseCategoryId = foodCats.some((c) => c.id === photoExpense.categoryId)
+    ? photoExpense.categoryId
+    : defaultFoodCategoryId
 
   // A kcal badge on a Food Expense links here with ?date=YYYY-MM-DD.
   useEffect(() => {
@@ -153,11 +168,30 @@ export default function NutritionPage() {
 
   const handlePhotoDraftSave = (entries: FoodInput[]) => {
     if (entries.length === 0) return
-    const ids = entries.map((input) => store.addFood(input))
+    const withExpense = photoExpense.on && foodCats.length > 0
+    const amount = photoExpenseAmount(photoExpense)
+    if (withExpense && amount === null) {
+      setPhotoExpenseErrors(true)
+      return false
+    }
+    const { foodIds, expenseId } = savePhotoDraft(
+      entries,
+      withExpense && amount !== null ? { amount, categoryId: photoExpenseCategoryId } : null,
+    )
     const total = entries.reduce((sum, e) => sum + e.kcal, 0)
-    toast.success(`บันทึก ${entries.length} รายการ ${n(total)} kcal แล้ว`, {
-      action: { label: 'ยกเลิก', onClick: () => ids.forEach((id) => store.deleteFood(id)) },
-    })
+    const undo = () => {
+      foodIds.forEach((id) => store.deleteFood(id))
+      if (expenseId) useTransactionStore.getState().deleteTransaction(expenseId)
+    }
+    const message = expenseId
+      ? `บันทึก ${entries.length} รายการ ${n(total)} kcal พร้อมรายจ่าย ${formatCurrency(amount!)} แล้ว`
+      : `บันทึก ${entries.length} รายการ ${n(total)} kcal แล้ว`
+    toast.success(message, { action: { label: 'ยกเลิก', onClick: undo } })
+  }
+
+  const resetPhotoExpense = () => {
+    setPhotoExpense((current) => ({ ...current, amount: '' }))
+    setPhotoExpenseErrors(false)
   }
 
   const handleExerciseSubmit =(input: ExerciseInput) => {
@@ -274,7 +308,19 @@ export default function NutritionPage() {
           <Button onClick={() => { setEditingFood(null); setFoodFormOpen(true) }} className="w-full gap-1.5">
             <Plus className="w-4 h-4" /> บันทึกอาหาร
           </Button>
-          <FoodPhotoButton date={date} onSave={handlePhotoDraftSave} />
+          <FoodPhotoButton
+            date={date}
+            onSave={handlePhotoDraftSave}
+            onClose={resetPhotoExpense}
+            footer={
+              <PhotoExpenseFields
+                value={{ ...photoExpense, categoryId: photoExpenseCategoryId }}
+                onChange={setPhotoExpense}
+                categories={foodCats}
+                showErrors={photoExpenseErrors}
+              />
+            }
+          />
         </PressCard>
 
         <PressCard {...cardShadow} className={cardClass}>
@@ -354,7 +400,8 @@ export default function NutritionPage() {
           <h3 className="text-sm font-bold text-slate-600 dark:text-slate-300">การออกกำลัง{date === today ? 'วันนี้' : ''}</h3>
           <ul className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 divide-y divide-slate-100 dark:divide-slate-800">
             {dayExercise.map((e) => (
-              <li key={e.id} className="flex items-center gap-2 py-1.5 pl-1">
+              <li key={e.id} className="space-y-1 py-1.5 pl-1">
+                <div className="flex items-center gap-2">
                 <p className="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-100 break-words">
                   {e.name} <span className="text-slate-500 dark:text-slate-400">· {e.minutes} นาที</span>
                 </p>
@@ -365,6 +412,8 @@ export default function NutritionPage() {
                 <Button variant="ghost" size="icon" aria-label={`ลบ ${e.name}`} onClick={() => setDeletingExercise(e)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
+                </div>
+                <SessionMoveList entry={e} />
               </li>
             ))}
           </ul>

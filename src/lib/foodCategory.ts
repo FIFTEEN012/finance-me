@@ -12,3 +12,8 @@ export function isFoodCategory(category: Category | null | undefined): boolean {
   if (typeof category.isFood === 'boolean') return category.isFood
   return category.id === DEFAULT_FOOD_CATEGORY_ID
 }
+
+/** The Food Categories among `categories`, in their order. */
+export function foodCategories(categories: Category[]): Category[] {
+  return categories.filter(isFoodCategory)
+}

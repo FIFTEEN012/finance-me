@@ -92,6 +92,34 @@ describe('cancelPlan', () => {
   })
 })
 
+describe('repeatSession', () => {
+  it('starts a Workout Plan with the same Moves, sets and count as a logged Workout Session', () => {
+    const store = useWorkoutPlanStore.getState()
+    store.startPlan(pushUps)
+    store.toggleSet(0, 0)
+    store.toggleSet(0, 1)
+    store.toggleSet(1, 0)
+    useWorkoutPlanStore.getState().finishPlan({ date: '2026-11-24', minutes: 10, kcal: 60 })
+    const [session] = useNutritionStore.getState().exercise
+
+    expect(useWorkoutPlanStore.getState().repeatSession(session)).toBe(true)
+
+    const { active } = useWorkoutPlanStore.getState()
+    expect(active?.plan.activity).toBe('weights')
+    expect(active?.plan.moves.map(({ moveId, sets, count }) => ({ moveId, sets, count }))).toEqual([
+      { moveId: 'push-up', sets: 2, count: 10 },
+      { moveId: 'forearm-plank', sets: 1, count: 30 },
+    ])
+    expect(active?.done).toEqual([[false, false], [false]])
+  })
+
+  it('does nothing for a quick log with no Moves', () => {
+    const quick = { id: 'q', date: '2026-11-24', activity: 'running', name: 'วิ่ง', minutes: 30, kcal: 300, createdAt: '' }
+    expect(useWorkoutPlanStore.getState().repeatSession(quick)).toBe(false)
+    expect(useWorkoutPlanStore.getState().active).toBeNull()
+  })
+})
+
 describe('persistence', () => {
   it('keeps the in-progress plan and its ticks after a reload', async () => {
     useWorkoutPlanStore.getState().startPlan(pushUps)
