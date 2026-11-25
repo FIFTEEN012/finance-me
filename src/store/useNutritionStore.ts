@@ -20,7 +20,8 @@ interface NutritionStore {
   addFood: (input: FoodInput) => string
   updateFood: (id: string, input: FoodInput) => void
   deleteFood: (id: string) => void
-  addWater: (date: string, ml: number) => void
+  /** Returns the new entry's id (used to undo it). */
+  addWater: (date: string, ml: number) => string
   deleteWater: (id: string) => void
   addExercise: (input: ExerciseInput) => void
   updateExercise: (id: string, input: ExerciseInput) => void
@@ -48,10 +49,11 @@ export const useNutritionStore = create<NutritionStore>()(
       updateFood: (id, input) =>
         set((s) => ({ food: s.food.map((e) => (e.id === id ? { ...e, ...input } : e)) })),
       deleteFood: (id) => set((s) => ({ food: s.food.filter((e) => e.id !== id) })),
-      addWater: (date, ml) =>
-        set((s) => ({
-          water: [...s.water, { id: crypto.randomUUID(), date, ml, createdAt: new Date().toISOString() }],
-        })),
+      addWater: (date, ml) => {
+        const id = crypto.randomUUID()
+        set((s) => ({ water: [...s.water, { id, date, ml, createdAt: new Date().toISOString() }] }))
+        return id
+      },
       deleteWater: (id) => set((s) => ({ water: s.water.filter((e) => e.id !== id) })),
       addExercise: (input) =>
         set((s) => ({

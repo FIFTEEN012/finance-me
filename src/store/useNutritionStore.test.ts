@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useNutritionStore } from './useNutritionStore'
+import { waterOn } from '@/lib/nutrition'
 
 beforeEach(() => {
   useNutritionStore.setState({ food: [], water: [], exercise: [], profile: null })
@@ -31,5 +32,17 @@ describe('updateFood', () => {
       date: '2026-11-19', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 30, carbsG: undefined, fatG: undefined,
     })
     expect(useNutritionStore.getState().food[0]).toMatchObject({ proteinG: 30, carbsG: undefined, fatG: undefined })
+  })
+})
+
+describe('water undo', () => {
+  it('undoing a sip removes only that sip', () => {
+    const store = useNutritionStore.getState()
+    store.addWater('2026-11-25', 500)
+    const id = store.addWater('2026-11-25', 250)
+
+    useNutritionStore.getState().deleteWater(id)
+
+    expect(waterOn(useNutritionStore.getState().water, '2026-11-25')).toBe(500)
   })
 })

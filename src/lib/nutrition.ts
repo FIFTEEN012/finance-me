@@ -111,6 +111,17 @@ export function recentFoodNames(entries: FoodEntry[], limit = 30): string[] {
   return names
 }
 
+/**
+ * Water Bottle reading for a day: `level` is how full the bottle still is (1 = nothing drunk,
+ * 0 = Water Target reached), `over` is how much was drunk past the target. A target of 0 draws
+ * an empty bottle.
+ */
+export function waterBottle(drank: number, target: number): { level: number; over: number } {
+  const over = Math.max(0, drank - Math.max(0, target))
+  if (!(target > 0)) return { level: 0, over }
+  return { level: Math.min(1, Math.max(0, 1 - drank / target)), over }
+}
+
 export function formatMl(ml: number): string {
   return ml >= 1000 ? `${(ml / 1000).toLocaleString('th-TH', { maximumFractionDigits: 2 })} ลิตร` : `${ml.toLocaleString('th-TH')} มล.`
 }
