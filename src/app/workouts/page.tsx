@@ -9,6 +9,7 @@ import { MoveBadges } from '@/components/workouts/MoveBadges'
 import { MedicalNotice, MoveDetailDialog } from '@/components/workouts/MoveDetail'
 import { PlanEditor } from '@/components/workouts/PlanEditor'
 import { ActivePlanChecklist } from '@/components/workouts/ActivePlanChecklist'
+import { WorkoutBuilder } from '@/components/workouts/WorkoutBuilder'
 import { DEFAULT_PLAN_ACTIVITY, planMoveFor } from '@/lib/workoutPlan'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import {
@@ -95,6 +96,7 @@ export default function WorkoutsPage() {
       <MedicalNotice />
 
       {active && <ActivePlanChecklist active={active} />}
+      <WorkoutBuilder />
       <PlanEditor hasActive={active !== null} />
 
       <section className="space-y-2">
