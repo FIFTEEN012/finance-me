@@ -9,6 +9,7 @@ import {
   financeDebts,
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { foodFlagFrom } from "@/lib/foodCategory";
 import { normalizeDebt } from "@/lib/debtRecord";
 
 export const dynamic = "force-dynamic";
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
         if (!cat.name) continue;
         const catId = cat.id || crypto.randomUUID();
         const catType = (cat.type || "EXPENSE").toUpperCase();
-        const isFood = typeof cat.isFood === "boolean" ? cat.isFood : null;
+        const isFood = foodFlagFrom(cat.isFood);
         await db
           .insert(financeCategories)
           .values({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Category } from '@/types'
-import { foodCategories, isFoodCategory } from './foodCategory'
+import { foodCategories, foodFlagFrom, isFoodCategory } from './foodCategory'
 
 function category(overrides: Partial<Category> = {}): Category {
   return {
@@ -52,5 +52,16 @@ describe('foodCategories', () => {
       category({ id: 'cat-income', type: 'INCOME', isFood: true }),
     ]
     expect(foodCategories(list).map((c) => c.id)).toEqual(['cat-expense-1', 'cat-coffee'])
+  })
+})
+
+describe('foodFlagFrom', () => {
+  it('keeps a boolean Food Category flag', () => {
+    expect(foodFlagFrom(true)).toBe(true)
+    expect(foodFlagFrom(false)).toBe(false)
+  })
+
+  it('treats anything else as never set', () => {
+    for (const value of [undefined, null, 'true', 1, 0, {}, []]) expect(foodFlagFrom(value)).toBeNull()
   })
 })

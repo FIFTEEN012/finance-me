@@ -13,6 +13,14 @@ export function isFoodCategory(category: Category | null | undefined): boolean {
   return category.id === DEFAULT_FOOD_CATEGORY_ID
 }
 
+/**
+ * A Category's Food Category flag as sent by a client: the boolean if one was given,
+ * otherwise null (never set).
+ */
+export function foodFlagFrom(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null
+}
+
 /** The Food Categories among `categories`, in their order. */
 export function foodCategories(categories: Category[]): Category[] {
   return categories.filter(isFoodCategory)

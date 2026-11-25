@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeCategories } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { foodFlagFrom } from "@/lib/foodCategory";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,9 @@ export async function PUT(
   if (body.type !== undefined) updateData.type = body.type;
   if (body.icon !== undefined) updateData.icon = body.icon;
   if (body.color !== undefined) updateData.color = body.color;
-  if (typeof body.isFood === "boolean") updateData.isFood = body.isFood;
+  // Partial update: leave the flag untouched unless a boolean was sent.
+  const isFood = foodFlagFrom(body.isFood);
+  if (isFood !== null) updateData.isFood = isFood;
 
   const [updated] = await db
     .update(financeCategories)
