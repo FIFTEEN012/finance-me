@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { id, name, type, icon, color, isDefault } = body;
+  const { id, name, type, icon, color, isDefault, isFood } = body;
 
   if (!name || !type) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       icon: icon || "Folder",
       color: color || "#7c3aed",
       isDefault: !!isDefault,
+      isFood: typeof isFood === "boolean" ? isFood : null,
     })
     .returning();
 

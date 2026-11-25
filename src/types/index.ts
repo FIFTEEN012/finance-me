@@ -9,6 +9,8 @@ export interface Category {
   icon: string
   color: string
   isDefault: boolean
+  /** Expense only. Absent = not set yet; use isFoodCategory() to read. */
+  isFood?: boolean
 }
 
 export interface Transaction {

@@ -75,6 +75,7 @@ export async function GET() {
       icon: c.icon,
       color: c.color,
       isDefault: c.isDefault,
+      ...(typeof c.isFood === "boolean" ? { isFood: c.isFood } : {}),
     }));
 
     const formattedBudgets = budgets.map((b) => ({
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
         if (!cat.name) continue;
         const catId = cat.id || crypto.randomUUID();
         const catType = (cat.type || "EXPENSE").toUpperCase();
+        const isFood = typeof cat.isFood === "boolean" ? cat.isFood : null;
         await db
           .insert(financeCategories)
           .values({
@@ -154,6 +156,7 @@ export async function POST(request: Request) {
             icon: cat.icon || "Folder",
             color: cat.color || "#7c3aed",
             isDefault: !!cat.isDefault,
+            isFood,
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
@@ -164,6 +167,7 @@ export async function POST(request: Request) {
               icon: cat.icon || "Folder",
               color: cat.color || "#7c3aed",
               isDefault: !!cat.isDefault,
+              isFood,
               updatedAt: new Date(),
             },
           });

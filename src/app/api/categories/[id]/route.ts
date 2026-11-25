@@ -31,6 +31,7 @@ export async function PUT(
   if (body.type !== undefined) updateData.type = body.type;
   if (body.icon !== undefined) updateData.icon = body.icon;
   if (body.color !== undefined) updateData.color = body.color;
+  if (typeof body.isFood === "boolean") updateData.isFood = body.isFood;
 
   const [updated] = await db
     .update(financeCategories)

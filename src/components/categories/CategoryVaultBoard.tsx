@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, Lock, Plus, ReceiptText, ShieldAlert, Tags, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Lock, Plus, ReceiptText, ShieldAlert, Tags, Trash2, Utensils } from 'lucide-react'
 import { Category } from '@/types'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { PressCard } from '@/components/ui/PressCard'
 import { cn } from '@/lib/utils'
+import { isFoodCategory } from '@/lib/foodCategory'
 
 export interface CategoryVaultItem {
   category: Category
@@ -19,6 +20,7 @@ interface CategoryVaultBoardProps {
   onAddCategory: () => void
   onEditCategory: (category: Category) => void
   onDeleteCategory: (category: Category) => void
+  onToggleFood: (category: Category, isFood: boolean) => void
 }
 
 export function CategoryVaultBoard({
@@ -29,6 +31,7 @@ export function CategoryVaultBoard({
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
+  onToggleFood,
 }: CategoryVaultBoardProps) {
   const hasCategories = items.length > 0
 
@@ -83,6 +86,7 @@ export function CategoryVaultBoard({
                 item={item}
                 onEdit={() => onEditCategory(item.category)}
                 onDelete={() => onDeleteCategory(item.category)}
+                onToggleFood={(isFood) => onToggleFood(item.category, isFood)}
               />
             ))}
           </div>
@@ -188,13 +192,17 @@ function CategoryVaultCard({
   item,
   onEdit,
   onDelete,
+  onToggleFood,
 }: {
   item: CategoryVaultItem
   onEdit: () => void
   onDelete: () => void
+  onToggleFood: (isFood: boolean) => void
 }) {
   const { category, txCount, budgetCount, inUse } = item
   const isIncome = category.type === 'INCOME'
+  const isExpense = category.type === 'EXPENSE'
+  const isFood = isFoodCategory(category)
   const typeBadgeClass = isIncome
     ? 'bg-[#dff7d0] text-[#2b6c00] border-[#2b6c00]/15'
     : 'bg-[#ffe0de] text-[#ba1a1a] border-[#ba1a1a]/15'
@@ -250,6 +258,21 @@ function CategoryVaultCard({
               <span>ผูกกับ {budgetCount} งบประมาณ</span>
             </div>
           </div>
+
+          {isExpense && (
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border-2 border-[#becbb1] bg-[var(--quest-surface)] px-4 py-2.5 text-sm font-bold text-[var(--quest-foreground)] dark:border-[#3b4630]">
+              <span className="flex items-center gap-2">
+                <Utensils className="h-4 w-4 text-[var(--quest-outline)]" />
+                เป็นอาหาร
+              </span>
+              <input
+                type="checkbox"
+                checked={isFood}
+                onChange={(e) => onToggleFood(e.target.checked)}
+                className="h-4 w-4 accent-emerald-600"
+              />
+            </label>
+          )}
         </div>
 
         <div className="flex gap-2 pt-1">

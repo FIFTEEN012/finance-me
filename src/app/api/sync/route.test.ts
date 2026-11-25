@@ -67,6 +67,61 @@ describe("/api/sync route", () => {
     expect(data).toHaveProperty("syncedAt");
   });
 
+  it("returns the Food Category flag on GET, leaving it absent when never set", async () => {
+    const rowsByTable = new Map<unknown, unknown[]>([
+      [
+        financeCategories,
+        [
+          { id: "cat-expense-1", name: "อาหาร", type: "EXPENSE", icon: "Utensils", color: "#ef4444", isDefault: true, isFood: null },
+          { id: "cat-coffee", name: "กาแฟ", type: "EXPENSE", icon: "Coffee", color: "#000", isDefault: false, isFood: true },
+          { id: "cat-expense-2", name: "เดินทาง", type: "EXPENSE", icon: "Car", color: "#f97316", isDefault: true, isFood: false },
+        ],
+      ],
+    ]);
+    mockDb.select.mockImplementation(() => ({
+      from: vi.fn().mockImplementation((table: unknown) => {
+        const rows = rowsByTable.get(table) ?? [];
+        return {
+          where: vi.fn().mockImplementation(() => ({
+            orderBy: vi.fn().mockResolvedValue(rows),
+            then: (fn: (r: unknown[]) => unknown) => Promise.resolve(fn(rows)),
+          })),
+        };
+      }),
+    }));
+
+    const res = await GET();
+    const data = await res.json();
+    const byId = Object.fromEntries(data.categories.map((c: { id: string }) => [c.id, c]));
+    expect(byId["cat-expense-1"]).not.toHaveProperty("isFood");
+    expect(byId["cat-coffee"].isFood).toBe(true);
+    expect(byId["cat-expense-2"].isFood).toBe(false);
+  });
+
+  it("saves the Food Category flag on POST and stores null when absent", async () => {
+    const valuesMock = vi.fn();
+    const onConflictMock = vi.fn().mockResolvedValue({});
+    valuesMock.mockReturnValue({ onConflictDoUpdate: onConflictMock });
+    mockDb.insert.mockReturnValue({ values: valuesMock });
+
+    const req = new Request("http://localhost/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categories: [
+          { id: "cat-coffee", name: "กาแฟ", type: "EXPENSE", isFood: true },
+          { id: "cat-expense-1", name: "อาหาร", type: "EXPENSE", isFood: false },
+          { id: "cat-expense-2", name: "เดินทาง", type: "EXPENSE" },
+        ],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(valuesMock.mock.calls.map((c) => c[0].isFood)).toEqual([true, false, null]);
+    expect(onConflictMock.mock.calls.map((c) => c[0].set.isFood)).toEqual([true, false, null]);
+  });
+
   it("upserts user data on POST", async () => {
     const onConflictMock = vi.fn().mockResolvedValue({});
     mockDb.insert.mockReturnValue({
