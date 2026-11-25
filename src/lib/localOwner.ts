@@ -12,6 +12,7 @@ import { useDashboardStore } from '@/store/useDashboardStore'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useBillSplitStore } from '@/store/useBillSplitStore'
 import { useDebtStore } from '@/store/useDebtStore'
+import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 
 /**
  * localStorage key recording which account the persisted `finance-*` data
@@ -40,6 +41,7 @@ const PERSISTED_STORES: ResettableStore[] = [
   useOnboardingStore,
   useBillSplitStore,
   useDebtStore,
+  useWorkoutPlanStore,
 ] as unknown as ResettableStore[]
 
 function hasWindow(): boolean {
