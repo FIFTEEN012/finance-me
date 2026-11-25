@@ -3,6 +3,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Transaction, TransactionType } from '@/types'
+import { useNutritionStore } from './useNutritionStore'
+
+export type SplitPart = Pick<Transaction, 'categoryId' | 'amount' | 'description'>
 
 interface TransactionStore {
   transactions: Transaction[]
@@ -11,6 +14,11 @@ interface TransactionStore {
   updateTransaction: (id: string, t: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => void
   deleteTransaction: (id: string) => void
   deleteTransactions: (ids: string[]) => void
+  /**
+   * Replaces a transaction with one new row per part (same type, date, note, tags).
+   * Linked Food Entries move to the first row. Returns the new ids in order.
+   */
+  splitTransaction: (id: string, parts: SplitPart[]) => string[]
   recategorizeTransactions: (ids: string[], categoryId: string) => void
   bulkAddTag: (ids: string[], tag: string) => void
   bulkRemoveTag: (ids: string[], tag: string) => void
@@ -68,6 +76,7 @@ export const useTransactionStore = create<TransactionStore>()(
         set((s) => ({
           transactions: s.transactions.filter((tx) => tx.id !== id),
         }))
+        useNutritionStore.getState().unlinkFoodExpenses([id])
         if (typeof window !== 'undefined') {
           fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
         }
@@ -76,11 +85,30 @@ export const useTransactionStore = create<TransactionStore>()(
         set((s) => ({
           transactions: s.transactions.filter((tx) => !ids.includes(tx.id)),
         }))
+        useNutritionStore.getState().unlinkFoodExpenses(ids)
         if (typeof window !== 'undefined') {
           ids.forEach((id) => {
             fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
           })
         }
+      },
+      splitTransaction: (id, parts) => {
+        const original = get().transactions.find((tx) => tx.id === id)
+        if (!original || parts.length === 0) return []
+        const ids = parts.map((p) =>
+          get().addTransaction({
+            categoryId: p.categoryId,
+            type: original.type,
+            amount: p.amount,
+            description: p.description || original.description,
+            note: original.note,
+            tags: original.tags,
+            date: original.date,
+          })
+        )
+        useNutritionStore.getState().relinkFoodExpense(id, ids[0])
+        get().deleteTransaction(id)
+        return ids
       },
       recategorizeTransactions: (ids, categoryId) =>
         set((s) => ({

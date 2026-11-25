@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,8 @@ import { ProfileDialog } from '@/components/nutrition/ProfileDialog'
 import { AdviceCard } from '@/components/nutrition/AdviceCard'
 import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDialogs'
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
+import { useTransactionStore } from '@/store/useTransactionStore'
+import { formatCurrency } from '@/lib/utils'
 import { todayKey } from '@/lib/recurring'
 import { addDays } from '@/lib/supplies'
 import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, macrosOn, progress, waterBottle, waterOn } from '@/lib/nutrition'
@@ -67,6 +70,14 @@ export default function NutritionPage() {
   const { food, water, exercise, profile, calorieGoal, waterGoal } = store
   const today = todayKey()
   const [date, setDate] = useState(today)
+  const transactions = useTransactionStore((s) => s.transactions)
+  const expenseById = useMemo(() => new Map(transactions.map((t) => [t.id, t])), [transactions])
+
+  // A kcal badge on a Food Expense links here with ?date=YYYY-MM-DD.
+  useEffect(() => {
+    const linked = new URLSearchParams(window.location.search).get('date')
+    if (linked && /^\d{4}-\d{2}-\d{2}$/.test(linked) && linked <= today) setDate(linked)
+  }, [today])
 
   const [foodFormOpen, setFoodFormOpen] = useState(false)
   const [editingFood, setEditingFood] = useState<FoodEntry | null>(null)
@@ -361,6 +372,15 @@ export default function NutritionPage() {
                 {dayFood.filter((e) => e.meal === m.value).map((e) => (
                   <li key={e.id} className="flex items-center gap-2 py-1.5 pl-1">
                     <p className="flex-1 min-w-0 text-sm text-slate-800 dark:text-slate-100 break-words">{e.name}</p>
+                    {e.foodExpenseId && expenseById.has(e.foodExpenseId) && (
+                      <Link
+                        href={`/transactions?tx=${e.foodExpenseId}`}
+                        aria-label={`ดูรายจ่ายของ ${e.name}`}
+                        className="text-xs num tabular-nums px-1.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300 hover:underline"
+                      >
+                        {formatCurrency(expenseById.get(e.foodExpenseId)!.amount)}
+                      </Link>
+                    )}
                     <p className="text-sm num tabular-nums text-slate-500 dark:text-slate-400">{n(e.kcal)}</p>
                     <Button variant="ghost" size="icon" aria-label={`แก้ไข ${e.name}`} onClick={() => { setEditingFood(e); setFoodFormOpen(true) }}>
                       <Pencil className="w-4 h-4" />

@@ -123,6 +123,8 @@ export interface FoodEntry {
   proteinG?: number
   carbsG?: number
   fatG?: number
+  /** Id of the Food Expense (expense Transaction) this entry was bought with, if any. */
+  foodExpenseId?: string
   createdAt: string
 }
 

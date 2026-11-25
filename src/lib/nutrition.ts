@@ -19,6 +19,50 @@ export function mealForHour(hour: number): MealType {
   return 'snack'
 }
 
+/** Food Entries linked to a Food Expense. */
+export function foodForExpense(entries: FoodEntry[], foodExpenseId: string): FoodEntry[] {
+  return entries.filter((e) => e.foodExpenseId === foodExpenseId)
+}
+
+/** Total kcal of the Food Entries linked to a Food Expense (its kcal badge). */
+export function kcalForExpense(entries: FoodEntry[], foodExpenseId: string): number {
+  return foodForExpense(entries, foodExpenseId).reduce((sum, e) => sum + e.kcal, 0)
+}
+
+/** kcal badge per Food Expense id, for a list of expenses. */
+export function kcalByExpenseId(entries: FoodEntry[]): Map<string, number> {
+  const totals = new Map<string, number>()
+  for (const e of entries) {
+    if (e.foodExpenseId) totals.set(e.foodExpenseId, (totals.get(e.foodExpenseId) ?? 0) + e.kcal)
+  }
+  return totals
+}
+
+/** A Food Entry row being typed into a form, before it is saved. */
+export interface FoodDraft {
+  key: string
+  name: string
+  kcal: string
+  meal: MealType
+}
+
+export function newFoodDraft(now: Date = new Date()): FoodDraft {
+  return { key: crypto.randomUUID(), name: '', kcal: '', meal: mealForHour(now.getHours()) }
+}
+
+/** Typed rows → Food Entry inputs for `date`. Rows without a name are skipped; a blank kcal counts as 0. */
+export function foodInputsFromDrafts(
+  drafts: FoodDraft[],
+  date: string,
+): Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal'>[] {
+  return drafts.flatMap((d) => {
+    const name = d.name.trim().replace(/\s+/g, ' ')
+    if (!name) return []
+    const kcal = Math.max(0, Math.round(Number(d.kcal) || 0))
+    return [{ date, meal: d.meal, name, kcal }]
+  })
+}
+
 export function kcalOn(entries: FoodEntry[], date: string): number {
   return entries.reduce((sum, e) => (e.date === date ? sum + e.kcal : sum), 0)
 }
