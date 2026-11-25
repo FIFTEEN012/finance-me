@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Check, Flag, Info, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { MoveDetailDialog } from '@/components/workouts/MoveDetail'
 import { FALLBACK_WEIGHT_KG, estimateBurn, exerciseLabel } from '@/lib/fitness'
 import { getMove, type Move } from '@/lib/moves'
-import { planMinutes } from '@/lib/workoutPlan'
+import { checklistSections, planMinutes, type ChecklistSection, type PlanStep } from '@/lib/workoutPlan'
 import { todayKey } from '@/lib/recurring'
 import { cn } from '@/lib/utils'
 import { useNutritionStore } from '@/store/useNutritionStore'
@@ -64,7 +64,120 @@ function FinishDialog({ active, open, onOpenChange }: { active: ActivePlan; open
   )
 }
 
-/** The in-progress Workout Plan as a checklist: tick each set, open a Move's how-to, finish or cancel. */
+const PART_LABELS = { warmUp: 'วอร์มอัพ', coolDown: 'คูลดาวน์' } as const
+
+function unitOf(move: Move | undefined): string {
+  return move?.countMode === 'seconds' ? 'วินาที' : 'ครั้ง'
+}
+
+function SetTick({ label, done, onClick, children }: { label: string; done: boolean; onClick: () => void; children?: ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        'flex h-10 min-w-10 flex-shrink-0 items-center justify-center gap-1 rounded-xl border-2 px-3 text-sm font-bold transition-colors',
+        done
+          ? 'border-violet-500 bg-violet-500 text-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+      )}
+    >
+      {done && <Check className="h-4 w-4" aria-hidden />}
+      {children}
+    </button>
+  )
+}
+
+function InfoButton({ move, onDetail }: { move: Move | undefined; onDetail: (m: Move) => void }) {
+  if (!move) return null
+  return (
+    <Button variant="ghost" size="icon" aria-label={`วิธีทำ ${move.name}`} onClick={() => onDetail(move)}>
+      <Info className="h-4 w-4" />
+    </Button>
+  )
+}
+
+interface SectionProps {
+  section: ChecklistSection
+  active: ActivePlan
+  onToggle: (moveIndex: number, setIndex: number) => void
+  onDetail: (m: Move) => void
+}
+
+/** One stretch of the checklist: Moves with all their sets, or one circuit round with each Move once. */
+function ChecklistSectionView({ section, active, onToggle, onDetail }: SectionProps) {
+  if (section.kind === 'round') {
+    const allDone = section.steps.every(({ moveIndex, setIndex }: PlanStep) => active.done[moveIndex]?.[setIndex])
+    return (
+      <div className="space-y-2">
+        <h4 className={cn('num text-sm font-black tabular-nums', allDone ? 'text-violet-700 dark:text-violet-400' : 'text-slate-700 dark:text-slate-200')}>
+          รอบ {section.round}/{section.rounds}
+        </h4>
+        <ol className="space-y-2">
+          {section.steps.map(({ moveIndex, setIndex }) => {
+            const pm = active.plan.moves[moveIndex]
+            const move = getMove(pm.moveId)
+            const name = move?.name ?? pm.moveId
+            return (
+              <li key={moveIndex} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2 pl-3 dark:border-slate-700">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold text-slate-800 dark:text-slate-100">{name}</p>
+                  <p className="num text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                    {pm.count} {unitOf(move)} · พัก {pm.restSeconds} วินาที
+                  </p>
+                </div>
+                <InfoButton move={move} onDetail={onDetail} />
+                <SetTick
+                  label={`${name} รอบ ${section.round}`}
+                  done={active.done[moveIndex]?.[setIndex] ?? false}
+                  onClick={() => onToggle(moveIndex, setIndex)}
+                />
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {section.part && <h4 className="text-sm font-black text-slate-700 dark:text-slate-200">{PART_LABELS[section.part]}</h4>}
+      <ol className="space-y-2">
+        {section.moveIndexes.map((i) => {
+          const pm = active.plan.moves[i]
+          const move = getMove(pm.moveId)
+          const name = move?.name ?? pm.moveId
+          return (
+            <li key={`${pm.moveId}-${i}`} className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-slate-800 dark:text-slate-100">{name}</p>
+                  <p className="num text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                    {pm.sets} เซ็ต × {pm.count} {unitOf(move)} · พัก {pm.restSeconds} วินาที
+                  </p>
+                </div>
+                <InfoButton move={move} onDetail={onDetail} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(active.done[i] ?? []).map((d, j) => (
+                  <SetTick key={j} label={`${name} เซ็ต ${j + 1}`} done={d} onClick={() => onToggle(i, j)}>
+                    {j + 1}
+                  </SetTick>
+                ))}
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
+/** The in-progress Workout Plan as a checklist: tick each set (in a circuit, each Move once per round), open a Move's how-to, finish or cancel. */
 export function ActivePlanChecklist({ active }: { active: ActivePlan }) {
   const toggleSet = useWorkoutPlanStore((s) => s.toggleSet)
   const cancelPlan = useWorkoutPlanStore((s) => s.cancelPlan)
@@ -84,50 +197,17 @@ export function ActivePlanChecklist({ active }: { active: ActivePlan }) {
         </p>
       </div>
 
-      <ol className="space-y-2">
-        {active.plan.moves.map((pm, i) => {
-          const move = getMove(pm.moveId)
-          const unit = move?.countMode === 'seconds' ? 'วินาที' : 'ครั้ง'
-          return (
-            <li key={`${pm.moveId}-${i}`} className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-slate-800 dark:text-slate-100">{move?.name ?? pm.moveId}</p>
-                  <p className="num text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                    {pm.sets} เซ็ต × {pm.count} {unit} · พัก {pm.restSeconds} วินาที
-                  </p>
-                </div>
-                {move && (
-                  <Button variant="ghost" size="icon" aria-label={`วิธีทำ ${move.name}`} onClick={() => setDetail(move)}>
-                    <Info className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(active.done[i] ?? []).map((d, j) => (
-                  <button
-                    key={j}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={d}
-                    aria-label={`${move?.name ?? pm.moveId} เซ็ต ${j + 1}`}
-                    onClick={() => toggleSet(i, j)}
-                    className={cn(
-                      'flex h-10 min-w-10 items-center justify-center gap-1 rounded-xl border-2 px-3 text-sm font-bold transition-colors',
-                      d
-                        ? 'border-violet-500 bg-violet-500 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
-                    )}
-                  >
-                    {d && <Check className="h-4 w-4" aria-hidden />}
-                    {j + 1}
-                  </button>
-                ))}
-              </div>
-            </li>
-          )
-        })}
-      </ol>
+      <div className="space-y-3">
+        {checklistSections(active.plan).map((section) => (
+          <ChecklistSectionView
+            key={section.kind === 'round' ? `round-${section.round}` : `moves-${section.part ?? 'all'}`}
+            section={section}
+            active={active}
+            onToggle={toggleSet}
+            onDetail={setDetail}
+          />
+        ))}
+      </div>
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" className="gap-1.5" onClick={() => setCancelOpen(true)}>

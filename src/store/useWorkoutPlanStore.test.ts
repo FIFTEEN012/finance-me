@@ -42,6 +42,22 @@ describe('startPlan', () => {
   })
 })
 
+describe('plan format', () => {
+  const circuit: WorkoutPlan = { ...pushUps, format: 'circuit' }
+
+  it('keeps the format of a draft', () => {
+    useWorkoutPlanStore.getState().setDraft(circuit)
+    expect(useWorkoutPlanStore.getState().draft?.format).toBe('circuit')
+  })
+
+  it('starts a circuit as a circuit, one tick per round of each Move', () => {
+    useWorkoutPlanStore.getState().startPlan(circuit)
+    const { active } = useWorkoutPlanStore.getState()
+    expect(active?.plan.format).toBe('circuit')
+    expect(active?.done).toEqual([[false, false, false], [false, false]])
+  })
+})
+
 describe('finishPlan', () => {
   it('logs a Workout Session with the ticked sets of each Move and clears the plan', () => {
     const store = useWorkoutPlanStore.getState()

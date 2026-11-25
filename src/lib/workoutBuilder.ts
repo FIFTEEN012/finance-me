@@ -1,4 +1,4 @@
-import type { BodyGoal, HealthProfile, PlanMove, WorkoutPlan } from '@/types'
+import type { BodyGoal, HealthProfile, PlanFormat, PlanMove, WorkoutPlan } from '@/types'
 import {
   EQUIPMENT,
   coolDownMoves,
@@ -50,6 +50,8 @@ export interface BuilderChoices {
 /** A built Workout Plan, split into its warm-up, main Moves and cool-down. */
 export interface PlanSections {
   activity: string
+  /** How the main Moves are done; the warm-up and cool-down are done once either way. */
+  format: PlanFormat
   warmUp: PlanMove[]
   main: PlanMove[]
   coolDown: PlanMove[]
@@ -57,15 +59,17 @@ export interface PlanSections {
 
 interface Prescription {
   activity: string
+  format: PlanFormat
   sets: number
   reps: number
   restSeconds: number
 }
 
 const PRESCRIPTIONS: Record<BodyGoal, Prescription> = {
-  lose: { activity: 'hiit', sets: 3, reps: 15, restSeconds: 30 },
-  maintain: { activity: 'weights', sets: 3, reps: 12, restSeconds: 60 },
-  gain: { activity: 'weights', sets: 4, reps: 10, restSeconds: 90 },
+  // Losing weight: a circuit, 3 rounds × 15 with 30 s rest (#20).
+  lose: { activity: 'hiit', format: 'circuit', sets: 3, reps: 15, restSeconds: 30 },
+  maintain: { activity: 'weights', format: 'straight', sets: 3, reps: 12, restSeconds: 60 },
+  gain: { activity: 'weights', format: 'straight', sets: 4, reps: 10, restSeconds: 90 },
 }
 
 function prescribe(move: Move, p: Prescription, sets: number): PlanMove {
@@ -117,6 +121,7 @@ function buildStretchSections(minutes: number): PlanSections {
   const mainMoves = stretches.filter((m) => m !== warm && m !== cool).slice(0, MAX_MAIN_MOVES)
   const attempt = (sets: number): PlanSections => ({
     activity: STRETCH.activity,
+    format: 'straight',
     warmUp: [planMoveFor(warm)],
     main: mainMoves.map((m) => ({ moveId: m.id, sets, count: m.recommended.count, restSeconds: STRETCH.restSeconds })),
     coolDown: [planMoveFor(cool)],
@@ -140,6 +145,7 @@ export function buildPlanSections(choices: BuilderChoices): PlanSections {
 
   const attempt = (sets: number, n: number): PlanSections => ({
     activity: p.activity,
+    format: p.format,
     warmUp,
     main: candidates.slice(0, n).map((m) => prescribe(m, p, sets)),
     coolDown,
@@ -155,8 +161,8 @@ export function buildPlanSections(choices: BuilderChoices): PlanSections {
   return attempt(1, MIN_MAIN_MOVES)
 }
 
-function flatten({ activity, warmUp, main, coolDown }: PlanSections): WorkoutPlan {
-  return { activity, moves: [...warmUp, ...main, ...coolDown] }
+function flatten({ activity, format, warmUp, main, coolDown }: PlanSections): WorkoutPlan {
+  return { activity, format, moves: [...warmUp, ...main, ...coolDown] }
 }
 
 /** The goal the builder starts on: the profile's body goal, or none (the user picks) without a profile. */

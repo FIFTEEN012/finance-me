@@ -166,10 +166,19 @@ export interface PlanMove {
   restSeconds: number
 }
 
+/**
+ * How a Workout Plan's main Moves are done: 'straight' does each Move's sets
+ * back to back; 'circuit' does every main Move once per round, set n of each
+ * Move in round n. Warm-up and cool-down Moves are done once, outside the rounds.
+ */
+export type PlanFormat = 'straight' | 'circuit'
+
 /** The Moves intended for a session; finishing it logs a Workout Session of `activity`. */
 export interface WorkoutPlan {
   activity: string  // Session Type key from EXERCISES; sets the MET for kcal
   moves: PlanMove[]
+  /** Absent on plans saved before formats existed: read as 'straight'. */
+  format?: PlanFormat
 }
 
 export type Sex = 'male' | 'female'

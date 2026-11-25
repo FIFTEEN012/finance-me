@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EXERCISES } from '@/lib/fitness'
 import { getMove } from '@/lib/moves'
-import { DEFAULT_PLAN_ACTIVITY, planMinutes } from '@/lib/workoutPlan'
+import { DEFAULT_PLAN_ACTIVITY, planFormat, planMinutes } from '@/lib/workoutPlan'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import type { PlanMove, WorkoutPlan } from '@/types'
 
@@ -17,7 +17,7 @@ function clampInt(value: string, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
 }
 
-/** Edits the draft Workout Plan: change sets, reps/seconds and rest, remove or reorder Moves, then start. */
+/** Edits the draft Workout Plan: change sets, reps/seconds and rest, remove or reorder Moves, straight sets or circuit, then start. */
 export function PlanEditor({ hasActive }: { hasActive: boolean }) {
   const draft = useWorkoutPlanStore((s) => s.draft)
   const setDraft = useWorkoutPlanStore((s) => s.setDraft)
@@ -66,6 +66,21 @@ export function PlanEditor({ hasActive }: { hasActive: boolean }) {
           ))}
         </select>
       </div>
+
+      <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 accent-emerald-600"
+          checked={planFormat(draft) === 'circuit'}
+          onChange={(e) => update({ format: e.target.checked ? 'circuit' : 'straight' })}
+        />
+        <span>
+          <span className="font-bold">แบบวงจร (circuit)</span>
+          <span className="block text-xs text-slate-500 dark:text-slate-400">
+            ทำทุกท่าต่อกันท่าละ 1 เซ็ตเป็นหนึ่งรอบ จำนวนรอบเท่ากับเซ็ต (วอร์มอัพและคูลดาวน์ทำครั้งเดียว)
+          </span>
+        </span>
+      </label>
 
       <ol className="space-y-2">
         {draft.moves.map((pm, i) => {

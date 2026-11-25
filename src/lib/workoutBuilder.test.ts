@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FOCUS_GROUPS, getMove, type MoveLevel, type TrainingFocus } from './moves'
-import { planMinutes } from './workoutPlan'
+import { checklistSections, planMinutes } from './workoutPlan'
 import {
   BUILDER_EQUIPMENT,
   buildPlanSections,
@@ -50,6 +50,7 @@ describe('buildWorkoutPlan for every body goal × focus × time × level × equi
               const plan = buildWorkoutPlan(choices)
               expect(plan.activity).toBe(g.activity)
               expect(plan.moves).toEqual([...built.warmUp, ...built.main, ...built.coolDown])
+              expect(plan.format).toBe(g.goal === 'lose' ? 'circuit' : 'straight')
               expect(planMinutes(plan)).toBeLessThanOrEqual(minutes)
               expect(buildWorkoutPlan(choices)).toEqual(plan)
             })
@@ -73,6 +74,7 @@ describe('buildWorkoutPlan for stretching, every focus × time × level', () => 
           expect(built.main.every((m) => getMove(m.moveId)?.group === 'stretch')).toBe(true)
 
           const plan = buildWorkoutPlan(choices)
+          expect(plan.format).toBe('straight')
           expect(new Set(plan.moves.map((m) => m.moveId)).size).toBe(plan.moves.length)
           expect(planMinutes(plan)).toBeLessThanOrEqual(minutes)
           expect(buildWorkoutPlan(choices)).toEqual(plan)
@@ -147,5 +149,27 @@ describe('buildPlanSections', () => {
       expect(m.restSeconds).toBe(60)
       if (getMove(m.moveId)?.countMode === 'reps') expect(m.count).toBe(12)
     }
+  })
+
+  it('lose: runs the main Moves as a circuit of 3 rounds, warm-up before and cool-down after', () => {
+    const plan = buildWorkoutPlan({ goal: 'lose', focus: 'full', minutes: 30, level: 'beginner', equipment: 'bodyweight' })
+    const built = buildPlanSections({ goal: 'lose', focus: 'full', minutes: 30, level: 'beginner', equipment: 'bodyweight' })
+    const sections = checklistSections(plan)
+    const w = built.warmUp.length
+    const mainIndexes = built.main.map((_, i) => w + i)
+
+    expect(plan.format).toBe('circuit')
+    expect(sections[0]).toEqual({ kind: 'moves', part: 'warmUp', moveIndexes: built.warmUp.map((_, i) => i) })
+    expect(sections.at(-1)).toEqual({
+      kind: 'moves',
+      part: 'coolDown',
+      moveIndexes: built.coolDown.map((_, i) => w + built.main.length + i),
+    })
+    const rounds = sections.filter((s) => s.kind === 'round')
+    expect(rounds).toHaveLength(3)
+    rounds.forEach((r, i) => {
+      expect(r.round).toBe(i + 1)
+      expect(r.steps).toEqual(mainIndexes.map((moveIndex) => ({ moveIndex, setIndex: i })))
+    })
   })
 })
