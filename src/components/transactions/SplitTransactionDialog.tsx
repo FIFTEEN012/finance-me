@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function SplitTransactionDialog({ transaction, open, onOpenChange }: Props) {
-  const { addTransaction, deleteTransaction } = useTransactionStore()
+  const { splitTransaction } = useTransactionStore()
   const { categories }                        = useCategoryStore()
 
   const [rows, setRows] = useState<SplitRow[]>([])
@@ -74,18 +74,11 @@ export function SplitTransactionDialog({ transaction, open, onOpenChange }: Prop
 
   const handleConfirm = () => {
     if (!canSave) return
-    rows.forEach((r) => {
-      addTransaction({
-        categoryId:  r.categoryId,
-        type:        transaction.type,
-        amount:      parseFloat(r.amount),
-        description: r.description || transaction.description,
-        note:        transaction.note,
-        tags:        transaction.tags,
-        date:        transaction.date,
-      })
-    })
-    deleteTransaction(transaction.id)
+    // Linked Food Entries move to the first row.
+    splitTransaction(
+      transaction.id,
+      rows.map((r) => ({ categoryId: r.categoryId, amount: parseFloat(r.amount), description: r.description })),
+    )
     toast.success(`แยก ${rows.length} รายการสำเร็จ`)
     handleClose()
   }

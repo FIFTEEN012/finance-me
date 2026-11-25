@@ -18,8 +18,14 @@ interface NutritionStore {
   waterGoal: number
   /** Returns the new Food Entry's id. */
   addFood: (input: FoodInput) => string
+  /** Saves Food Entries linked to a Food Expense; returns their ids. */
+  addFoodForExpense: (foodExpenseId: string, inputs: FoodInput[]) => string[]
   updateFood: (id: string, input: FoodInput) => void
   deleteFood: (id: string) => void
+  /** Unlinks the Food Entries of these Food Expenses (the entries stay). */
+  unlinkFoodExpenses: (foodExpenseIds: string[]) => void
+  /** Re-points Food Entries from one Food Expense to another (e.g. after a split). */
+  relinkFoodExpense: (fromId: string, toId: string) => void
   /** Returns the new entry's id (used to undo it). */
   addWater: (date: string, ml: number) => string
   deleteWater: (id: string) => void
@@ -46,9 +52,27 @@ export const useNutritionStore = create<NutritionStore>()(
         }))
         return id
       },
+      addFoodForExpense: (foodExpenseId, inputs) => {
+        const createdAt = new Date().toISOString()
+        const entries = inputs.map((input) => ({ ...input, id: crypto.randomUUID(), foodExpenseId, createdAt }))
+        set((s) => ({ food: [...s.food, ...entries] }))
+        return entries.map((e) => e.id)
+      },
       updateFood: (id, input) =>
         set((s) => ({ food: s.food.map((e) => (e.id === id ? { ...e, ...input } : e)) })),
       deleteFood: (id) => set((s) => ({ food: s.food.filter((e) => e.id !== id) })),
+      unlinkFoodExpenses: (foodExpenseIds) =>
+        set((s) => ({
+          food: s.food.map((e) => {
+            if (!e.foodExpenseId || !foodExpenseIds.includes(e.foodExpenseId)) return e
+            const { foodExpenseId: _unlinked, ...rest } = e
+            return rest
+          }),
+        })),
+      relinkFoodExpense: (fromId, toId) =>
+        set((s) => ({
+          food: s.food.map((e) => (e.foodExpenseId === fromId ? { ...e, foodExpenseId: toId } : e)),
+        })),
       addWater: (date, ml) => {
         const id = crypto.randomUUID()
         set((s) => ({ water: [...s.water, { id, date, ml, createdAt: new Date().toISOString() }] }))
