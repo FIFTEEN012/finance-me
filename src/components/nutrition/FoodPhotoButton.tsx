@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { Camera, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -13,12 +13,19 @@ import type { FoodInput } from '@/store/useNutritionStore'
 
 interface Props {
   date: string
-  /** Receives the Food Entries the user ticked in the Photo Draft. */
-  onSave: (entries: FoodInput[]) => void
+  /** Receives the Food Entries the user ticked in the Photo Draft. Return false to keep the draft open. */
+  onSave: (entries: FoodInput[]) => boolean | void
+  /** Extra controls in the Photo Draft above its save button. */
+  footer?: ReactNode
+  saveLabel?: (count: number) => string
+  /** Called whenever the Photo Draft dialog closes (saved or cancelled). */
+  onClose?: () => void
+  /** "sm": a small ghost button for a section header (no sign-in hint below it). */
+  size?: 'default' | 'sm'
 }
 
 /** Take or pick a food photo, let Gemini suggest items, then review them in a Photo Draft. */
-export function FoodPhotoButton({ date, onSave }: Props) {
+export function FoodPhotoButton({ date, onSave, footer, saveLabel, onClose, size = 'default' }: Props) {
   const { data: session, isPending } = authClient.useSession()
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -35,6 +42,7 @@ export function FoodPhotoButton({ date, onSave }: Props) {
     setReading(false)
     setError('')
     setItems(null)
+    onClose?.()
   }
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -74,16 +82,30 @@ export function FoodPhotoButton({ date, onSave }: Props) {
         aria-label="เลือกหรือถ่ายรูปอาหาร"
         tabIndex={-1}
       />
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-1.5"
-        disabled={isPending || !signedIn || reading}
-        onClick={() => inputRef.current?.click()}
-      >
-        <Camera className="w-4 h-4" /> ถ่ายรูปอาหาร
-      </Button>
-      {!isPending && !signedIn && (
+      {size === 'sm' ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-1 h-7 text-xs"
+          disabled={isPending || !signedIn || reading}
+          title={!isPending && !signedIn ? 'เข้าสู่ระบบเพื่อวิเคราะห์รูปอาหาร' : undefined}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Camera className="w-3.5 h-3.5" /> ถ่ายรูป
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full gap-1.5"
+          disabled={isPending || !signedIn || reading}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Camera className="w-4 h-4" /> ถ่ายรูปอาหาร
+        </Button>
+      )}
+      {size === 'default' && !isPending && !signedIn && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           เข้าสู่ระบบเพื่อวิเคราะห์รูปอาหาร หรือกด &quot;บันทึกอาหาร&quot; เพื่อพิมพ์เอง
         </p>
@@ -112,7 +134,9 @@ export function FoodPhotoButton({ date, onSave }: Props) {
               items={items}
               date={date}
               onCancel={close}
-              onSave={(entries) => { onSave(entries); close() }}
+              footer={footer}
+              saveLabel={saveLabel}
+              onSave={(entries) => { if (onSave(entries) !== false) close() }}
             />
           )}
         </DialogContent>

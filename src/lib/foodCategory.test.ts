@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Category } from '@/types'
-import { isFoodCategory } from './foodCategory'
+import { foodCategories, isFoodCategory } from './foodCategory'
 
 function category(overrides: Partial<Category> = {}): Category {
   return {
@@ -40,5 +40,17 @@ describe('isFoodCategory', () => {
   it('returns false for a missing category', () => {
     expect(isFoodCategory(undefined)).toBe(false)
     expect(isFoodCategory(null)).toBe(false)
+  })
+})
+
+describe('foodCategories', () => {
+  it('keeps only Food Categories, for the Photo Draft expense category field', () => {
+    const list = [
+      category({ id: 'cat-expense-1', name: 'อาหาร', isDefault: true }),
+      category({ id: 'cat-expense-2', name: 'เดินทาง', isDefault: true }),
+      category({ id: 'cat-coffee', name: 'กาแฟ', isFood: true }),
+      category({ id: 'cat-income', type: 'INCOME', isFood: true }),
+    ]
+    expect(foodCategories(list).map((c) => c.id)).toEqual(['cat-expense-1', 'cat-coffee'])
   })
 })

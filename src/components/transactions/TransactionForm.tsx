@@ -23,9 +23,10 @@ import { Transaction, TransactionType } from '@/types'
 import { CategoryIcon } from '@/components/shared/CategoryIcon'
 import { TagInput } from '@/components/shared/TagInput'
 import { FoodEntriesSection } from '@/components/nutrition/FoodEntriesSection'
+import { FoodPhotoButton } from '@/components/nutrition/FoodPhotoButton'
 import { useNutritionStore } from '@/store/useNutritionStore'
 import { isFoodCategory } from '@/lib/foodCategory'
-import { FoodDraft, foodInputsFromDrafts } from '@/lib/nutrition'
+import { FoodDraft, foodDraftsFromInputs, foodInputsFromDrafts } from '@/lib/nutrition'
 
 const schema = z.object({
   type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
@@ -276,7 +277,19 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
           </div>
 
           {showFoodEntries && (
-            <FoodEntriesSection value={foodDrafts} onChange={setFoodDrafts} history={foodHistory} />
+            <FoodEntriesSection
+              value={foodDrafts}
+              onChange={setFoodDrafts}
+              history={foodHistory}
+              actions={
+                <FoodPhotoButton
+                  size="sm"
+                  date={format(selectedDate ?? new Date(), 'yyyy-MM-dd')}
+                  saveLabel={(count) => `เพิ่ม ${count} รายการในรายจ่ายนี้`}
+                  onSave={(entries) => setFoodDrafts((current) => [...current, ...foodDraftsFromInputs(entries)])}
+                />
+              }
+            />
           )}
 
           {/* Note */}
