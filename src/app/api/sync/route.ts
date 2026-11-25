@@ -108,8 +108,9 @@ export async function GET() {
       debts: formattedDebts,
       syncedAt: new Date().toISOString(),
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to fetch data" }, { status: 500 });
+  } catch (error) {
+    console.error("GET /api/sync failed", error);
+    return NextResponse.json({ error: "ดึงข้อมูลจากคลาวด์ไม่สำเร็จ ลองใหม่อีกครั้ง" }, { status: 500 });
   }
 }
 
@@ -336,7 +337,8 @@ export async function POST(request: Request) {
       success: true,
       syncedAt: new Date().toISOString(),
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Sync failed" }, { status: 500 });
+  } catch (error) {
+    console.error("POST /api/sync failed", error);
+    return NextResponse.json({ error: "ซิงก์ข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง" }, { status: 500 });
   }
 }

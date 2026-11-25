@@ -213,4 +213,47 @@ describe("/api/sync route", () => {
     ]);
     for (const a of args) expect(a.set).not.toHaveProperty("ownerId");
   });
+
+  describe("database errors", () => {
+    const rawMessage =
+      'insert into "finance_categories" ("owner_id") values ($1) -- params: user-test-1: relation does not exist';
+
+    it("GET returns a generic 500 without the raw error and logs it server-side", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockDb.select.mockImplementation(() => {
+        throw new Error(rawMessage);
+      });
+
+      const res = await GET();
+      expect(res.status).toBe(500);
+      const text = await res.text();
+      expect(text).not.toContain(rawMessage);
+      expect(text).not.toContain("user-test-1");
+      expect(JSON.parse(text).error).toEqual(expect.any(String));
+      expect(consoleError).toHaveBeenCalled();
+      expect(consoleError.mock.calls.flat()).toContainEqual(expect.objectContaining({ message: rawMessage }));
+      consoleError.mockRestore();
+    });
+
+    it("POST returns a generic 500 without the raw error and logs it server-side", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockDb.insert.mockImplementation(() => {
+        throw new Error(rawMessage);
+      });
+
+      const req = new Request("http://localhost/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categories: [{ id: "cat-1", name: "Food", type: "EXPENSE" }] }),
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      const text = await res.text();
+      expect(text).not.toContain(rawMessage);
+      expect(text).not.toContain("user-test-1");
+      expect(JSON.parse(text).error).toEqual(expect.any(String));
+      expect(consoleError.mock.calls.flat()).toContainEqual(expect.objectContaining({ message: rawMessage }));
+      consoleError.mockRestore();
+    });
+  });
 });
