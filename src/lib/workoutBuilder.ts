@@ -1,9 +1,11 @@
 import type { BodyGoal, HealthProfile, PlanMove, WorkoutPlan } from '@/types'
 import {
+  EQUIPMENT,
   coolDownMoves,
   filterMoves,
   movesForFocus,
   warmUpMoves,
+  type Equipment,
   type Move,
   type MoveGroup,
   type MoveLevel,
@@ -24,12 +26,25 @@ export const PLAN_GOALS: { value: PlanGoal; label: string }[] = [
 /** Minutes the builder offers. */
 export const PLAN_LENGTHS = [15, 30, 45] as const
 
+/** What the user has to train with: nothing (bodyweight only), or dumbbells too. */
+export type BuilderEquipment = Equipment
+
+export const BUILDER_EQUIPMENT: { value: BuilderEquipment; label: string }[] = EQUIPMENT
+
+/** The equipment a plan may use for each builder choice. */
+const AVAILABLE_EQUIPMENT: Record<BuilderEquipment, Equipment[]> = {
+  bodyweight: ['bodyweight'],
+  dumbbell: ['bodyweight', 'dumbbell'],
+}
+
 export interface BuilderChoices {
   goal: PlanGoal
   focus: TrainingFocus
   /** Minutes the user has; the plan never takes longer. */
   minutes: number
   level: MoveLevel
+  /** Equipment the user has; the plan uses only Moves needing no more. */
+  equipment: BuilderEquipment
 }
 
 /** A built Workout Plan, split into its warm-up, main Moves and cool-down. */
@@ -70,9 +85,10 @@ const GROUP_TURNS: MoveGroup[] = ['legs', 'chest', 'back', 'core', 'shoulders', 
  * The focus's Moves in the order a plan uses them: one from each body part in
  * turn, the harder Move of a body part first, otherwise library order.
  */
-function orderedCandidates(focus: TrainingFocus, level: MoveLevel): Move[] {
+function orderedCandidates(focus: TrainingFocus, level: MoveLevel, equipment: BuilderEquipment): Move[] {
+  const available = movesForFocus(focus, level, AVAILABLE_EQUIPMENT[equipment])
   const byGroup = GROUP_TURNS.map((g) =>
-    movesForFocus(focus, level)
+    available
       .filter((m) => m.group === g)
       .sort((a, b) => Number(b.level === 'intermediate') - Number(a.level === 'intermediate')),
   )
@@ -120,7 +136,7 @@ export function buildPlanSections(choices: BuilderChoices): PlanSections {
   const coolDown = coolDownMoves()
     .filter((m) => !warm.includes(m))
     .map(planMoveFor)
-  const candidates = orderedCandidates(choices.focus, choices.level)
+  const candidates = orderedCandidates(choices.focus, choices.level, choices.equipment)
 
   const attempt = (sets: number, n: number): PlanSections => ({
     activity: p.activity,

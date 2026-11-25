@@ -5,7 +5,15 @@ import { Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { MOVE_LEVELS, TRAINING_FOCUSES, type MoveLevel, type TrainingFocus } from '@/lib/moves'
-import { PLAN_GOALS, PLAN_LENGTHS, buildWorkoutPlan, profileGoal, type PlanGoal } from '@/lib/workoutBuilder'
+import {
+  BUILDER_EQUIPMENT,
+  PLAN_GOALS,
+  PLAN_LENGTHS,
+  buildWorkoutPlan,
+  profileGoal,
+  type BuilderEquipment,
+  type PlanGoal,
+} from '@/lib/workoutBuilder'
 import { useNutritionStore } from '@/store/useNutritionStore'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import { cn } from '@/lib/utils'
@@ -59,12 +67,13 @@ export function WorkoutBuilder() {
   const [focus, setFocus] = useState<TrainingFocus>('full')
   const [minutes, setMinutes] = useState<number>(30)
   const [level, setLevel] = useState<MoveLevel>('beginner')
+  const [equipment, setEquipment] = useState<BuilderEquipment>('bodyweight')
   const goal = pickedGoal ?? profileGoal(profile)
 
   const build = () => {
     if (!goal) return
     const replacing = draft !== null && draft.moves.length > 0
-    setDraft(buildWorkoutPlan({ goal, focus, minutes, level }))
+    setDraft(buildWorkoutPlan({ goal, focus, minutes, level, equipment }))
     toast.success(replacing ? 'จัดชุดใหม่แทนแผนเดิมแล้ว แก้ต่อได้ก่อนเริ่ม' : 'จัดชุดแล้ว แก้ต่อได้ก่อนเริ่ม')
   }
 
@@ -86,6 +95,7 @@ export function WorkoutBuilder() {
       <Choice label="ส่วนที่ฝึก" options={TRAINING_FOCUSES} value={focus} onChange={setFocus} />
       <Choice label="เวลาที่มี" options={LENGTH_OPTIONS} value={minutes} onChange={setMinutes} />
       <Choice label="ระดับ" options={MOVE_LEVELS} value={level} onChange={setLevel} />
+      <Choice label="อุปกรณ์" options={BUILDER_EQUIPMENT} value={equipment} onChange={setEquipment} />
       <Button className="gap-1.5" disabled={!goal} onClick={build}>
         <Sparkles className="h-4 w-4" aria-hidden /> จัดชุด
       </Button>
