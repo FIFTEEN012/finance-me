@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { todayKey } from '@/lib/recurring'
-import { daysBetween, formatDuration } from '@/lib/supplies'
+import { FillGauge } from '@/components/shared/FillGauge'
+import { daysBetween, formatDuration, guessShape, SUPPLY_SHAPES, supplyShape } from '@/lib/supplies'
+import { cn } from '@/lib/utils'
 import { SupplyInput } from '@/store/useSupplyStore'
-import { SupplyItem } from '@/types'
+import { SupplyItem, SupplyShape } from '@/types'
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -29,6 +31,8 @@ const schema = z
     quantity: optionalPositive,
     unit: z.string().optional(),
     note: z.string().optional(),
+    shape: z.enum(SUPPLY_SHAPES.map((s) => s.value) as [SupplyShape, ...SupplyShape[]]),
+    expectedDays: z.union([z.nan(), z.number().int('ใส่เป็นจำนวนวันเต็ม').positive('ต้องมากกว่า 0')]).optional(),
   })
   .superRefine((v, ctx) => {
     if (v.startDate > todayKey()) {
@@ -59,6 +63,8 @@ export function toSupplyInput(v: FormValues): SupplyInput {
     quantity: clean(v.quantity),
     unit: v.unit?.trim() || undefined,
     note: v.note?.trim() || undefined,
+    shape: v.shape,
+    expectedDays: clean(v.expectedDays),
   }
 }
 
@@ -71,12 +77,15 @@ interface Props {
 }
 
 export function SupplyForm({ open, onOpenChange, editing, knownNames, onSubmit }: Props) {
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
+  // Until the user picks a shape, keep guessing it from the name.
+  const [shapePicked, setShapePicked] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    setShapePicked(!!editing?.shape)
     reset(editing
       ? {
           name: editing.name,
@@ -87,9 +96,20 @@ export function SupplyForm({ open, onOpenChange, editing, knownNames, onSubmit }
           quantity: editing.quantity ?? NaN,
           unit: editing.unit ?? '',
           note: editing.note ?? '',
+          shape: supplyShape(editing),
+          expectedDays: editing.expectedDays ?? NaN,
         }
-      : { name: '', startDate: todayKey(), finished: false, finishedDate: todayKey(), price: NaN, quantity: NaN, unit: '', note: '' })
+      : {
+          name: '', startDate: todayKey(), finished: false, finishedDate: todayKey(), price: NaN, quantity: NaN,
+          unit: '', note: '', shape: guessShape(''), expectedDays: NaN,
+        })
   }, [open, editing, reset])
+
+  const name = watch('name')
+  const shape = watch('shape')
+  const nameField = register('name', {
+    onChange: (e) => { if (!shapePicked) setValue('shape', guessShape(e.target.value)) },
+  })
 
   const finished = watch('finished')
   const startDate = watch('startDate')
@@ -108,7 +128,7 @@ export function SupplyForm({ open, onOpenChange, editing, knownNames, onSubmit }
         <form onSubmit={handleSubmit((v) => onSubmit(toSupplyInput(v)))} className="space-y-4">
           <div>
             <Label htmlFor="supply-name" className="text-sm mb-1.5 block">ชื่อสินค้า</Label>
-            <Input id="supply-name" {...register('name')} list="supply-names" placeholder="เช่น ครีมกันแดด ยาสีฟัน" autoComplete="off" />
+            <Input id="supply-name" {...nameField} list="supply-names" placeholder="เช่น ครีมกันแดด ยาสีฟัน" autoComplete="off" />
             <datalist id="supply-names">
               {knownNames.map((name) => <option key={name} value={name} />)}
             </datalist>
@@ -116,6 +136,36 @@ export function SupplyForm({ open, onOpenChange, editing, knownNames, onSubmit }
               ใช้ชื่อเดิมทุกครั้งที่ซื้อซ้ำ ระบบจะคำนวณว่าปกติใช้ได้กี่วัน
             </p>
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+          </div>
+
+          <div>
+            <p id="supply-shape-label" className="text-sm font-medium mb-1.5">รูปทรง</p>
+            <div role="radiogroup" aria-labelledby="supply-shape-label" className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+              {SUPPLY_SHAPES.map((option) => {
+                const selected = shape === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => { setShapePicked(true); setValue('shape', option.value) }}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-xl border p-1.5 text-xs transition-colors',
+                      selected
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
+                    )}
+                  >
+                    <FillGauge shape={option.value} level={0.6} className="h-10 w-auto" label={option.label} />
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+            {!shapePicked && name?.trim() && (
+              <p className="text-xs text-gray-500 dark:text-white/50 mt-1">เดาจากชื่อให้แล้ว กดเลือกเองได้</p>
+            )}
           </div>
 
           <div>
@@ -155,6 +205,23 @@ export function SupplyForm({ open, onOpenChange, editing, knownNames, onSubmit }
               </div>
               {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="supply-expected" className="text-sm mb-1.5 block">คาดว่าใช้ได้ (วัน)</Label>
+            <Input
+              id="supply-expected"
+              {...register('expectedDays', { valueAsNumber: true })}
+              type="number"
+              inputMode="numeric"
+              step="1"
+              min="1"
+              placeholder="ไม่บังคับ เช่น 30"
+            />
+            <p className="text-xs text-gray-500 dark:text-white/50 mt-1">
+              ใช้แสดงว่าเหลือเท่าไรจนกว่าจะมีประวัติการใช้จริง
+            </p>
+            {errors.expectedDays && <p className="text-xs text-red-500 mt-1">{errors.expectedDays.message}</p>}
           </div>
 
           <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">

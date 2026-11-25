@@ -7,7 +7,10 @@ import {
   forecast,
   formatAmount,
   formatDuration,
+  guessShape,
   productKey,
+  remaining,
+  supplyShape,
   usageDays,
 } from './supplies'
 import type { SupplyItem } from '@/types'
@@ -139,5 +142,72 @@ describe('formatAmount', () => {
     expect(formatAmount(4.44)).toBe('4.4')
     expect(formatAmount(0.25)).toBe('0.25')
     expect(formatAmount(0.5)).toBe('0.5')
+  })
+})
+
+describe('remaining', () => {
+  const today = '2026-10-11'
+
+  it('is unknown without history or expected days', () => {
+    expect(remaining(item({ startDate: '2026-10-01' }), [], today)).toEqual({ level: null, needsRestock: false })
+  })
+
+  it('uses the expected days when the product has no history', () => {
+    // 10 of 40 days used
+    expect(remaining(item({ startDate: '2026-10-01', expectedDays: 40 }), [], today)).toEqual({ level: 0.75, needsRestock: false })
+  })
+
+  it('prefers the real history over the expected days', () => {
+    const past = item({ startDate: '2026-09-01', finishedDate: '2026-09-21' }) // lasted 20 days
+    const current = item({ startDate: '2026-10-01', expectedDays: 40 })
+    expect(remaining(current, [past, current], today)).toEqual({ level: 0.5, needsRestock: false })
+  })
+
+  it('needs a restock once the usual lifespan is reached', () => {
+    expect(remaining(item({ startDate: '2026-10-01', expectedDays: 10 }), [], today)).toEqual({ level: 0, needsRestock: true })
+  })
+
+  it('never drops below empty when used past the lifespan', () => {
+    expect(remaining(item({ startDate: '2026-10-01', expectedDays: 4 }), [], today)).toEqual({ level: 0, needsRestock: true })
+  })
+})
+
+describe('guessShape', () => {
+  it('guesses from Thai names', () => {
+    expect(guessShape('ยาสีฟัน คอลเกต')).toBe('tube')
+    expect(guessShape('กระดาษชำระ')).toBe('roll')
+    expect(guessShape('ผงซักฟอก')).toBe('bag')
+    expect(guessShape('แชมพู')).toBe('bottle')
+    expect(guessShape('นมผง')).toBe('can')
+    expect(guessShape('ผงชงเกลือแร่')).toBe('sachet')
+    expect(guessShape('ซีเรียล')).toBe('box')
+  })
+
+  it('guesses from English names, ignoring case', () => {
+    expect(guessShape('Colgate Toothpaste')).toBe('tube')
+    expect(guessShape('Sunscreen SPF50')).toBe('tube')
+    expect(guessShape('Toilet Paper')).toBe('roll')
+    expect(guessShape('Tissue box')).toBe('box')
+    expect(guessShape('Rice 5kg')).toBe('bag')
+    expect(guessShape('Deodorant spray')).toBe('can')
+    expect(guessShape('Face mask sheet')).toBe('sachet')
+    expect(guessShape('Shampoo')).toBe('bottle')
+  })
+
+  it('matches English keywords as whole words', () => {
+    expect(guessShape('Canola oil')).toBe('bottle')
+    expect(guessShape('Hand gel')).toBe('tube')
+    expect(guessShape('Angel cake')).toBe('bottle')
+  })
+
+  it('is the stored shape, or a guess for items saved before shapes existed', () => {
+    expect(supplyShape(item({ name: 'ยาสีฟัน', shape: 'box' }))).toBe('box')
+    expect(supplyShape(item({ name: 'ยาสีฟัน' }))).toBe('tube')
+  })
+
+  it('falls back to a bottle when nothing matches', () => {
+    expect(guessShape('ของจิปาถะ')).toBe('bottle')
+    expect(guessShape('Widget')).toBe('bottle')
+    expect(guessShape('')).toBe('bottle')
   })
 })

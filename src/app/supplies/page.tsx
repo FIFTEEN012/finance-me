@@ -12,7 +12,8 @@ import { SupplyForm } from '@/components/supplies/SupplyForm'
 import { FinishSupplyDialog } from '@/components/supplies/FinishSupplyDialog'
 import { SupplyInput, useSupplyStore } from '@/store/useSupplyStore'
 import { todayKey } from '@/lib/recurring'
-import { dailyUsage, forecast, formatAmount, formatDuration, productKey, usageDays } from '@/lib/supplies'
+import { FillGauge } from '@/components/shared/FillGauge'
+import { dailyUsage, forecast, formatAmount, formatDuration, productKey, remaining, supplyShape, usageDays } from '@/lib/supplies'
 import { SupplyItem } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 
@@ -123,6 +124,7 @@ export default function SuppliesPage() {
             {inUse.map((item) => {
               const elapsed = usageDays(item, today)
               const plan = forecast(item, items, today)
+              const left = remaining(item, items, today)
               const details = usageDetails(item, today)
               return (
                 <PressCard
@@ -132,11 +134,20 @@ export default function SuppliesPage() {
                   className="p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3"
                 >
                   <div className="flex flex-wrap items-start gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full shrink-0 bg-sky-100 dark:bg-sky-500/15">
-                      <Package className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                    </div>
+                    <FillGauge shape={supplyShape(item)} level={left.level} className="w-12 h-[4.2rem] shrink-0" />
                     <div className="flex-1 min-w-[9rem]">
                       <p className="font-bold text-slate-800 dark:text-slate-100 break-words">{item.name}</p>
+                      {left.needsRestock && (
+                        <span className="inline-block mt-0.5 mb-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                          ควรซื้อเพิ่ม
+                        </span>
+                      )}
+                      {left.level === null && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่รู้ว่าใช้ได้กี่วัน</p>
+                      )}
+                      {!plan && item.expectedDays && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">คาดว่าใช้ได้ {formatDuration(item.expectedDays)}</p>
+                      )}
                       <p className="text-xs text-slate-500 dark:text-slate-400">เริ่มใช้ {formatThaiDate(item.startDate)}</p>
                       {details.length > 0 && (
                         <p className="text-xs text-slate-500 dark:text-slate-400">{details.join(' · ')}</p>

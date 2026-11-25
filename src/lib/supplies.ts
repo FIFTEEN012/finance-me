@@ -11,7 +11,37 @@ export const SUPPLY_SHAPES: { value: SupplyShape; label: string }[] = [
   { value: 'sachet', label: 'ซอง' },
 ]
 
-const DAY_MS = 24 * 60 * 60 * 1000
+// Checked in order, so the more specific words come first (ครีมกันแดด is a tube, other ครีม a bottle).
+const SHAPE_KEYWORDS: [SupplyShape, string[]][] = [
+  ['tube', ['ยาสีฟัน', 'โฟม', 'เจล', 'ครีมกันแดด', 'หลอด', 'toothpaste', 'sunscreen', 'foam', 'gel', 'tube']],
+  ['roll', ['กระดาษชำระ', 'ทิชชู่ม้วน', 'ม้วน', 'ฟอยล์', 'แรป', 'toilet paper', 'paper towel', 'foil', 'wrap', 'roll']],
+  ['box', ['กล่อง', 'ทิชชู่', 'ซีเรียล', 'นมกล่อง', 'tissue', 'cereal', 'box']],
+  ['bag', ['ข้าว', 'ผงซักฟอก', 'อาหารแมว', 'อาหารหมา', 'น้ำตาล', 'ถุง', 'rice', 'detergent', 'cat food', 'dog food', 'sugar', 'bag']],
+  ['can', ['กระป๋อง', 'สเปรย์', 'กาแฟ', 'นมผง', 'spray', 'coffee', 'formula', 'can']],
+  ['sachet', ['ซอง', 'ผงชง', 'มาส์ก', 'sachet', 'mask', 'packet']],
+  ['bottle', ['แชมพู', 'ครีม', 'สบู่', 'น้ำยา', 'โลชั่น', 'ขวด', 'ซอส', 'น้ำปลา', 'น้ำมัน', 'shampoo', 'conditioner', 'soap', 'lotion', 'cream', 'sauce', 'oil', 'bottle']],
+]
+
+/** Guess the Supply Shape from a name. */
+export function guessShape(name: string): SupplyShape {
+  const n = name.toLocaleLowerCase('th-TH')
+  for (const [shape, words] of SHAPE_KEYWORDS) if (words.some((w) => containsKeyword(n, w))) return shape
+  return 'bottle'
+}
+
+/** The shape to draw `item` as; items saved before shapes existed get a guess from the name. */
+export function supplyShape(item: SupplyItem): SupplyShape {
+  return item.shape ?? guessShape(item.name)
+}
+
+// Thai is written without spaces, so a Thai keyword matches anywhere. An English one must be
+// a whole word (plurals allowed), or "can" would match "canola".
+function containsKeyword(name: string, word: string): boolean {
+  if (!/^[a-z ]+$/.test(word)) return name.includes(word)
+  return new RegExp(`(^|[^a-z])${word}(e?s)?($|[^a-z])`).test(name)
+}
+
+const DAY_MS =24 * 60 * 60 * 1000
 
 function toUtc(date: string): number {
   const [year, month, day] = date.split('-').map(Number)
@@ -75,6 +105,22 @@ export function forecast(item: SupplyItem, items: SupplyItem[], today: string): 
     progress: Math.min(1, elapsedDays / rounded),
     overdueDays: Math.max(0, elapsedDays - rounded),
   }
+}
+
+export interface SupplyRemaining {
+  /** Share left, 1 full to 0 empty; null while the Usual Lifespan is unknown. */
+  level: number | null
+  /** In use for the whole Usual Lifespan or longer. */
+  needsRestock: boolean
+}
+
+/** How much of `item` is estimated to be left (GLOSSARY: Remaining). */
+export function remaining(item: SupplyItem, items: SupplyItem[], today: string): SupplyRemaining {
+  const lifespan = averageLifespan(item, items)?.averageDays ?? item.expectedDays
+  if (!lifespan) return { level: null, needsRestock: false }
+
+  const elapsed = usageDays(item, today)
+  return { level: Math.max(0, 1 - elapsed / lifespan), needsRestock: elapsed >= lifespan }
 }
 
 /** Cost and amount used per day. A same-day finish counts as one day. */
