@@ -1,5 +1,6 @@
 import type { FoodEntry, MealType, WaterEntry } from '@/types'
 import { addDays } from '@/lib/supplies'
+import { formatCurrency } from '@/lib/utils'
 
 export const MEALS: { value: MealType; label: string }[] = [
   { value: 'breakfast', label: 'มื้อเช้า' },
@@ -22,6 +23,19 @@ export function mealForHour(hour: number): MealType {
 /** Food Entries linked to a Food Expense. */
 export function foodForExpense(entries: FoodEntry[], foodExpenseId: string): FoodEntry[] {
   return entries.filter((e) => e.foodExpenseId === foodExpenseId)
+}
+
+/**
+ * The ฿ badge on a Food Entry linked to a Food Expense: the whole bill, plus
+ * how many dishes it covers when it covers more than one ("฿180 · 3 จาน").
+ */
+export function expenseBadgeLabel(
+  amount: number,
+  dishCount: number,
+  formatAmount: (amount: number) => string = formatCurrency,
+): string {
+  const bill = formatAmount(amount)
+  return dishCount > 1 ? `${bill} · ${dishCount} จาน` : bill
 }
 
 /** Total kcal of the Food Entries linked to a Food Expense (its kcal badge). */

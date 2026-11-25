@@ -35,7 +35,7 @@ import { DEFAULT_FOOD_CATEGORY_ID, foodCategories } from '@/lib/foodCategory'
 import { formatCurrency } from '@/lib/utils'
 import { todayKey } from '@/lib/recurring'
 import { addDays } from '@/lib/supplies'
-import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, macrosOn, progress, waterBottle, waterOn } from '@/lib/nutrition'
+import { MEALS, averageOfLogged, expenseBadgeLabel, foodForExpense, formatMl, kcalByMeal, kcalOn, macrosOn, progress, waterBottle, waterOn } from '@/lib/nutrition'
 import { FillGauge } from '@/components/shared/FillGauge'
 import { FALLBACK_WEIGHT_KG, burnedOn, exerciseWater, minutesOn, recommend, weekMinutes } from '@/lib/fitness'
 import { ExerciseEntry, FoodEntry } from '@/types'
@@ -449,7 +449,7 @@ export default function NutritionPage() {
                         aria-label={`ดูรายจ่ายของ ${e.name}`}
                         className="text-xs num tabular-nums px-1.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300 hover:underline"
                       >
-                        {formatCurrency(expenseById.get(e.foodExpenseId)!.amount)}
+                        {expenseBadgeLabel(expenseById.get(e.foodExpenseId)!.amount, foodForExpense(food, e.foodExpenseId).length)}
                       </Link>
                     )}
                     <p className="text-sm num tabular-nums text-slate-500 dark:text-slate-400">{n(e.kcal)}</p>

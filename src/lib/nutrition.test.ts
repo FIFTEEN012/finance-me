@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   averageOfLogged,
+  expenseBadgeLabel,
   foodDraftsFromInputs,
   foodInputsFromDrafts,
   formatMl,
@@ -186,5 +187,22 @@ describe('photo items in the expense form', () => {
       { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 25, carbsG: 70, fatG: 20 },
       { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 250 },
     ])
+  })
+})
+
+describe('expenseBadgeLabel', () => {
+  const baht = (n: number) => `฿${n}`
+
+  it('shows just the bill for a Food Expense with one dish', () => {
+    expect(expenseBadgeLabel(180, 1, baht)).toBe('฿180')
+    expect(expenseBadgeLabel(180, 0, baht)).toBe('฿180')
+  })
+
+  it('adds the number of dishes when one bill covers several Food Entries', () => {
+    expect(expenseBadgeLabel(180, 3, baht)).toBe('฿180 · 3 จาน')
+  })
+
+  it('formats the amount as currency by default', () => {
+    expect(expenseBadgeLabel(180, 2)).toMatch(/180.* · 2 จาน$/)
   })
 })
