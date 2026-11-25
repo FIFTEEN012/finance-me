@@ -106,6 +106,9 @@ export interface SupplyItem {
   createdAt: string
 }
 
+/** The physical form a Supply is drawn as (GLOSSARY: Supply Shape). */
+export type SupplyShape = 'bottle' | 'tube' | 'bag' | 'box' | 'roll' | 'can' | 'sachet'
+
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
 export interface FoodEntry {

@@ -1,4 +1,15 @@
-import { SupplyItem } from '@/types'
+import { SupplyItem, SupplyShape } from '@/types'
+
+/** The fixed list of Supply Shapes, in picker order. */
+export const SUPPLY_SHAPES: { value: SupplyShape; label: string }[] = [
+  { value: 'bottle', label: 'ขวด' },
+  { value: 'tube', label: 'หลอด' },
+  { value: 'bag', label: 'ถุง' },
+  { value: 'box', label: 'กล่อง' },
+  { value: 'roll', label: 'ม้วน' },
+  { value: 'can', label: 'กระป๋อง' },
+  { value: 'sachet', label: 'ซอง' },
+]
 
 const DAY_MS = 24 * 60 * 60 * 1000
 

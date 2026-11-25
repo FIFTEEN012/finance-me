@@ -26,12 +26,15 @@ import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDia
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
 import { todayKey } from '@/lib/recurring'
 import { addDays } from '@/lib/supplies'
-import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, progress, waterOn } from '@/lib/nutrition'
+import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, progress, waterBottle, waterOn } from '@/lib/nutrition'
+import { FillGauge } from '@/components/shared/FillGauge'
 import { FALLBACK_WEIGHT_KG, burnedOn, exerciseWater, minutesOn, recommend, weekMinutes } from '@/lib/fitness'
 import { ExerciseEntry, FoodEntry } from '@/types'
 import { cn } from '@/lib/utils'
 
 const QUICK_WATER = [250, 500]
+/** One tap on the Water Bottle logs this much. */
+const TAP_WATER = 250
 /** Weekly exercise target before a profile exists (WHO minimum). */
 const DEFAULT_WEEKLY_MINUTES = 150
 
@@ -52,6 +55,9 @@ function timeOf(iso: string): string {
 }
 
 const n = (v: number) => v.toLocaleString('th-TH')
+/** ml → litres for the bottle caption, e.g. 1200 → "1.2". */
+const formatLitres = (ml: number) =>
+  (ml / 1000).toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })
 const cardShadow = { shadow: '0 4px 0 0 #e5e5e5', shadowHover: '0 2px 0 0 #e5e5e5' }
 const cardClass = 'p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3'
 
@@ -87,6 +93,7 @@ export default function NutritionPage() {
   const byMeal = kcalByMeal(food, date)
   const kcalLeft = calorieTarget - eaten
   const waterLeft = waterTarget - drank
+  const bottle = waterBottle(drank, waterTarget)
   const weekMins = weekMinutes(exercise, date)
 
   const dayFood = useMemo(
@@ -143,10 +150,11 @@ export default function NutritionPage() {
 
   const handleAddWater = (ml: number) => {
     const before = drank
-    store.addWater(date, ml)
+    const id = store.addWater(date, ml)
     setWaterOpen(false)
-    if (before < waterTarget && before + ml >= waterTarget) toast.success('ดื่มน้ำครบเป้าแล้ว')
-    else toast.success(`ดื่มน้ำ ${formatMl(ml)}`)
+    const undo = { action: { label: 'ยกเลิก', onClick: () => store.deleteWater(id) } }
+    if (before < waterTarget && before + ml >= waterTarget) toast.success('ดื่มน้ำครบเป้าแล้ว', undo)
+    else toast.success(`ดื่มน้ำ ${formatMl(ml)}`, undo)
   }
 
   const handleProfile = (input: ProfileInput) => {
@@ -238,16 +246,32 @@ export default function NutritionPage() {
             </div>
             <p className="font-bold text-slate-700 dark:text-slate-200">น้ำ</p>
           </div>
-          <p className="num tabular-nums">
-            <span className="text-3xl font-black text-slate-800 dark:text-slate-100">{n(drank)}</span>
-            <span className="text-sm text-slate-500 dark:text-slate-400"> / {n(waterTarget)} มล.</span>
-          </p>
-          <div className="h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-            <div className="h-full rounded-full bg-sky-500" style={{ width: `${Math.round(progress(drank, waterTarget) * 100)}%` }} />
+          <div className="flex flex-col items-center">
+            <FillGauge
+              shape="water"
+              level={bottle.level}
+              onClick={() => handleAddWater(TAP_WATER)}
+              label={`ขวดน้ำ ดื่มแล้ว ${formatLitres(drank)} จาก ${formatLitres(waterTarget)} แตะเพื่อดื่ม ${TAP_WATER} มล.`}
+              className="h-44 drop-shadow-md"
+            />
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">แตะขวดเพื่อดื่ม {TAP_WATER} มล.</p>
           </div>
-          <p className={cn('text-sm', waterLeft <= 0 ? 'text-sky-700 dark:text-sky-400 font-semibold' : 'text-slate-500 dark:text-slate-400')}>
-            {waterLeft <= 0 ? 'ดื่มครบเป้าแล้ว' : `อีก ${formatMl(waterLeft)}`}
-          </p>
+          <div className="text-center space-y-1">
+            <p className="num tabular-nums">
+              <span className="text-sm text-slate-500 dark:text-slate-400">ดื่มแล้ว </span>
+              <span className="text-3xl font-black text-slate-800 dark:text-slate-100">{formatLitres(drank)}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400"> / {formatLitres(waterTarget)} ล.</span>
+            </p>
+            {bottle.over > 0 ? (
+              <span className="inline-block rounded-full bg-sky-600 dark:bg-sky-500 text-white text-xs font-bold px-2 py-0.5">
+                +{n(bottle.over)} มล. เกินเป้า
+              </span>
+            ) : (
+              <p className={cn('text-sm', waterLeft <= 0 ? 'text-sky-700 dark:text-sky-400 font-semibold' : 'text-slate-500 dark:text-slate-400')}>
+                {waterLeft <= 0 ? 'ดื่มครบเป้าแล้ว' : `อีก ${formatMl(waterLeft)}`}
+              </p>
+            )}
+          </div>
           {extraWater > 0 && (
             <p className="text-xs text-violet-700 dark:text-violet-400">เป้า {formatMl(waterGoal)} + ชดเชยเหงื่อ {formatMl(extraWater)}</p>
           )}
