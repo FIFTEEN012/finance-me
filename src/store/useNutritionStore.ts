@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware'
 import { ExerciseEntry, FoodEntry, HealthProfile, WaterEntry } from '@/types'
 import { DEFAULT_CALORIE_GOAL, DEFAULT_WATER_GOAL } from '@/lib/nutrition'
 
-export type FoodInput = Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal'>
+export type FoodInput = Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>
 export type ExerciseInput = Pick<ExerciseEntry, 'date' | 'activity' | 'name' | 'minutes' | 'kcal'>
 export type ProfileInput = Omit<HealthProfile, 'updatedAt'>
 
@@ -16,7 +16,8 @@ interface NutritionStore {
   profile: HealthProfile | null
   calorieGoal: number
   waterGoal: number
-  addFood: (input: FoodInput) => void
+  /** Returns the new Food Entry's id. */
+  addFood: (input: FoodInput) => string
   updateFood: (id: string, input: FoodInput) => void
   deleteFood: (id: string) => void
   addWater: (date: string, ml: number) => void
@@ -37,10 +38,13 @@ export const useNutritionStore = create<NutritionStore>()(
       profile: null,
       calorieGoal: DEFAULT_CALORIE_GOAL,
       waterGoal: DEFAULT_WATER_GOAL,
-      addFood: (input) =>
+      addFood: (input) => {
+        const id = crypto.randomUUID()
         set((s) => ({
-          food: [...s.food, { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() }],
-        })),
+          food: [...s.food, { ...input, id, createdAt: new Date().toISOString() }],
+        }))
+        return id
+      },
       updateFood: (id, input) =>
         set((s) => ({ food: s.food.map((e) => (e.id === id ? { ...e, ...input } : e)) })),
       deleteFood: (id) => set((s) => ({ food: s.food.filter((e) => e.id !== id) })),

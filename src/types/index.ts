@@ -114,6 +114,10 @@ export interface FoodEntry {
   meal: MealType
   name: string
   kcal: number
+  // Grams; optional, absent on entries saved before macros existed.
+  proteinG?: number
+  carbsG?: number
+  fatG?: number
   createdAt: string
 }
 

@@ -23,6 +23,28 @@ export function kcalOn(entries: FoodEntry[], date: string): number {
   return entries.reduce((sum, e) => (e.date === date ? sum + e.kcal : sum), 0)
 }
 
+export interface MacroTotals {
+  proteinG: number
+  carbsG: number
+  fatG: number
+  /** Food Entries of the day that have at least one macro filled in. */
+  entriesWithMacros: number
+}
+
+/** Day totals of protein, carbs and fat; blank fields count as nothing. */
+export function macrosOn(entries: FoodEntry[], date: string): MacroTotals {
+  const totals: MacroTotals = { proteinG: 0, carbsG: 0, fatG: 0, entriesWithMacros: 0 }
+  for (const e of entries) {
+    if (e.date !== date) continue
+    if (e.proteinG === undefined && e.carbsG === undefined && e.fatG === undefined) continue
+    totals.proteinG += e.proteinG ?? 0
+    totals.carbsG += e.carbsG ?? 0
+    totals.fatG += e.fatG ?? 0
+    totals.entriesWithMacros++
+  }
+  return totals
+}
+
 export function waterOn(entries: WaterEntry[], date: string): number {
   return entries.reduce((sum, e) => (e.date === date ? sum + e.ml : sum), 0)
 }

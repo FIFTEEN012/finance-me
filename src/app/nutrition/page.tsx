@@ -26,7 +26,7 @@ import { GoalsDialog, WaterAmountDialog } from '@/components/nutrition/AmountDia
 import { ExerciseInput, FoodInput, ProfileInput, useNutritionStore } from '@/store/useNutritionStore'
 import { todayKey } from '@/lib/recurring'
 import { addDays } from '@/lib/supplies'
-import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, progress, waterOn } from '@/lib/nutrition'
+import { MEALS, averageOfLogged, formatMl, kcalByMeal, kcalOn, macrosOn, progress, waterOn } from '@/lib/nutrition'
 import { FALLBACK_WEIGHT_KG, burnedOn, exerciseWater, minutesOn, recommend, weekMinutes } from '@/lib/fitness'
 import { ExerciseEntry, FoodEntry } from '@/types'
 import { cn } from '@/lib/utils'
@@ -52,6 +52,7 @@ function timeOf(iso: string): string {
 }
 
 const n = (v: number) => v.toLocaleString('th-TH')
+const grams = (v: number) => n(Math.round(v * 10) / 10)
 const cardShadow = { shadow: '0 4px 0 0 #e5e5e5', shadowHover: '0 2px 0 0 #e5e5e5' }
 const cardClass = 'p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3'
 
@@ -85,6 +86,7 @@ export default function NutritionPage() {
   const eaten = kcalOn(food, date)
   const drank = waterOn(water, date)
   const byMeal = kcalByMeal(food, date)
+  const macros = macrosOn(food, date)
   const kcalLeft = calorieTarget - eaten
   const waterLeft = waterTarget - drank
   const weekMins = weekMinutes(exercise, date)
@@ -225,6 +227,20 @@ export default function NutritionPage() {
           </p>
           {burned > 0 && (
             <p className="text-xs text-violet-700 dark:text-violet-400">เป้า {n(calorieGoal)} + ออกกำลัง {n(burned)} kcal</p>
+          )}
+          {macros.entriesWithMacros > 0 && (
+            <div className="grid grid-cols-3 gap-2 text-center" aria-label="สารอาหารรวมของวัน">
+              {[
+                { label: 'โปรตีน', value: macros.proteinG },
+                { label: 'คาร์บ', value: macros.carbsG },
+                { label: 'ไขมัน', value: macros.fatG },
+              ].map((m) => (
+                <div key={m.label} className="rounded-lg bg-slate-50 dark:bg-slate-800/60 py-1.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{m.label}</p>
+                  <p className="num tabular-nums text-sm font-bold text-slate-700 dark:text-slate-200">{grams(m.value)} ก.</p>
+                </div>
+              ))}
+            </div>
           )}
           <Button onClick={() => { setEditingFood(null); setFoodFormOpen(true) }} className="w-full gap-1.5">
             <Plus className="w-4 h-4" /> บันทึกอาหาร

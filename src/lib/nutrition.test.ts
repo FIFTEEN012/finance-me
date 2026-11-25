@@ -5,6 +5,7 @@ import {
   kcalByMeal,
   kcalOn,
   lastKcalFor,
+  macrosOn,
   mealForHour,
   progress,
   recentDays,
@@ -112,5 +113,22 @@ describe('formatMl', () => {
   it('switches to litres from 1,000 ml', () => {
     expect(formatMl(750)).toBe('750 มล.')
     expect(formatMl(1500)).toBe('1.5 ลิตร')
+  })
+})
+
+describe('macrosOn', () => {
+  it('sums protein, carbs and fat of the day, skipping blank fields and other days', () => {
+    const entries = [
+      food({ proteinG: 30, carbsG: 80, fatG: 20 }),
+      food({ proteinG: 12.5 }),
+      food({ carbsG: 40, fatG: undefined }),
+      food({}),
+      food({ date: '2026-11-18', proteinG: 99, carbsG: 99, fatG: 99 }),
+    ]
+    expect(macrosOn(entries, '2026-11-19')).toEqual({ proteinG: 42.5, carbsG: 120, fatG: 20, entriesWithMacros: 3 })
+  })
+
+  it('reports nothing logged for a day of entries saved before macros existed', () => {
+    expect(macrosOn([food(), food()], '2026-11-19')).toEqual({ proteinG: 0, carbsG: 0, fatG: 0, entriesWithMacros: 0 })
   })
 })
