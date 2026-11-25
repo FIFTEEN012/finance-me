@@ -79,6 +79,13 @@ describe('cloudSync - SYNC_STORE_KEYS', () => {
   it('does not sync the removed cycle store', () => {
     expect(SYNC_STORE_KEYS as readonly string[]).not.toContain('finance-cycle')
   })
+
+  it('backs up Workout Sessions (in finance-nutrition) and the in-progress Workout Plan', () => {
+    expect(SYNC_STORE_KEYS as readonly string[]).toContain('finance-nutrition')
+    expect(SYNC_STORE_KEYS as readonly string[]).toContain('finance-workout-plan')
+    expect(SYNC_STORE_KEYS as readonly string[]).not.toContain('finance-workouts')
+    expect(SYNC_STORE_KEYS as readonly string[]).not.toContain('finance-routines')
+  })
 })
 
 describe('cloudSync - clearRemovedFeatureStorage', () => {

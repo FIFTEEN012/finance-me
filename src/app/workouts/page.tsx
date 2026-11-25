@@ -1,11 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Dumbbell, ChevronRight } from 'lucide-react'
+import { Dumbbell, ChevronRight, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { PressCard } from '@/components/ui/PressCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { MoveBadges } from '@/components/workouts/MoveBadges'
 import { MedicalNotice, MoveDetailDialog } from '@/components/workouts/MoveDetail'
+import { PlanEditor } from '@/components/workouts/PlanEditor'
+import { ActivePlanChecklist } from '@/components/workouts/ActivePlanChecklist'
+import { DEFAULT_PLAN_ACTIVITY, planMoveFor } from '@/lib/workoutPlan'
+import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import {
   EQUIPMENT,
   MOVE_GROUPS,
@@ -69,6 +74,15 @@ export default function WorkoutsPage() {
   )
   const filtered = group !== null || equipment !== null || level !== null
 
+  const active = useWorkoutPlanStore((s) => s.active)
+  const draft = useWorkoutPlanStore((s) => s.draft)
+  const setDraft = useWorkoutPlanStore((s) => s.setDraft)
+  const addToPlan = (m: Move) => {
+    const plan = draft ?? { activity: DEFAULT_PLAN_ACTIVITY, moves: [] }
+    setDraft({ ...plan, moves: [...plan.moves, planMoveFor(m)] })
+    toast.success(`เพิ่ม ${m.name} ในแผนแล้ว`)
+  }
+
   return (
     <div className="space-y-6">
       <div className="min-w-0">
@@ -79,6 +93,9 @@ export default function WorkoutsPage() {
       </div>
 
       <MedicalNotice />
+
+      {active && <ActivePlanChecklist active={active} />}
+      <PlanEditor hasActive={active !== null} />
 
       <section className="space-y-2">
         <FilterChips label="กลุ่ม" options={MOVE_GROUPS} value={group} onChange={setGroup} />
@@ -134,6 +151,16 @@ export default function WorkoutsPage() {
                   {formatRecommendation(m)}
                 </p>
                 </button>
+                <div className="px-4 pb-4">
+                  <button
+                    type="button"
+                    onClick={() => addToPlan(m)}
+                    aria-label={`เพิ่ม ${m.name} ในแผน`}
+                    className="inline-flex items-center gap-1 rounded-full border-2 border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden /> เพิ่มในแผน
+                  </button>
+                </div>
               </PressCard>
             ))}
           </div>

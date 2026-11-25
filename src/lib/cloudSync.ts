@@ -19,6 +19,7 @@ export const SYNC_STORE_KEYS = [
   'finance-recurring-rules',
   'finance-supplies',
   'finance-nutrition',
+  'finance-workout-plan',
 ] as const
 
 const REMOVED_SYNC_STORE_KEYS = [
@@ -128,6 +129,7 @@ export async function rehydrateAllStores() {
     { useRecurringStore },
     { useSupplyStore },
     { useNutritionStore },
+    { useWorkoutPlanStore },
   ] = await Promise.all([
     import('@/store/useTransactionStore'),
     import('@/store/useBudgetStore'),
@@ -143,6 +145,7 @@ export async function rehydrateAllStores() {
     import('@/store/useRecurringStore'),
     import('@/store/useSupplyStore'),
     import('@/store/useNutritionStore'),
+    import('@/store/useWorkoutPlanStore'),
   ])
 
   type WithPersist = { persist?: { rehydrate?: () => void | Promise<void> } }
@@ -162,6 +165,7 @@ export async function rehydrateAllStores() {
     useRecurringStore,
     useSupplyStore,
     useNutritionStore,
+    useWorkoutPlanStore,
   ]
 
   stores.forEach((store) => {

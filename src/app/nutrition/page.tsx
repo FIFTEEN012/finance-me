@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { PressCard } from '@/components/ui/PressCard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { FoodForm } from '@/components/nutrition/FoodForm'
@@ -388,6 +388,9 @@ export default function NutritionPage() {
           <Button onClick={() => { setEditingExercise(null); setExerciseOpen(true) }} className="w-full gap-1.5">
             <Plus className="w-4 h-4" /> บันทึกการออกกำลัง
           </Button>
+          <Link href="/workouts" className={cn(buttonVariants({ variant: 'outline' }), 'w-full gap-1.5')}>
+            <Dumbbell className="w-4 h-4" /> เริ่มออกกำลังกาย
+          </Link>
         </PressCard>
       </div>
 
