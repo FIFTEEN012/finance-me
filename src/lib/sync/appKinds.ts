@@ -1,5 +1,7 @@
 import { useSupplyStore } from '@/store/useSupplyStore'
+import { useNutritionStore } from '@/store/useNutritionStore'
 import { arrayKind } from './kinds'
+import { healthProfileKind } from './healthProfileKind'
 import type { SyncKindAdapter } from './engine'
 
 /**
@@ -9,4 +11,8 @@ import type { SyncKindAdapter } from './engine'
  */
 export const APP_SYNC_KINDS: SyncKindAdapter[] = [
   arrayKind({ kind: 'supply', store: useSupplyStore, field: 'items' }),
+  arrayKind({ kind: 'food-entry', store: useNutritionStore, field: 'food' }),
+  arrayKind({ kind: 'water-entry', store: useNutritionStore, field: 'water' }),
+  arrayKind({ kind: 'workout-session', store: useNutritionStore, field: 'exercise' }),
+  healthProfileKind,
 ]

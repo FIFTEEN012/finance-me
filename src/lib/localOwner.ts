@@ -14,6 +14,7 @@ import { useBillSplitStore } from '@/store/useBillSplitStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import { useSupplyStore } from '@/store/useSupplyStore'
+import { useNutritionStore } from '@/store/useNutritionStore'
 import { getAppSyncEngine } from '@/lib/sync/appEngine'
 
 /**
@@ -45,6 +46,7 @@ const PERSISTED_STORES: ResettableStore[] = [
   useDebtStore,
   useWorkoutPlanStore,
   useSupplyStore,
+  useNutritionStore,
 ] as unknown as ResettableStore[]
 
 function hasWindow(): boolean {
