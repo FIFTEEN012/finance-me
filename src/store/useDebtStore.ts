@@ -5,16 +5,7 @@ import { persist } from 'zustand/middleware'
 import { DebtItem, DebtPayment, DebtType, DebtCategory } from '@/types/debt'
 import { useTransactionStore } from './useTransactionStore'
 import { useCategoryStore } from './useCategoryStore'
-import { debtToDatabasePayload, normalizeDebt } from '@/lib/debtRecord'
-
-function saveDebt(id: string, debt: DebtItem) {
-  if (typeof window === 'undefined') return
-  fetch(`/api/debts/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(debtToDatabasePayload(debt)),
-  }).catch(() => {})
-}
+import { normalizeDebt } from '@/lib/debtRecord'
 
 export interface CreateDebtInput {
   personName: string
@@ -61,6 +52,7 @@ const DEFAULT_DEBT_COLORS: Record<DebtCategory, string> = {
   other: '#f59e0b',
 }
 
+// Changes reach the server through the sync engine (src/lib/sync/appKinds.ts).
 export const useDebtStore = create<DebtStore>()(
   persist(
     (set, get) => ({
@@ -87,7 +79,7 @@ export const useDebtStore = create<DebtStore>()(
             ? `ยืมเงินจาก: ${input.personName}`
             : `ให้ยืมเงิน: ${input.personName}`
 
-          txStore.addTransaction({
+          initialTransactionId = txStore.addTransaction({
             type: txType,
             amount: input.totalAmount,
             categoryId: catId,
@@ -96,11 +88,6 @@ export const useDebtStore = create<DebtStore>()(
             note: input.note ? `[หนี้สิน/ยืม-คืน] ${input.note}` : '[หนี้สิน/ยืม-คืน]',
             tags: ['หนี้สิน', input.personName],
           })
-
-          const createdTx = txStore.transactions[0]
-          if (createdTx) {
-            initialTransactionId = createdTx.id
-          }
         }
 
         const newDebt: DebtItem = {
@@ -125,24 +112,6 @@ export const useDebtStore = create<DebtStore>()(
           debts: [newDebt, ...state.debts],
         }))
 
-        if (typeof window !== 'undefined') {
-          fetch('/api/debts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id,
-              person: newDebt.personName,
-              type: newDebt.type,
-              originalAmount: newDebt.totalAmount,
-              remainingAmount: newDebt.totalAmount,
-              dueDate: newDebt.dueDate,
-              note: newDebt.note,
-              status: 'ACTIVE',
-              payments: [],
-            }),
-          }).catch(() => {})
-        }
-
         return newDebt
       },
 
@@ -163,18 +132,12 @@ export const useDebtStore = create<DebtStore>()(
           }),
         }))
 
-        const updated = get().getDebtById(id)
-        if (updated) saveDebt(id, updated)
       },
 
       deleteDebt: (id) => {
         set((state) => ({
           debts: state.debts.filter((d) => d.id !== id),
         }))
-
-        if (typeof window !== 'undefined') {
-          fetch(`/api/debts/${id}`, { method: 'DELETE' }).catch(() => {})
-        }
       },
 
       addPayment: (debtId, input) => {
@@ -201,7 +164,7 @@ export const useDebtStore = create<DebtStore>()(
             ? `ชำระหนี้คืน: ${debt.personName}${input.note ? ` (${input.note})` : ''}`
             : `รับคืนเงินจาก: ${debt.personName}${input.note ? ` (${input.note})` : ''}`
 
-          txStore.addTransaction({
+          transactionId = txStore.addTransaction({
             type: txType,
             amount: payAmount,
             categoryId: catId,
@@ -210,11 +173,6 @@ export const useDebtStore = create<DebtStore>()(
             note: `[ชำระหนี้/ยืม-คืน] ${debt.personName}`,
             tags: ['ชำระหนี้', debt.personName],
           })
-
-          const createdTx = txStore.transactions[0]
-          if (createdTx) {
-            transactionId = createdTx.id
-          }
         }
 
         const newPayment: DebtPayment = {
@@ -241,8 +199,6 @@ export const useDebtStore = create<DebtStore>()(
             }
           }),
         }))
-        const updated = get().getDebtById(debtId)
-        if (updated) saveDebt(debtId, updated)
       },
 
       deletePayment: (debtId, paymentId) => {
@@ -261,8 +217,6 @@ export const useDebtStore = create<DebtStore>()(
             }
           }),
         }))
-        const updated = get().getDebtById(debtId)
-        if (updated) saveDebt(debtId, updated)
       },
 
       getDebtById: (id) => get().debts.find((d) => d.id === id),

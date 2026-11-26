@@ -15,6 +15,7 @@ interface CategoryStore {
   replaceCategories: (categories: Category[]) => void
 }
 
+// Changes reach the server through the sync engine (src/lib/sync/appKinds.ts).
 export const useCategoryStore = create<CategoryStore>()(
   persist(
     (set, get) => ({
@@ -25,13 +26,6 @@ export const useCategoryStore = create<CategoryStore>()(
         set((s) => ({
           categories: [...s.categories, newCat],
         }))
-        if (typeof window !== 'undefined') {
-          fetch('/api/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newCat),
-          }).catch(() => {})
-        }
       },
       updateCategory: (id, c) => {
         set((s) => ({
@@ -39,21 +33,11 @@ export const useCategoryStore = create<CategoryStore>()(
             cat.id === id ? { ...cat, ...c } : cat
           ),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/categories/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(c),
-          }).catch(() => {})
-        }
       },
       deleteCategory: (id) => {
         set((s) => ({
           categories: s.categories.filter((c) => c.id !== id),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/categories/${id}`, { method: 'DELETE' }).catch(() => {})
-        }
       },
       getCategoriesByType: (type) =>
         get().categories.filter((c) => c.type === type),
