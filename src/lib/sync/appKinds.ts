@@ -5,6 +5,9 @@ import { healthProfileKind } from './healthProfileKind'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { useMonthlyExpenseStore } from '@/store/useMonthlyExpenseStore'
 import { investmentKinds, monthlyExpenseKinds } from './investmentKinds'
+import { useRecurringStore } from '@/store/useRecurringStore'
+import { useBillSplitStore } from '@/store/useBillSplitStore'
+import { settingsKind, workoutPlanKind } from './settingsKinds'
 import type { SyncKindAdapter } from './engine'
 
 /**
@@ -20,4 +23,8 @@ export const APP_SYNC_KINDS: SyncKindAdapter[] = [
   healthProfileKind,
   ...investmentKinds(useInvestmentStore),
   ...monthlyExpenseKinds(useMonthlyExpenseStore),
+  arrayKind({ kind: 'recurring-rule', store: useRecurringStore, field: 'recurrings' }),
+  arrayKind({ kind: 'bill-split', store: useBillSplitStore, field: 'splits' }),
+  settingsKind,
+  workoutPlanKind,
 ]

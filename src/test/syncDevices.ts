@@ -130,3 +130,50 @@ export function createAppDevice(
     unregister: () => stops.forEach((stop) => stop()),
   });
 }
+
+type AnyStore = {
+  getState: () => unknown;
+  getInitialState: () => unknown;
+  setState: (state: never, replace: true) => void;
+};
+
+/**
+ * Several app devices over the app's real stores, which are singletons: only
+ * the device in use is bound to them. `use(device)` puts the current device's
+ * store contents aside and brings back the chosen device's (a new device
+ * starts from the stores' initial state), so each device keeps its own local
+ * copy, like separate browsers. Call `close()` when done.
+ */
+export function appDevicePool(network: DeviceNetwork, stores: unknown[], adapters: SyncKindAdapter[]) {
+  const all = stores as AnyStore[];
+  type PoolDevice = ReturnType<typeof createAppDevice> & { saved: unknown[] };
+  let current: PoolDevice | null = null;
+
+  function use(device: PoolDevice) {
+    if (current === device) return device;
+    if (current) {
+      current.unregister();
+      current.saved = all.map((s) => s.getState());
+    }
+    all.forEach((s, i) => s.setState(device.saved[i] as never, true));
+    const stops = adapters.map((adapter) => device.engine.register(adapter));
+    device.unregister = () => stops.forEach((stop) => stop());
+    current = device;
+    return device;
+  }
+
+  return {
+    /** A new device of `userId`; not bound to the stores until `use(device)`. */
+    create(userId: string, opts: { startAt?: number } = {}): PoolDevice {
+      const device = createAppDevice(network, userId, [], opts) as PoolDevice;
+      device.saved = all.map((s) => s.getInitialState());
+      return device;
+    },
+    use,
+    close() {
+      current?.unregister();
+      current = null;
+      all.forEach((s) => s.setState(s.getInitialState() as never, true));
+    },
+  };
+}

@@ -8,9 +8,8 @@ import { useGoalStore } from '@/store/useGoalStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
 import { useMonthlyExpenseStore } from '@/store/useMonthlyExpenseStore'
-import { useDashboardStore } from '@/store/useDashboardStore'
-import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useBillSplitStore } from '@/store/useBillSplitStore'
+import { useRecurringStore } from '@/store/useRecurringStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import { useSupplyStore } from '@/store/useSupplyStore'
@@ -32,6 +31,7 @@ type ResettableStore = {
   setState: (state: never, replace: true) => unknown
 }
 
+/** Stores holding User Data, emptied when another account signs in. */
 const PERSISTED_STORES: ResettableStore[] = [
   useTransactionStore,
   useBudgetStore,
@@ -40,14 +40,16 @@ const PERSISTED_STORES: ResettableStore[] = [
   useInvestmentStore,
   useSettingsStore,
   useMonthlyExpenseStore,
-  useDashboardStore,
-  useOnboardingStore,
   useBillSplitStore,
   useDebtStore,
   useWorkoutPlanStore,
   useSupplyStore,
   useNutritionStore,
+  useRecurringStore,
 ] as unknown as ResettableStore[]
+
+/** Device Preferences (dashboard layout, onboarding): they belong to the browser, not the account. */
+const DEVICE_PREFERENCE_KEYS: readonly string[] = ['finance-dashboard-layout', 'finance-onboarding']
 
 function hasWindow(): boolean {
   return typeof window !== 'undefined'
@@ -93,6 +95,7 @@ function clearPreviousOwnerData() {
 
   // Same naming as clearStoreKey/clearRemovedFeatureStorage in cloudSync.ts.
   for (const key of SYNC_STORE_KEYS) {
+    if (DEVICE_PREFERENCE_KEYS.includes(key)) continue
     safeRemove(key)
     safeRemove(`${key}__synced_at`)
     safeRemove(`${key}__modified_at`)
@@ -111,7 +114,7 @@ function clearPreviousOwnerData() {
  * - Marker present and different: clear the previous owner's persisted data
  *   (store keys, their __synced_at/__modified_at markers and the
  *   migrated-to-neon flag), reset the in-memory stores, record `userId`,
- *   return true.
+ *   return true. Device Preferences (dashboard layout, onboarding) are kept.
  * - No marker (legacy browser): keep the local data as before, record
  *   `userId`, return false.
  * - Same owner: return false.

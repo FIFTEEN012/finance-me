@@ -75,7 +75,12 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
 
     expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
 
+    const devicePreferences = ['finance-dashboard-layout', 'finance-onboarding']
     for (const key of SYNC_STORE_KEYS) {
+      if (devicePreferences.includes(key)) {
+        expect(data.has(key), key).toBe(true)
+        continue
+      }
       expect(data.has(key), key).toBe(false)
       expect(data.has(`${key}__synced_at`), key).toBe(false)
       expect(data.has(`${key}__modified_at`), key).toBe(false)
@@ -156,6 +161,40 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
       portfolioSnapshots: [],
     })
     expect(useMonthlyExpenseStore.getState()).toMatchObject({ logs: [], trackedCategoryIds: [] })
+  })
+
+  it("empties the previous owner's recurring rules, bill splits, settings and Workout Plan but keeps Device Preferences", async () => {
+    data.set('finance-owner-id', 'user-a')
+    const { ensureLocalDataBelongsTo } = await load()
+    const { useRecurringStore } = await import('@/store/useRecurringStore')
+    const { useBillSplitStore } = await import('@/store/useBillSplitStore')
+    const { useSettingsStore } = await import('@/store/useSettingsStore')
+    const { useWorkoutPlanStore } = await import('@/store/useWorkoutPlanStore')
+    const { useDashboardStore } = await import('@/store/useDashboardStore')
+    const { useOnboardingStore } = await import('@/store/useOnboardingStore')
+
+    useRecurringStore.setState({ recurrings: [{ id: 'r-a' } as never] })
+    useBillSplitStore.setState({ splits: [{ id: 's-a' } as never] })
+    useSettingsStore.getState().setPaydayDate(5)
+    useWorkoutPlanStore.getState().setDraft({ activity: 'run', moves: [] })
+    useDashboardStore.getState().setVisible('spending-heatmap', false)
+    useOnboardingStore.getState().complete()
+
+    expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
+
+    expect(useRecurringStore.getState().recurrings).toEqual([])
+    expect(data.get('finance-recurring-rules') ?? '').not.toContain('r-a')
+    expect(useBillSplitStore.getState().splits).toEqual([])
+    expect(useSettingsStore.getState().paydayDate).toBe(25)
+    expect(useWorkoutPlanStore.getState().draft).toBeNull()
+
+    const heatmap = useDashboardStore.getState().widgets.find((w) => w.id === 'spending-heatmap')
+    expect(heatmap?.visible).toBe(false)
+    expect(useOnboardingStore.getState().completed).toBe(true)
+    await useDashboardStore.persist.rehydrate()
+    await useOnboardingStore.persist.rehydrate()
+    expect(useDashboardStore.getState().widgets.find((w) => w.id === 'spending-heatmap')?.visible).toBe(false)
+    expect(useOnboardingStore.getState().completed).toBe(true)
   })
 
   it('does not throw when localStorage throws', async () => {

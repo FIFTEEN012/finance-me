@@ -30,6 +30,10 @@ export const RECORD_KINDS = [
   'portfolio-snapshot',
   'monthly-expense-log',
   'monthly-tracked-category',
+  'recurring-rule',
+  'bill-split',
+  'settings',
+  'workout-plan',
 ] as const
 export type RecordKind = (typeof RECORD_KINDS)[number]
 
