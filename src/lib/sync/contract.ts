@@ -24,6 +24,12 @@ export const RECORD_KINDS = [
   'water-entry',
   'workout-session',
   'health-profile',
+  'investment-holding',
+  'investment-order',
+  'dividend',
+  'portfolio-snapshot',
+  'monthly-expense-log',
+  'monthly-tracked-category',
 ] as const
 export type RecordKind = (typeof RECORD_KINDS)[number]
 
