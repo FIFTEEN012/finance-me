@@ -91,6 +91,14 @@ describe("local PostgreSQL schema contract", () => {
     },
   );
 
+  it("stores the Food Category flag as a nullable is_food column so old rows stay unset", () => {
+    const isFood = getTableConfig(financeCategories).columns.find((c) => c.name === "is_food");
+
+    expect(isFood?.getSQLType()).toBe("boolean");
+    expect(isFood?.notNull).toBe(false);
+    expect(isFood?.hasDefault).toBe(false);
+  });
+
   it("enforces owner-scoped ingestion idempotency", () => {
     const config = getTableConfig(agentIngestionEvents);
     const unique = config.uniqueConstraints.find(

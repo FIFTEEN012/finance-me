@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeCategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { foodFlagFrom } from "@/lib/foodCategory";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { id, name, type, icon, color, isDefault } = body;
+  const { id, name, type, icon, color, isDefault, isFood } = body;
 
   if (!name || !type) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       icon: icon || "Folder",
       color: color || "#7c3aed",
       isDefault: !!isDefault,
+      isFood: foodFlagFrom(isFood),
     })
     .returning();
 

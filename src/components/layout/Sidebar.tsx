@@ -16,6 +16,7 @@ import {
   Repeat,
   Package,
   Apple,
+  Dumbbell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DataManager } from '@/components/shared/DataManager'
@@ -32,6 +33,7 @@ const groupedNav = [
       { href: '/recurring', label: 'รายการประจำ', icon: Repeat },
       { href: '/supplies', label: 'ของใช้', icon: Package },
       { href: '/nutrition', label: 'แคลอรี่ น้ำ & ออกกำลัง', icon: Apple },
+      { href: '/workouts', label: 'ท่าออกกำลังกาย', icon: Dumbbell },
       { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
       { href: '/reports', label: 'รายงาน', icon: BarChart3 },
       { href: '/goals', label: 'เป้าหมาย', icon: Target },

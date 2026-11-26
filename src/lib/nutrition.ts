@@ -1,5 +1,6 @@
 import type { FoodEntry, MealType, WaterEntry } from '@/types'
 import { addDays } from '@/lib/supplies'
+import { formatCurrency } from '@/lib/utils'
 
 export const MEALS: { value: MealType; label: string }[] = [
   { value: 'breakfast', label: 'มื้อเช้า' },
@@ -19,8 +20,109 @@ export function mealForHour(hour: number): MealType {
   return 'snack'
 }
 
+/** Food Entries linked to a Food Expense. */
+export function foodForExpense(entries: FoodEntry[], foodExpenseId: string): FoodEntry[] {
+  return entries.filter((e) => e.foodExpenseId === foodExpenseId)
+}
+
+/**
+ * The ฿ badge on a Food Entry linked to a Food Expense: the whole bill, plus
+ * how many dishes it covers when it covers more than one ("฿180 · 3 จาน").
+ */
+export function expenseBadgeLabel(
+  amount: number,
+  dishCount: number,
+  formatAmount: (amount: number) => string = formatCurrency,
+): string {
+  const bill = formatAmount(amount)
+  return dishCount > 1 ? `${bill} · ${dishCount} จาน` : bill
+}
+
+/** Total kcal of the Food Entries linked to a Food Expense (its kcal badge). */
+export function kcalForExpense(entries: FoodEntry[], foodExpenseId: string): number {
+  return foodForExpense(entries, foodExpenseId).reduce((sum, e) => sum + e.kcal, 0)
+}
+
+/** kcal badge per Food Expense id, for a list of expenses. */
+export function kcalByExpenseId(entries: FoodEntry[]): Map<string, number> {
+  const totals = new Map<string, number>()
+  for (const e of entries) {
+    if (e.foodExpenseId) totals.set(e.foodExpenseId, (totals.get(e.foodExpenseId) ?? 0) + e.kcal)
+  }
+  return totals
+}
+
+/** A Food Entry row being typed into a form, before it is saved. */
+export interface FoodDraft {
+  key: string
+  name: string
+  kcal: string
+  meal: MealType
+  /** Macros carried over from a Photo Draft (not typed in the expense form). */
+  proteinG?: number
+  carbsG?: number
+  fatG?: number
+}
+
+type FoodDraftInput = Pick<FoodEntry, 'date' | 'meal' | 'name' | 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>
+
+const MACRO_KEYS = ['proteinG', 'carbsG', 'fatG'] as const
+
+function macrosOf(source: Partial<Record<(typeof MACRO_KEYS)[number], number>>) {
+  const out: Partial<Record<(typeof MACRO_KEYS)[number], number>> = {}
+  for (const k of MACRO_KEYS) if (source[k] !== undefined) out[k] = source[k]
+  return out
+}
+
+export function newFoodDraft(now: Date = new Date()): FoodDraft {
+  return { key: crypto.randomUUID(), name: '', kcal: '', meal: mealForHour(now.getHours()) }
+}
+
+/** Food Entry inputs (e.g. the ticked rows of a Photo Draft) → rows in the expense form, macros kept. */
+export function foodDraftsFromInputs(inputs: FoodDraftInput[]): FoodDraft[] {
+  return inputs.map((input) => ({
+    key: crypto.randomUUID(),
+    name: input.name,
+    kcal: String(input.kcal),
+    meal: input.meal,
+    ...macrosOf(input),
+  }))
+}
+
+/** Typed rows → Food Entry inputs for `date`. Rows without a name are skipped; a blank kcal counts as 0. */
+export function foodInputsFromDrafts(drafts: FoodDraft[], date: string): FoodDraftInput[] {
+  return drafts.flatMap((d) => {
+    const name = d.name.trim().replace(/\s+/g, ' ')
+    if (!name) return []
+    const kcal = Math.max(0, Math.round(Number(d.kcal) || 0))
+    return [{ date, meal: d.meal, name, kcal, ...macrosOf(d) }]
+  })
+}
+
 export function kcalOn(entries: FoodEntry[], date: string): number {
   return entries.reduce((sum, e) => (e.date === date ? sum + e.kcal : sum), 0)
+}
+
+export interface MacroTotals {
+  proteinG: number
+  carbsG: number
+  fatG: number
+  /** Food Entries of the day that have at least one macro filled in. */
+  entriesWithMacros: number
+}
+
+/** Day totals of protein, carbs and fat; blank fields count as nothing. */
+export function macrosOn(entries: FoodEntry[], date: string): MacroTotals {
+  const totals: MacroTotals = { proteinG: 0, carbsG: 0, fatG: 0, entriesWithMacros: 0 }
+  for (const e of entries) {
+    if (e.date !== date) continue
+    if (e.proteinG === undefined && e.carbsG === undefined && e.fatG === undefined) continue
+    totals.proteinG += e.proteinG ?? 0
+    totals.carbsG += e.carbsG ?? 0
+    totals.fatG += e.fatG ?? 0
+    totals.entriesWithMacros++
+  }
+  return totals
 }
 
 export function waterOn(entries: WaterEntry[], date: string): number {
@@ -87,6 +189,17 @@ export function recentFoodNames(entries: FoodEntry[], limit = 30): string[] {
     if (names.length >= limit) break
   }
   return names
+}
+
+/**
+ * Water Bottle reading for a day: `level` is how full the bottle still is (1 = nothing drunk,
+ * 0 = Water Target reached), `over` is how much was drunk past the target. A target of 0 draws
+ * an empty bottle.
+ */
+export function waterBottle(drank: number, target: number): { level: number; over: number } {
+  const over = Math.max(0, drank - Math.max(0, target))
+  if (!(target > 0)) return { level: 0, over }
+  return { level: Math.min(1, Math.max(0, 1 - drank / target)), over }
 }
 
 export function formatMl(ml: number): string {

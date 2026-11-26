@@ -80,6 +80,8 @@ export const financeCategories = pgTable(
     icon: text("icon").notNull(),
     color: text("color").notNull(),
     isDefault: boolean("is_default").default(false).notNull(),
+    // Food Category flag; NULL = never set (default "อาหาร" then counts as food).
+    isFood: boolean("is_food"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

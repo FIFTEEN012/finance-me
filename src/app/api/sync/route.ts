@@ -9,6 +9,7 @@ import {
   financeDebts,
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { foodFlagFrom } from "@/lib/foodCategory";
 import { normalizeDebt } from "@/lib/debtRecord";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,7 @@ export async function GET() {
       icon: c.icon,
       color: c.color,
       isDefault: c.isDefault,
+      ...(typeof c.isFood === "boolean" ? { isFood: c.isFood } : {}),
     }));
 
     const formattedBudgets = budgets.map((b) => ({
@@ -107,8 +109,9 @@ export async function GET() {
       debts: formattedDebts,
       syncedAt: new Date().toISOString(),
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to fetch data" }, { status: 500 });
+  } catch (error) {
+    console.error("GET /api/sync failed", error);
+    return NextResponse.json({ error: "ดึงข้อมูลจากคลาวด์ไม่สำเร็จ ลองใหม่อีกครั้ง" }, { status: 500 });
   }
 }
 
@@ -144,6 +147,7 @@ export async function POST(request: Request) {
         if (!cat.name) continue;
         const catId = cat.id || crypto.randomUUID();
         const catType = (cat.type || "EXPENSE").toUpperCase();
+        const isFood = foodFlagFrom(cat.isFood);
         await db
           .insert(financeCategories)
           .values({
@@ -154,6 +158,7 @@ export async function POST(request: Request) {
             icon: cat.icon || "Folder",
             color: cat.color || "#7c3aed",
             isDefault: !!cat.isDefault,
+            isFood,
             updatedAt: new Date(),
           })
           .onConflictDoUpdate({
@@ -164,6 +169,7 @@ export async function POST(request: Request) {
               icon: cat.icon || "Folder",
               color: cat.color || "#7c3aed",
               isDefault: !!cat.isDefault,
+              isFood,
               updatedAt: new Date(),
             },
           });
@@ -332,7 +338,8 @@ export async function POST(request: Request) {
       success: true,
       syncedAt: new Date().toISOString(),
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Sync failed" }, { status: 500 });
+  } catch (error) {
+    console.error("POST /api/sync failed", error);
+    return NextResponse.json({ error: "ซิงก์ข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง" }, { status: 500 });
   }
 }

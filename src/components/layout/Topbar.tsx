@@ -17,6 +17,7 @@ const pageTitles: Record<string, string> = {
   '/recurring': 'รายการประจำ',
   '/supplies': 'ของใช้',
   '/nutrition': 'แคลอรี่ น้ำ & ออกกำลัง',
+  '/workouts': 'ท่าออกกำลังกาย',
   '/bill-split': 'แบ่งบิล & ยืม-คืน',
   '/settings': 'ตั้งค่า',
   '/investments': 'พอร์ตลงทุน',

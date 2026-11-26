@@ -1,0 +1,1 @@
+ALTER TABLE "finance_categories" ADD COLUMN "is_food" boolean;

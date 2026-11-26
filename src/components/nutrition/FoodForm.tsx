@@ -13,6 +13,15 @@ import { MEALS, lastKcalFor, mealForHour, recentFoodNames } from '@/lib/nutritio
 import { FoodInput } from '@/store/useNutritionStore'
 import { FoodEntry } from '@/types'
 
+// Macros are optional grams; a blank input means "not given" (undefined).
+const macro = z
+  .number()
+  .min(0, 'ใส่ได้ 0 – 2,000 กรัม')
+  .max(2000, 'ใส่ได้ 0 – 2,000 กรัม')
+  .optional()
+
+const blankToUndefined = (v: unknown) => (v === '' || v == null ? undefined : Number(v))
+
 const schema = z.object({
   name: z.string().trim().min(1, 'กรุณาระบุชื่ออาหาร'),
   // An empty number input arrives as NaN.
@@ -22,9 +31,18 @@ const schema = z.object({
     .refine((n) => Number.isNaN(n) || Number.isInteger(n), 'ใส่เป็นจำนวนเต็ม')
     .refine((n) => Number.isNaN(n) || (n >= 0 && n <= 20000), 'ใส่ได้ 0 – 20,000 kcal'),
   meal: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  proteinG: macro,
+  carbsG: macro,
+  fatG: macro,
 })
 
 type FormValues = z.infer<typeof schema>
+
+const MACRO_FIELDS = [
+  { name: 'proteinG', label: 'โปรตีน' },
+  { name: 'carbsG', label: 'คาร์บ' },
+  { name: 'fatG', label: 'ไขมัน' },
+] as const
 
 interface Props {
   open: boolean
@@ -43,8 +61,15 @@ export function FoodForm({ open, onOpenChange, date, editing, history, onSubmit 
   useEffect(() => {
     if (!open) return
     reset(editing
-      ? { name: editing.name, kcal: editing.kcal, meal: editing.meal }
-      : { name: '', kcal: NaN, meal: mealForHour(new Date().getHours()) })
+      ? {
+          name: editing.name,
+          kcal: editing.kcal,
+          meal: editing.meal,
+          proteinG: editing.proteinG,
+          carbsG: editing.carbsG,
+          fatG: editing.fatG,
+        }
+      : { name: '', kcal: NaN, meal: mealForHour(new Date().getHours()), proteinG: undefined, carbsG: undefined, fatG: undefined })
   }, [open, editing, reset])
 
   const names = recentFoodNames(history)
@@ -65,7 +90,16 @@ export function FoodForm({ open, onOpenChange, date, editing, history, onSubmit 
 
         <form
           onSubmit={handleSubmit((v) =>
-            onSubmit({ date: editing?.date ?? date, meal: v.meal, name: v.name.trim().replace(/\s+/g, ' '), kcal: v.kcal }),
+            onSubmit({
+              date: editing?.date ?? date,
+              meal: v.meal,
+              name: v.name.trim().replace(/\s+/g, ' '),
+              kcal: v.kcal,
+              // Always pass all three so an edit can clear a macro.
+              proteinG: v.proteinG,
+              carbsG: v.carbsG,
+              fatG: v.fatG,
+            }),
           )}
           className="space-y-4"
         >
@@ -109,6 +143,29 @@ export function FoodForm({ open, onOpenChange, date, editing, history, onSubmit 
               </select>
             </div>
           </div>
+
+          <fieldset>
+            <legend className="text-sm mb-1.5">
+              สารอาหาร (กรัม) <span className="text-slate-400 dark:text-slate-500">ไม่ใส่ก็ได้</span>
+            </legend>
+            <div className="grid grid-cols-3 gap-3">
+              {MACRO_FIELDS.map((f) => (
+                <div key={f.name}>
+                  <Label htmlFor={`food-${f.name}`} className="text-xs mb-1 block text-slate-500 dark:text-slate-400">{f.label}</Label>
+                  <Input
+                    id={`food-${f.name}`}
+                    {...register(f.name, { setValueAs: blankToUndefined })}
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    min="0"
+                    placeholder="-"
+                  />
+                  {errors[f.name] && <p className="text-xs text-red-500 mt-1">{errors[f.name]?.message}</p>}
+                </div>
+              ))}
+            </div>
+          </fieldset>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>ยกเลิก</Button>

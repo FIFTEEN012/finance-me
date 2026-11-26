@@ -20,6 +20,7 @@ import {
   Repeat,
   Package,
   Apple,
+  Dumbbell,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { DataManager } from '@/components/shared/DataManager'
@@ -42,6 +43,7 @@ const SECONDARY = [
   { href: '/recurring', label: 'รายการประจำ', icon: Repeat, desc: 'บันทึกรายจ่าย-รายรับประจำอัตโนมัติ' },
   { href: '/supplies', label: 'ของใช้', icon: Package, desc: 'นับวันใช้ของจนหมด' },
   { href: '/nutrition', label: 'แคลอรี่ น้ำ & ออกกำลัง', icon: Apple, desc: 'อาหาร น้ำ ออกกำลัง และคำแนะนำ' },
+  { href: '/workouts', label: 'ท่าออกกำลังกาย', icon: Dumbbell, desc: 'คลังท่าพร้อมวิธีทำที่ถูกต้อง' },
   { href: '/reports', label: 'รายงาน', icon: BarChart3, desc: 'สรุปภาพรวมรายรับ-จ่าย' },
   { href: '/goals', label: 'เป้าหมายออม', icon: Target, desc: 'ตั้งเป้าหมายการเงิน' },
   { href: '/investments', label: 'พอร์ตลงทุน', icon: TrendingUp, desc: 'สินทรัพย์และราคาตลาด' },

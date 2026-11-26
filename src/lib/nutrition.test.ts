@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
   averageOfLogged,
+  expenseBadgeLabel,
+  foodDraftsFromInputs,
+  foodInputsFromDrafts,
   formatMl,
   kcalByMeal,
   kcalOn,
   lastKcalFor,
+  macrosOn,
   mealForHour,
   progress,
   recentDays,
   recentFoodNames,
+  waterBottle,
   waterOn,
 } from './nutrition'
 import type { FoodEntry, WaterEntry } from '@/types'
@@ -112,5 +117,92 @@ describe('formatMl', () => {
   it('switches to litres from 1,000 ml', () => {
     expect(formatMl(750)).toBe('750 มล.')
     expect(formatMl(1500)).toBe('1.5 ลิตร')
+  })
+})
+
+describe('macrosOn', () => {
+  it('sums protein, carbs and fat of the day, skipping blank fields and other days', () => {
+    const entries = [
+      food({ proteinG: 30, carbsG: 80, fatG: 20 }),
+      food({ proteinG: 12.5 }),
+      food({ carbsG: 40, fatG: undefined }),
+      food({}),
+      food({ date: '2026-11-18', proteinG: 99, carbsG: 99, fatG: 99 }),
+    ]
+    expect(macrosOn(entries, '2026-11-19')).toEqual({ proteinG: 42.5, carbsG: 120, fatG: 20, entriesWithMacros: 3 })
+  })
+
+  it('reports nothing logged for a day of entries saved before macros existed', () => {
+    expect(macrosOn([food(), food()], '2026-11-19')).toEqual({ proteinG: 0, carbsG: 0, fatG: 0, entriesWithMacros: 0 })
+  })
+})
+
+describe('waterBottle', () => {
+  it('is full before anything is drunk', () => {
+    expect(waterBottle(0, 2500)).toEqual({ level: 1, over: 0 })
+  })
+
+  it('drains as you drink', () => {
+    expect(waterBottle(1000, 2500)).toEqual({ level: 0.6, over: 0 })
+  })
+
+  it('is empty once the target is reached', () => {
+    expect(waterBottle(2500, 2500)).toEqual({ level: 0, over: 0 })
+  })
+
+  it('stays empty and reports the extra when drinking past the target', () => {
+    expect(waterBottle(2800, 2500)).toEqual({ level: 0, over: 300 })
+  })
+
+  it('does not break when the target is 0', () => {
+    expect(waterBottle(0, 0)).toEqual({ level: 0, over: 0 })
+    expect(waterBottle(250, 0)).toEqual({ level: 0, over: 250 })
+  })
+})
+
+describe('foodInputsFromDrafts', () => {
+  it('turns typed rows into Food Entries for the expense date, skipping blank rows', () => {
+    const inputs = foodInputsFromDrafts([
+      { key: 'a', name: '  ข้าวมันไก่ ', kcal: '600', meal: 'lunch' },
+      { key: 'b', name: '', kcal: '', meal: 'lunch' },
+      { key: 'c', name: 'ชาเย็น', kcal: '', meal: 'snack' },
+    ], '2026-11-25')
+
+    expect(inputs).toEqual([
+      { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600 },
+      { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 0 },
+    ])
+  })
+})
+
+describe('photo items in the expense form', () => {
+  it('keep their macros from the Photo Draft through to the saved Food Entries', () => {
+    const drafts = foodDraftsFromInputs([
+      { date: '2026-11-24', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 25, carbsG: 70, fatG: 20 },
+      { date: '2026-11-24', meal: 'snack', name: 'ชาเย็น', kcal: 250 },
+    ])
+    expect(drafts.map((d) => [d.name, d.kcal, d.meal])).toEqual([['ข้าวมันไก่', '600', 'lunch'], ['ชาเย็น', '250', 'snack']])
+
+    expect(foodInputsFromDrafts(drafts, '2026-11-25')).toEqual([
+      { date: '2026-11-25', meal: 'lunch', name: 'ข้าวมันไก่', kcal: 600, proteinG: 25, carbsG: 70, fatG: 20 },
+      { date: '2026-11-25', meal: 'snack', name: 'ชาเย็น', kcal: 250 },
+    ])
+  })
+})
+
+describe('expenseBadgeLabel', () => {
+  const baht = (n: number) => `฿${n}`
+
+  it('shows just the bill for a Food Expense with one dish', () => {
+    expect(expenseBadgeLabel(180, 1, baht)).toBe('฿180')
+    expect(expenseBadgeLabel(180, 0, baht)).toBe('฿180')
+  })
+
+  it('adds the number of dishes when one bill covers several Food Entries', () => {
+    expect(expenseBadgeLabel(180, 3, baht)).toBe('฿180 · 3 จาน')
+  })
+
+  it('formats the amount as currency by default', () => {
+    expect(expenseBadgeLabel(180, 2)).toMatch(/180.* · 2 จาน$/)
   })
 })

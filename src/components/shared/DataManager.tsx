@@ -42,7 +42,7 @@ interface StoreBlob {
   state?: Record<string, unknown>
 }
 
-function countItems(stores: Record<string, unknown>) {
+export function countItems(stores: Record<string, unknown>) {
   function len(key: string) {
     const blob = stores[key] as StoreBlob | undefined
     const state = blob?.state ?? {}
@@ -67,6 +67,13 @@ function countItems(stores: Record<string, unknown>) {
     netWorthItems: (() => {
       const s = (stores['finance-networth'] as StoreBlob | undefined)?.state ?? {}
       return ((s.items as unknown[])?.length ?? 0)
+    })(),
+    // Moves of the in-progress Workout Plan plus those of the unsaved draft.
+    workoutPlan: (() => {
+      const s = (stores['finance-workout-plan'] as StoreBlob | undefined)?.state ?? {}
+      const active = s.active as { plan?: { moves?: unknown[] } } | null | undefined
+      const draft = s.draft as { moves?: unknown[] } | null | undefined
+      return (active?.plan?.moves?.length ?? 0) + (draft?.moves?.length ?? 0)
     })(),
   }
 }
@@ -259,6 +266,7 @@ export function DataManager() {
                   { label: 'รายการประจำ',    value: stats.recurrings },
                   { label: 'ของใช้',         value: stats.supplies },
                   { label: 'อาหาร น้ำ ออกกำลัง', value: stats.nutrition },
+                  { label: 'ท่าในแผนออกกำลังกาย', value: stats.workoutPlan },
                   { label: 'Net Worth items', value: stats.netWorthItems },
                   { label: 'บิลแบ่งจ่าย',    value: stats.billSplits    },
                 ].map(({ label, value }) => (

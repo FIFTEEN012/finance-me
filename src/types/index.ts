@@ -9,6 +9,8 @@ export interface Category {
   icon: string
   color: string
   isDefault: boolean
+  /** Expense only. Absent = not set yet; use isFoodCategory() to read. */
+  isFood?: boolean
 }
 
 export interface Transaction {
@@ -103,8 +105,15 @@ export interface SupplyItem {
   quantity?: number     // ปริมาณต่อชิ้น เช่น 200
   unit?: string         // หน่วยของ quantity เช่น ml
   note?: string
+  /** Absent on items saved before shapes existed; guess it from the name. */
+  shape?: SupplyShape
+  /** The user's own guess at how many days it lasts, used until the Product has history. */
+  expectedDays?: number
   createdAt: string
 }
+
+/** The physical form a Supply is drawn as (GLOSSARY: Supply Shape). */
+export type SupplyShape = 'bottle' | 'tube' | 'bag' | 'box' | 'roll' | 'can' | 'sachet'
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
@@ -114,6 +123,12 @@ export interface FoodEntry {
   meal: MealType
   name: string
   kcal: number
+  // Grams; optional, absent on entries saved before macros existed.
+  proteinG?: number
+  carbsG?: number
+  fatG?: number
+  /** Id of the Food Expense (expense Transaction) this entry was bought with, if any. */
+  foodExpenseId?: string
   createdAt: string
 }
 
@@ -132,6 +147,42 @@ export interface ExerciseEntry {
   minutes: number
   kcal: number      // estimated or typed calories burned
   createdAt: string
+  /** Moves done in this Workout Session; absent for a quick log such as "run 30 min". */
+  moves?: SessionMove[]
+  /** Format of the Workout Plan this session was done from; absent for a quick log or an older session. */
+  planFormat?: PlanFormat
+}
+
+/** One Move as done in a Workout Session. */
+export interface SessionMove {
+  moveId: string    // Move.id from @/lib/moves
+  sets: number      // sets completed
+  count: number     // reps or seconds per set, read with the Move's countMode
+  /** Rest after each set as the plan had it; absent on sessions logged before it was kept. */
+  restSeconds?: number
+}
+
+/** One Move in a Workout Plan, with the sets, reps/seconds and rest intended. */
+export interface PlanMove {
+  moveId: string
+  sets: number
+  count: number
+  restSeconds: number
+}
+
+/**
+ * How a Workout Plan's main Moves are done: 'straight' does each Move's sets
+ * back to back; 'circuit' does every main Move once per round, set n of each
+ * Move in round n. Warm-up and cool-down Moves are done once, outside the rounds.
+ */
+export type PlanFormat = 'straight' | 'circuit'
+
+/** The Moves intended for a session; finishing it logs a Workout Session of `activity`. */
+export interface WorkoutPlan {
+  activity: string  // Session Type key from EXERCISES; sets the MET for kcal
+  moves: PlanMove[]
+  /** Absent on plans saved before formats existed: read as 'straight'. */
+  format?: PlanFormat
 }
 
 export type Sex = 'male' | 'female'

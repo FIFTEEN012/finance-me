@@ -8,6 +8,7 @@ import {
   financeGoals,
   financeDebts,
 } from "@/db/schema";
+import { foodFlagFrom } from "@/lib/foodCategory";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
           icon: cat.icon || "Folder",
           color: cat.color || "#7c3aed",
           isDefault: !!cat.isDefault,
+          isFood: foodFlagFrom(cat.isFood),
         })
         .onConflictDoNothing({ target: [financeCategories.ownerId, financeCategories.id] });
       importedCategories++;

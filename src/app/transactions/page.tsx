@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Search, Upload, Download, X,
@@ -111,6 +111,20 @@ export default function TransactionsPage() {
   const net          = totalIncome - totalExpense
 
   const handleEdit    = (t: Transaction) => { setEditing(t); setFormOpen(true) }
+
+  // A ฿ badge on a Food Entry links here with ?tx=<Food Expense id>: open that expense.
+  const [linkedTxId, setLinkedTxId] = useState<string | null>(null)
+  useEffect(() => {
+    setLinkedTxId(new URLSearchParams(window.location.search).get('tx'))
+  }, [])
+  useEffect(() => {
+    if (!linkedTxId) return
+    const tx = transactions.find((t) => t.id === linkedTxId)
+    if (!tx) return
+    setLinkedTxId(null)
+    setEditing(tx)
+    setFormOpen(true)
+  }, [linkedTxId, transactions])
 
   return (
     <div className="space-y-6 pb-28 text-slate-800 dark:text-slate-100">

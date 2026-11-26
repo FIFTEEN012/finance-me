@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware'
 import { SupplyItem } from '@/types'
 import { todayKey } from '@/lib/recurring'
 
-export type SupplyInput = Pick<SupplyItem, 'name' | 'startDate' | 'finishedDate' | 'price' | 'quantity' | 'unit' | 'note'>
+export type SupplyInput = Pick<SupplyItem, 'name' | 'startDate' | 'finishedDate' | 'price' | 'quantity' | 'unit' | 'note' | 'shape' | 'expectedDays'>
 
 interface SupplyStore {
   items: SupplyItem[]
@@ -49,6 +49,8 @@ export const useSupplyStore = create<SupplyStore>()(
           price: source.price,
           quantity: source.quantity,
           unit: source.unit,
+          shape: source.shape,
+          expectedDays: source.expectedDays,
         })
       },
     }),
