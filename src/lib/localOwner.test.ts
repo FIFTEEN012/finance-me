@@ -114,6 +114,55 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
     expect(useTransactionStore.getState().transactions).toEqual([])
   })
 
+  it("empties the previous owner's health records so they are not synced into the new account", async () => {
+    data.set('finance-owner-id', 'user-a')
+    const { ensureLocalDataBelongsTo } = await load()
+    const { useNutritionStore } = await import('@/store/useNutritionStore')
+    useNutritionStore.setState({
+      food: [{ id: 'f-a' } as never],
+      water: [{ id: 'w-a' } as never],
+      exercise: [{ id: 'e-a' } as never],
+      profile: { weightKg: 70 } as never,
+      calorieGoal: 1500,
+    })
+
+    expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
+
+    const initial = useNutritionStore.getInitialState()
+    expect(useNutritionStore.getState()).toMatchObject({
+      food: [],
+      water: [],
+      exercise: [],
+      profile: null,
+      calorieGoal: initial.calorieGoal,
+    })
+    expect(data.get('finance-nutrition') ?? '').not.toContain('f-a')
+  })
+
+  it("empties the previous owner's portfolio and monthly expense logs", async () => {
+    data.set('finance-owner-id', 'user-a')
+    const { ensureLocalDataBelongsTo } = await load()
+    const { useInvestmentStore } = await import('@/store/useInvestmentStore')
+    const { useMonthlyExpenseStore } = await import('@/store/useMonthlyExpenseStore')
+    useInvestmentStore.setState({
+      holdings: [{ id: 'h-a' } as never],
+      orders: [{ id: 'o-a' } as never],
+      dividends: [{ id: 'd-a' } as never],
+      portfolioSnapshots: [{ date: '2026-11-01', totalValueTHB: 1, totalCostTHB: 1 }],
+    })
+    useMonthlyExpenseStore.setState({ logs: [{ id: 'l-a' } as never], trackedCategoryIds: ['cat-a'] })
+
+    expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
+
+    expect(useInvestmentStore.getState()).toMatchObject({
+      holdings: [],
+      orders: [],
+      dividends: [],
+      portfolioSnapshots: [],
+    })
+    expect(useMonthlyExpenseStore.getState()).toMatchObject({ logs: [], trackedCategoryIds: [] })
+  })
+
   it("empties the previous owner's recurring rules, bill splits, settings and Workout Plan but keeps Device Preferences", async () => {
     data.set('finance-owner-id', 'user-a')
     const { ensureLocalDataBelongsTo } = await load()

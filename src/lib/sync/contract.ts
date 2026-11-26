@@ -20,6 +20,16 @@ import { z } from 'zod'
  */
 export const RECORD_KINDS = [
   'supply',
+  'food-entry',
+  'water-entry',
+  'workout-session',
+  'health-profile',
+  'investment-holding',
+  'investment-order',
+  'dividend',
+  'portfolio-snapshot',
+  'monthly-expense-log',
+  'monthly-tracked-category',
   'recurring-rule',
   'bill-split',
   'settings',

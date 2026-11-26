@@ -55,7 +55,13 @@ export type Device = {
 export function createDevice(
   network: DeviceNetwork,
   userId: string,
-  opts: { startAt?: number; storage?: ReturnType<typeof memoryStorage>; items?: Item[] } = {},
+  opts: {
+    startAt?: number;
+    storage?: ReturnType<typeof memoryStorage>;
+    items?: Item[];
+    /** Record kind this device's items are synced as (default "supply"). */
+    kind?: string;
+  } = {},
 ): Device {
   let clock = opts.startAt ?? Date.parse("2026-11-26T00:00:00Z");
   const storage = opts.storage ?? memoryStorage();
@@ -79,7 +85,7 @@ export function createDevice(
   };
 
   device.engine = createSyncEngine({ fetch: deviceFetch(network, userId, device), storage, now: () => clock });
-  device.engine.register(arrayKind({ kind: "supply", store, field: "items" }));
+  device.engine.register(arrayKind({ kind: opts.kind ?? "supply", store, field: "items" }));
   return device;
 }
 
