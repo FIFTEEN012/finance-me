@@ -60,3 +60,46 @@ export function arrayKind<S, F extends keyof S>(opts: {
     },
   }
 }
+
+/**
+ * Adapter for a record kind with one record per user, held as a few fields of
+ * a zustand store, e.g. the health profile with its calorie and water goals.
+ *
+ * - `read(state)` returns the record, or null while the user has entered
+ *   nothing (store defaults are not uploaded, so they never overwrite a
+ *   record saved on another device).
+ * - `write(data)` returns the store fields for a record, or for null (deleted)
+ *   the store's defaults.
+ * - `fields` lists the store fields the record is made of: a change to any of
+ *   them is an edit.
+ */
+export function singletonKind<S>(opts: {
+  kind: string
+  id: string
+  store: StoreApi<S>
+  fields: (keyof S)[]
+  read: (state: S) => RecordData | null
+  write: (data: RecordData | null) => Partial<S>
+}): SyncKindAdapter {
+  const { kind, id, store, fields, read, write } = opts
+
+  return {
+    kind,
+    snapshot() {
+      const data = read(store.getState())
+      return data === null ? [] : [{ id, data }]
+    },
+    apply(records) {
+      const mine = records.filter((r) => r.id === id)
+      if (mine.length === 0) return
+      store.setState(write(mine[mine.length - 1].data))
+    },
+    watch(onChange) {
+      return store.subscribe((state, prev) => {
+        if (isHydrating(store) || fields.every((f) => state[f] === prev[f])) return
+        const data = read(state)
+        if (data !== null) onChange(id, data)
+      })
+    },
+  }
+}

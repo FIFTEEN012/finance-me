@@ -17,7 +17,23 @@ import { z } from 'zod'
  * Record kinds stored in the shared `user_records` table. Adding one: append
  * it here and register an adapter for it in `src/lib/sync/appKinds.ts`.
  */
-export const SHARED_TABLE_KINDS = ['supply'] as const
+export const SHARED_TABLE_KINDS = [
+  'supply',
+  'food-entry',
+  'water-entry',
+  'workout-session',
+  'health-profile',
+  'investment-holding',
+  'investment-order',
+  'dividend',
+  'portfolio-snapshot',
+  'monthly-expense-log',
+  'monthly-tracked-category',
+  'recurring-rule',
+  'bill-split',
+  'settings',
+  'workout-plan',
+] as const
 
 /**
  * Record kinds kept in a table of their own (ADR-0003). Each needs a mapping
