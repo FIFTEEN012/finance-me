@@ -10,6 +10,47 @@ function isHydrating(store: unknown): boolean {
 }
 
 /**
+ * Adapter for a kind with one record per user, kept as some fields of a
+ * zustand store, e.g. `singletonKind({ kind: 'settings', store: useSettingsStore,
+ * fields: ['paydayDate', …] })`. The record (fixed id `SINGLETON_ID`) holds
+ * those fields; a change to any of them is an edit of the whole record, so
+ * the latest edit on any device wins. A deleted record (or a missing field)
+ * puts the store's initial value back.
+ */
+export const SINGLETON_ID = 'current'
+
+export function singletonKind<S>(opts: {
+  kind: string
+  store: StoreApi<S>
+  fields: readonly (keyof S & string)[]
+}): SyncKindAdapter {
+  const { kind, store, fields } = opts
+  const pick = (state: S) => Object.fromEntries(fields.map((f) => [f, state[f]])) as RecordData
+
+  return {
+    kind,
+    snapshot: () => [{ id: SINGLETON_ID, data: pick(store.getState()) }],
+    apply(records) {
+      const initial = store.getInitialState()
+      for (const { id, data } of records) {
+        if (id !== SINGLETON_ID) continue
+        const next = Object.fromEntries(
+          fields.map((f) => [f, data && f in data ? data[f] : initial[f]]),
+        ) as Partial<S>
+        store.setState(next)
+      }
+    },
+    watch(onChange) {
+      return store.subscribe((state, prev) => {
+        if (isHydrating(store)) return
+        if (fields.every((f) => Object.is(state[f], prev[f]))) return
+        onChange(SINGLETON_ID, pick(state))
+      })
+    },
+  }
+}
+
+/**
  * Adapter for a record kind kept as an array of `{ id, … }` in one field of a
  * zustand store, e.g. `arrayKind({ kind: 'supply', store: useSupplyStore, field: 'items' })`.
  *

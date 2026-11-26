@@ -26,9 +26,9 @@ import { cn } from '@/lib/utils'
 export function AppShell({ children }: { children: React.ReactNode }) {
   useBudgetAlert()
   const { dataLoaded } = useInitialData()
-  useRecurringTransactions(dataLoaded)
 
   const { data: session, isPending } = authClient.useSession()
+  useRecurringTransactions(dataLoaded, !!session?.user)
   useEffect(() => {
     if (session?.user) {
       useAuthStore.getState().setUser(session.user)
