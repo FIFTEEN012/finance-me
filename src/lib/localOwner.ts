@@ -13,6 +13,8 @@ import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useBillSplitStore } from '@/store/useBillSplitStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
+import { useSupplyStore } from '@/store/useSupplyStore'
+import { getAppSyncEngine } from '@/lib/sync/appEngine'
 
 /**
  * localStorage key recording which account the persisted `finance-*` data
@@ -42,6 +44,7 @@ const PERSISTED_STORES: ResettableStore[] = [
   useBillSplitStore,
   useDebtStore,
   useWorkoutPlanStore,
+  useSupplyStore,
 ] as unknown as ResettableStore[]
 
 function hasWindow(): boolean {
@@ -93,6 +96,9 @@ function clearPreviousOwnerData() {
     safeRemove(`${key}__modified_at`)
   }
   safeRemove(MIGRATED_FLAG_KEY)
+  // After the stores are emptied: their removals must not be uploaded to the
+  // new account, and its first sync must not count as already uploaded.
+  getAppSyncEngine().reset()
 
   rehydrateAllStores().catch(() => {})
 }

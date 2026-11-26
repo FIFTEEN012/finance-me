@@ -36,6 +36,13 @@
       "when": 1795571391951,
       "tag": "0004_category_is_food",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795679835774,
+      "tag": "0005_user_records",
+      "breakpoints": true
     }
   ]
 }

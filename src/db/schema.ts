@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
   numeric,
@@ -220,6 +221,29 @@ export const runningLogs = pgTable(
   ],
 );
 
+/* ─── User Records (ADR-0003) ───
+ * One row per record of every User Data kind that has no table of its own
+ * (supply, food-entry, …). `data` is the whole client record; a delete keeps
+ * the row as a tombstone (`deleted_at` set, `data` null). `edited_at` is the
+ * editing device's clock and decides last-edit-wins; `updated_at` is the
+ * server's receive time and is what pulls page by. */
+export const userRecords = pgTable(
+  "user_records",
+  {
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    id: text("id").notNull(),
+    data: jsonb("data"),
+    editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.kind, table.id] }),
+    index("user_records_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
+);
+
 export const agentIngestionEvents = pgTable(
   "agent_ingestion_events",
   {
@@ -251,4 +275,5 @@ export const schema = {
   workoutLogs,
   runningLogs,
   agentIngestionEvents,
+  userRecords,
 };
