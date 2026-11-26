@@ -109,6 +109,31 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
     expect(useTransactionStore.getState().transactions).toEqual([])
   })
 
+  it("empties the previous owner's health records so they are not synced into the new account", async () => {
+    data.set('finance-owner-id', 'user-a')
+    const { ensureLocalDataBelongsTo } = await load()
+    const { useNutritionStore } = await import('@/store/useNutritionStore')
+    useNutritionStore.setState({
+      food: [{ id: 'f-a' } as never],
+      water: [{ id: 'w-a' } as never],
+      exercise: [{ id: 'e-a' } as never],
+      profile: { weightKg: 70 } as never,
+      calorieGoal: 1500,
+    })
+
+    expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
+
+    const initial = useNutritionStore.getInitialState()
+    expect(useNutritionStore.getState()).toMatchObject({
+      food: [],
+      water: [],
+      exercise: [],
+      profile: null,
+      calorieGoal: initial.calorieGoal,
+    })
+    expect(data.get('finance-nutrition') ?? '').not.toContain('f-a')
+  })
+
   it('does not throw when localStorage throws', async () => {
     const throwing = () => {
       throw new Error('SecurityError')
