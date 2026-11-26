@@ -18,7 +18,15 @@ import { z } from 'zod'
  * refuses kinds not listed here. Adding a kind: append it here and register
  * an adapter for it in `src/lib/sync/appKinds.ts`.
  */
-export const RECORD_KINDS = ['supply'] as const
+export const RECORD_KINDS = [
+  'supply',
+  'investment-holding',
+  'investment-order',
+  'dividend',
+  'portfolio-snapshot',
+  'monthly-expense-log',
+  'monthly-tracked-category',
+] as const
 export type RecordKind = (typeof RECORD_KINDS)[number]
 
 export const SYNC_CHANGES_PATH = '/api/sync/changes'

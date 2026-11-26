@@ -1,5 +1,8 @@
 import { useSupplyStore } from '@/store/useSupplyStore'
 import { arrayKind } from './kinds'
+import { useInvestmentStore } from '@/store/useInvestmentStore'
+import { useMonthlyExpenseStore } from '@/store/useMonthlyExpenseStore'
+import { investmentKinds, monthlyExpenseKinds } from './investmentKinds'
 import type { SyncKindAdapter } from './engine'
 
 /**
@@ -9,4 +12,6 @@ import type { SyncKindAdapter } from './engine'
  */
 export const APP_SYNC_KINDS: SyncKindAdapter[] = [
   arrayKind({ kind: 'supply', store: useSupplyStore, field: 'items' }),
+  ...investmentKinds(useInvestmentStore),
+  ...monthlyExpenseKinds(useMonthlyExpenseStore),
 ]

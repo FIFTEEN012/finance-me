@@ -109,6 +109,30 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
     expect(useTransactionStore.getState().transactions).toEqual([])
   })
 
+  it("empties the previous owner's portfolio and monthly expense logs", async () => {
+    data.set('finance-owner-id', 'user-a')
+    const { ensureLocalDataBelongsTo } = await load()
+    const { useInvestmentStore } = await import('@/store/useInvestmentStore')
+    const { useMonthlyExpenseStore } = await import('@/store/useMonthlyExpenseStore')
+    useInvestmentStore.setState({
+      holdings: [{ id: 'h-a' } as never],
+      orders: [{ id: 'o-a' } as never],
+      dividends: [{ id: 'd-a' } as never],
+      portfolioSnapshots: [{ date: '2026-11-01', totalValueTHB: 1, totalCostTHB: 1 }],
+    })
+    useMonthlyExpenseStore.setState({ logs: [{ id: 'l-a' } as never], trackedCategoryIds: ['cat-a'] })
+
+    expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
+
+    expect(useInvestmentStore.getState()).toMatchObject({
+      holdings: [],
+      orders: [],
+      dividends: [],
+      portfolioSnapshots: [],
+    })
+    expect(useMonthlyExpenseStore.getState()).toMatchObject({ logs: [], trackedCategoryIds: [] })
+  })
+
   it('does not throw when localStorage throws', async () => {
     const throwing = () => {
       throw new Error('SecurityError')
