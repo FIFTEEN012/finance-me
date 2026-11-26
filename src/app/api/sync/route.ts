@@ -8,7 +8,7 @@ import {
   financeGoals,
   financeDebts,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc, isNull } from "drizzle-orm";
 import { foodFlagFrom } from "@/lib/foodCategory";
 import { normalizeDebt } from "@/lib/debtRecord";
 
@@ -40,19 +40,19 @@ export async function GET() {
       db
         .select()
         .from(financeCategories)
-        .where(eq(financeCategories.ownerId, user.id)),
+        .where(and(eq(financeCategories.ownerId, user.id), isNull(financeCategories.deletedAt))),
       db
         .select()
         .from(financeBudgets)
-        .where(eq(financeBudgets.ownerId, user.id)),
+        .where(and(eq(financeBudgets.ownerId, user.id), isNull(financeBudgets.deletedAt))),
       db
         .select()
         .from(financeGoals)
-        .where(eq(financeGoals.ownerId, user.id)),
+        .where(and(eq(financeGoals.ownerId, user.id), isNull(financeGoals.deletedAt))),
       db
         .select()
         .from(financeDebts)
-        .where(eq(financeDebts.ownerId, user.id)),
+        .where(and(eq(financeDebts.ownerId, user.id), isNull(financeDebts.deletedAt))),
     ]);
 
     // Format transactions to match client store format if needed
@@ -163,6 +163,8 @@ export async function POST(request: Request) {
           })
           .onConflictDoUpdate({
             target: [financeCategories.ownerId, financeCategories.id],
+            // Deleted records stay deleted (ADR-0003); a write here counts as an edit.
+            setWhere: isNull(financeCategories.deletedAt),
             set: {
               name: cat.name,
               type: catType,
@@ -170,6 +172,7 @@ export async function POST(request: Request) {
               color: cat.color || "#7c3aed",
               isDefault: !!cat.isDefault,
               isFood,
+              editedAt: new Date(),
               updatedAt: new Date(),
             },
           });
@@ -245,9 +248,12 @@ export async function POST(request: Request) {
           })
           .onConflictDoUpdate({
             target: [financeBudgets.ownerId, financeBudgets.id],
+            // Deleted records stay deleted (ADR-0003); a write here counts as an edit.
+            setWhere: isNull(financeBudgets.deletedAt),
             set: {
               amount: String(b.amount),
               allowRollover: !!b.allowRollover,
+              editedAt: new Date(),
               updatedAt: new Date(),
             },
           });
@@ -275,6 +281,8 @@ export async function POST(request: Request) {
           })
           .onConflictDoUpdate({
             target: [financeGoals.ownerId, financeGoals.id],
+            // Deleted records stay deleted (ADR-0003); a write here counts as an edit.
+            setWhere: isNull(financeGoals.deletedAt),
             set: {
               name: g.name,
               targetAmount: String(g.targetAmount),
@@ -283,6 +291,7 @@ export async function POST(request: Request) {
               description: g.description || null,
               icon: g.icon || "Target",
               color: g.color || "#10b981",
+              editedAt: new Date(),
               updatedAt: new Date(),
             },
           });
@@ -319,6 +328,8 @@ export async function POST(request: Request) {
           })
           .onConflictDoUpdate({
             target: [financeDebts.ownerId, financeDebts.id],
+            // Deleted records stay deleted (ADR-0003); a write here counts as an edit.
+            setWhere: isNull(financeDebts.deletedAt),
             set: {
               person,
               type: d.type || "I_OWE",
@@ -328,6 +339,7 @@ export async function POST(request: Request) {
               note: d.note || null,
               status: d.isSettled || remainingAmount === 0 ? "SETTLED" : d.status || "ACTIVE",
               payments: d.payments || [],
+              editedAt: new Date(),
               updatedAt: new Date(),
             },
           });

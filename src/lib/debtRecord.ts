@@ -61,7 +61,8 @@ export function normalizeDebt(record: DebtRecord, local?: DebtRecord): DebtItem 
       : typeof record.color === 'string' && record.color ? record.color : colors[category],
     isSettled: paidAmount >= totalAmount || record.status === 'SETTLED',
     payments,
-    initialTransactionId: typeof local?.initialTransactionId === 'string' ? local.initialTransactionId : undefined,
+    initialTransactionId: typeof local?.initialTransactionId === 'string' ? local.initialTransactionId
+      : typeof record.initialTransactionId === 'string' ? record.initialTransactionId : undefined,
     createdAt,
     updatedAt: recoveredLocalPayments
       ? dateString(local?.updatedAt) ?? createdAt

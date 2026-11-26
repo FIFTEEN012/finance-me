@@ -1,10 +1,6 @@
 'use client'
 
 import { useTransactionStore } from '@/store/useTransactionStore'
-import { useCategoryStore } from '@/store/useCategoryStore'
-import { useBudgetStore } from '@/store/useBudgetStore'
-import { useGoalStore } from '@/store/useGoalStore'
-import { useDebtStore } from '@/store/useDebtStore'
 import { useAuthStore } from '@/store/useAuthStore'
 
 export const FINANCE_DIRTY_EVENT = 'finance:store-dirty'
@@ -33,16 +29,14 @@ export function triggerSyncNow() {
  */
 export async function pushToNeon(): Promise<SyncResult> {
   try {
+    // Categories, budgets, goals and debts sync through the sync engine
+    // (src/lib/sync/appKinds.ts); only transactions still go this way.
     const transactions = useTransactionStore.getState().transactions
-    const categories = useCategoryStore.getState().categories
-    const budgets = useBudgetStore.getState().budgets
-    const goals = useGoalStore.getState().goals
-    const debts = useDebtStore.getState().debts
 
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactions, categories, budgets, goals, debts }),
+      body: JSON.stringify({ transactions }),
     })
 
     if (!res.ok) {
@@ -81,38 +75,6 @@ export async function pullFromNeon(): Promise<SyncResult> {
         const serverTxIds = new Set(data.transactions.map((t: any) => t.id))
         const unpushedLocal = localTx.filter((t) => !serverTxIds.has(t.id))
         useTransactionStore.getState().replaceTransactions([...data.transactions, ...unpushedLocal])
-      }
-
-      // 2. Categories Merge
-      if (Array.isArray(data.categories) && data.categories.length > 0) {
-        const localCat = useCategoryStore.getState().categories
-        const serverCatIds = new Set(data.categories.map((c: any) => c.id))
-        const unpushedCat = localCat.filter((c) => !serverCatIds.has(c.id))
-        useCategoryStore.getState().replaceCategories([...data.categories, ...unpushedCat])
-      }
-
-      // 3. Budgets Merge
-      if (Array.isArray(data.budgets)) {
-        const localBudgets = useBudgetStore.getState().budgets
-        const serverBudgetIds = new Set(data.budgets.map((b: any) => b.id))
-        const unpushedBudgets = localBudgets.filter((b) => !serverBudgetIds.has(b.id))
-        useBudgetStore.getState().replaceBudgets([...data.budgets, ...unpushedBudgets])
-      }
-
-      // 4. Goals Merge
-      if (Array.isArray(data.goals)) {
-        const localGoals = useGoalStore.getState().goals
-        const serverGoalIds = new Set(data.goals.map((g: any) => g.id))
-        const unpushedGoals = localGoals.filter((g) => !serverGoalIds.has(g.id))
-        useGoalStore.getState().replaceGoals([...data.goals, ...unpushedGoals])
-      }
-
-      // 5. Debts Merge
-      if (Array.isArray(data.debts)) {
-        const localDebts = useDebtStore.getState().debts
-        const serverDebtIds = new Set(data.debts.map((d: any) => d.id))
-        const unpushedDebts = localDebts.filter((d) => !serverDebtIds.has(d.id))
-        useDebtStore.getState().replaceDebts([...data.debts, ...unpushedDebts])
       }
 
       return { ok: true }

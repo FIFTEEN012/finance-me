@@ -14,11 +14,21 @@ import { z } from 'zod'
  */
 
 /**
- * Every record kind stored in the shared `user_records` table. The server
- * refuses kinds not listed here. Adding a kind: append it here and register
- * an adapter for it in `src/lib/sync/appKinds.ts`.
+ * Record kinds stored in the shared `user_records` table. Adding one: append
+ * it here and register an adapter for it in `src/lib/sync/appKinds.ts`.
  */
-export const RECORD_KINDS = ['supply'] as const
+export const SHARED_TABLE_KINDS = ['supply'] as const
+
+/**
+ * Record kinds kept in a table of their own (ADR-0003). Each needs a mapping
+ * in `TABLE_KINDS` (`src/lib/sync/tableKinds.ts`) and an adapter in
+ * `appKinds.ts`.
+ */
+export const OWN_TABLE_KINDS = ['category', 'budget', 'goal', 'debt'] as const
+export type OwnTableKind = (typeof OWN_TABLE_KINDS)[number]
+
+/** Every kind the server accepts; it refuses kinds not listed here. */
+export const RECORD_KINDS = [...SHARED_TABLE_KINDS, ...OWN_TABLE_KINDS] as const
 export type RecordKind = (typeof RECORD_KINDS)[number]
 
 export const SYNC_CHANGES_PATH = '/api/sync/changes'

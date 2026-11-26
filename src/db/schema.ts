@@ -26,6 +26,18 @@ const identityAndAuditColumns = {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 };
 
+/**
+ * Sync columns of the tables synced as record kinds (ADR-0003), same meaning
+ * as in `user_records`: `edited_at` is the editing device's clock and decides
+ * last-edit-wins; `deleted_at` marks a tombstone (the row stays, so no device
+ * can upload the record again). Each table's `updated_at` is the server's
+ * receive time, bumped on every write, and is what pulls page by.
+ */
+const syncColumns = {
+  editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+};
+
 /* ─── Household Sharing (Couple / Family) ─── */
 export const households = pgTable("households", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -85,8 +97,12 @@ export const financeCategories = pgTable(
     isFood: boolean("is_food"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_categories_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Budgets ─── */
@@ -103,8 +119,12 @@ export const financeBudgets = pgTable(
     allowRollover: boolean("allow_rollover").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_budgets_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Goals ─── */
@@ -121,10 +141,19 @@ export const financeGoals = pgTable(
     description: text("description"),
     icon: text("icon").notNull(),
     color: text("color").notNull(),
+    // Percentages whose celebration was already shown, e.g. [25, 50].
+    milestonesCelebrated: jsonb("milestones_celebrated"),
+    // Saved amount follows the investment portfolio value.
+    linkedPortfolio: boolean("linked_portfolio"),
+    // The goal's own createdAt (taken from the synced record).
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_goals_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Debts ─── */
@@ -142,10 +171,20 @@ export const financeDebts = pgTable(
     note: text("note"),
     status: text("status").default("ACTIVE").notNull(),
     payments: jsonb("payments").default([]).notNull(),
+    // App-only fields; NULL on rows saved before sync (the app falls back).
+    category: text("category"),
+    color: text("color"),
+    startDate: text("start_date"),
+    initialTransactionId: text("initial_transaction_id"),
+    // The debt's own createdAt (taken from the synced record).
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_debts_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Settings ─── */
