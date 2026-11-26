@@ -97,16 +97,18 @@ export function planMinutes(plan: WorkoutPlan): number {
 }
 
 /**
- * A new Workout Plan like a logged Workout Session: same Session Type, Moves,
- * sets and count. A Session doesn't keep rest, so each Move rests as it
- * recommends. Moves no longer in the library are left out; null when nothing
- * is left to repeat (a quick log has no Moves).
+ * A new Workout Plan like a logged Workout Session: same Session Type, plan
+ * format, Moves, sets, count and rest. A session logged before rest was kept
+ * rests each Move as it recommends; one logged before formats existed comes
+ * back as straight sets. Moves no longer in the library are left out; null
+ * when nothing is left to repeat (a quick log has no Moves).
  */
 export function planFromSession(entry: ExerciseEntry): WorkoutPlan | null {
   const moves: PlanMove[] = []
   for (const m of entry.moves ?? []) {
     const move = getMove(m.moveId)
-    if (move) moves.push({ moveId: m.moveId, sets: m.sets, count: m.count, restSeconds: move.recommended.restSeconds })
+    if (move) moves.push({ moveId: m.moveId, sets: m.sets, count: m.count, restSeconds: m.restSeconds ?? move.recommended.restSeconds })
   }
-  return moves.length > 0 ? { activity: entry.activity, moves } : null
+  if (moves.length === 0) return null
+  return entry.planFormat ? { activity: entry.activity, moves, format: entry.planFormat } : { activity: entry.activity, moves }
 }

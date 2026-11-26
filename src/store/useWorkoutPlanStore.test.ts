@@ -76,9 +76,10 @@ describe('finishPlan', () => {
       activity: 'weights',
       minutes: 12,
       kcal: 70,
+      planFormat: 'straight',
       moves: [
-        { moveId: 'push-up', sets: 2, count: 10 },
-        { moveId: 'forearm-plank', sets: 1, count: 30 },
+        { moveId: 'push-up', sets: 2, count: 10, restSeconds: 60 },
+        { moveId: 'forearm-plank', sets: 1, count: 30, restSeconds: 30 },
       ],
     })
     expect(useWorkoutPlanStore.getState().active).toBeNull()
@@ -91,7 +92,7 @@ describe('finishPlan', () => {
 
     useWorkoutPlanStore.getState().finishPlan({ date: '2026-11-25', minutes: 5, kcal: 25 })
 
-    expect(useNutritionStore.getState().exercise[0].moves).toEqual([{ moveId: 'forearm-plank', sets: 1, count: 30 }])
+    expect(useNutritionStore.getState().exercise[0].moves).toEqual([{ moveId: 'forearm-plank', sets: 1, count: 30, restSeconds: 30 }])
   })
 })
 
@@ -127,6 +128,26 @@ describe('repeatSession', () => {
       { moveId: 'forearm-plank', sets: 1, count: 30 },
     ])
     expect(active?.done).toEqual([[false, false], [false]])
+  })
+
+  it('repeats a circuit as a circuit with the rest the session used', () => {
+    const store = useWorkoutPlanStore.getState()
+    store.startPlan({
+      activity: 'hiit',
+      format: 'circuit',
+      moves: [{ moveId: 'push-up', sets: 3, count: 15, restSeconds: 20 }],
+    })
+    store.toggleSet(0, 0)
+    useWorkoutPlanStore.getState().finishPlan({ date: '2026-11-24', minutes: 5, kcal: 40 })
+    const [session] = useNutritionStore.getState().exercise
+    expect(session.planFormat).toBe('circuit')
+
+    useWorkoutPlanStore.getState().repeatSession(session)
+
+    const { active } = useWorkoutPlanStore.getState()
+    expect(active?.plan.format).toBe('circuit')
+    // push-up recommends 60 s; the session rested 20 s
+    expect(active?.plan.moves).toEqual([{ moveId: 'push-up', sets: 1, count: 15, restSeconds: 20 }])
   })
 
   it('does nothing for a quick log with no Moves', () => {

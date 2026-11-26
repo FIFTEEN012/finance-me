@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ExerciseEntry, SessionMove, WorkoutPlan } from '@/types'
 import { exerciseLabel } from '@/lib/fitness'
-import { planFromSession } from '@/lib/workoutPlan'
+import { planFormat, planFromSession } from '@/lib/workoutPlan'
 import { useNutritionStore } from '@/store/useNutritionStore'
 
 /** A Workout Plan being done now, with which sets are ticked off. */
@@ -15,10 +15,15 @@ export interface ActivePlan {
   done: boolean[][]
 }
 
-/** The Moves of an active plan as a Workout Session records them: ticked sets only. */
+/** The Moves of an active plan as a Workout Session records them: ticked sets only, with the plan's rest. */
 export function sessionMoves(active: ActivePlan): SessionMove[] {
   return active.plan.moves
-    .map((m, i) => ({ moveId: m.moveId, sets: (active.done[i] ?? []).filter(Boolean).length, count: m.count }))
+    .map((m, i) => ({
+      moveId: m.moveId,
+      sets: (active.done[i] ?? []).filter(Boolean).length,
+      count: m.count,
+      restSeconds: m.restSeconds,
+    }))
     .filter((m) => m.sets > 0)
 }
 
@@ -91,6 +96,7 @@ export const useWorkoutPlanStore = create<WorkoutPlanStore>()(
           minutes,
           kcal,
           moves: sessionMoves(active),
+          planFormat: planFormat(active.plan),
         })
         set({ active: null })
       },

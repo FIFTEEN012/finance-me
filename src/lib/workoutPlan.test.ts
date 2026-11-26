@@ -59,6 +59,23 @@ describe('planFromSession', () => {
     expect(plan?.moves.map((m) => m.moveId)).toEqual(['push-up'])
   })
 
+  it('keeps the rest each Move had in the session, and the recommended rest only where none was kept', () => {
+    const plan = planFromSession(session([
+      { moveId: 'push-up', sets: 3, count: 15, restSeconds: 30 },
+      { moveId: 'forearm-plank', sets: 1, count: 40 },
+    ]))
+    expect(plan?.moves).toEqual([
+      { moveId: 'push-up', sets: 3, count: 15, restSeconds: 30 },
+      { moveId: 'forearm-plank', sets: 1, count: 40, restSeconds: 45 },
+    ])
+  })
+
+  it('repeats a circuit session as a circuit; a session from before formats as straight sets', () => {
+    const moves = [{ moveId: 'push-up', sets: 3, count: 15, restSeconds: 30 }]
+    expect(planFromSession({ ...session(moves), planFormat: 'circuit' })?.format).toBe('circuit')
+    expect(planFromSession(session(moves))?.format).toBeUndefined()
+  })
+
   it('is null for a quick log with no Moves, or when none of its Moves still exist', () => {
     expect(planFromSession(session())).toBeNull()
     expect(planFromSession(session([]))).toBeNull()

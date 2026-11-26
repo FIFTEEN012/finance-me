@@ -149,6 +149,8 @@ export interface ExerciseEntry {
   createdAt: string
   /** Moves done in this Workout Session; absent for a quick log such as "run 30 min". */
   moves?: SessionMove[]
+  /** Format of the Workout Plan this session was done from; absent for a quick log or an older session. */
+  planFormat?: PlanFormat
 }
 
 /** One Move as done in a Workout Session. */
@@ -156,6 +158,8 @@ export interface SessionMove {
   moveId: string    // Move.id from @/lib/moves
   sets: number      // sets completed
   count: number     // reps or seconds per set, read with the Move's countMode
+  /** Rest after each set as the plan had it; absent on sessions logged before it was kept. */
+  restSeconds?: number
 }
 
 /** One Move in a Workout Plan, with the sets, reps/seconds and rest intended. */
