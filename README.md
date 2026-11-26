@@ -26,6 +26,17 @@ The server-side backend selector is legacy-safe:
 
 Selecting PostgreSQL does not silently change the frontend or authentication. Replacing frontend cloud sync, replacing authentication, and importing old data are future, approval-gated phases.
 
+## Development database
+
+Never point `localhost` at the production database: signing in, syncing, deleting or resetting on `localhost` changes real data. Use a Neon branch made for development instead.
+
+1. Open the Neon database that the Vercel project uses (Vercel → the project → **Storage** → the Neon database → **Open in Neon**).
+2. Create a branch named `dev` from the default (production) branch. It starts as a copy of today's production data; production is untouched.
+3. Copy the `dev` branch's pooled connection string and set it as `DATABASE_URL` in the untracked `.env.local`. Keep every other variable as it is, and leave the `DATABASE_URL` set in Vercel unchanged.
+4. Apply migrations to the branch with `npm run db:migrate`, then restart `npm run dev`.
+
+To start again from fresh production data, reset the `dev` branch from its parent in the Neon console. Sign-in accounts live in the database too, so the same email and password work on `dev`.
+
 ## Gemini quick add
 
 The quick-add dialog can turn short text such as `กาแฟ 85 บาทเมื่อวาน` into editable transaction rows. Create an API key in [Google AI Studio](https://aistudio.google.com/app/apikey), then set `GEMINI_API_KEY` in `.env.local` for local use and in the Vercel project's server-side environment variables for deployment. Restart the development server after setting the key. Do not prefix the variable with `NEXT_PUBLIC_`.
