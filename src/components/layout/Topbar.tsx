@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { UserMenu } from '@/components/layout/UserMenu'
+import { SyncStatusIndicator } from '@/components/layout/SyncStatusIndicator'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -81,6 +82,7 @@ export function Topbar() {
             </kbd>
           </span>
         </button>
+        <SyncStatusIndicator />
         <UserMenu />
       </div>
     </header>

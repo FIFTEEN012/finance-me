@@ -19,6 +19,7 @@ import { useOnboardingStore } from '@/store/useOnboardingStore'
 import { useInvestmentStore } from '@/store/useInvestmentStore'
 import { usePortfolioSnapshot } from '@/hooks/usePortfolioSnapshot'
 import { authClient } from '@/lib/auth-client'
+import { useRecordSync } from '@/lib/sync/appEngine'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       useAuthStore.getState().setUser(session.user)
     }
   }, [session])
+  useRecordSync(session?.user?.id)
 
   const holdings = useInvestmentStore((state) => state.holdings)
   const portfolioValue = holdings.reduce(
