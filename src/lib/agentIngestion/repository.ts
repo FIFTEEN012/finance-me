@@ -14,6 +14,7 @@ import {
 } from "../../db/schema";
 import { foodEntryFromMeal, weightFromHealthProfile, workoutSessionFrom } from "./botRecords";
 import type { AgentIngestionRequest } from "./schema";
+import { IngestionOwnerNotFoundError } from "./errors";
 import type { SharedTableKind } from "@/lib/sync/contract";
 
 /** The small part of the Drizzle database boundary used by this repository. */
@@ -51,6 +52,20 @@ const domainTables = {
 /** The `user_records` kinds a bot message becomes (contract.ts SHARED_TABLE_KINDS). */
 const SHARED_RECORD_TYPES = ["food-entry", "workout-session"] as const satisfies readonly SharedTableKind[];
 type SharedRecordType = (typeof SHARED_RECORD_TYPES)[number];
+
+/** The Postgres error code of `error`, or of the driver error it wraps. */
+function postgresCode(error: unknown): unknown {
+  for (let e = error, depth = 0; e && typeof e === "object" && depth < 3; depth++) {
+    const code = (e as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+    e = (e as { cause?: unknown }).cause;
+  }
+  return undefined;
+}
+
+function isForeignKeyViolation(error: unknown) {
+  return postgresCode(error) === "23503";
+}
 
 function isUniqueViolation(error: unknown) {
   return (
@@ -212,6 +227,8 @@ export class AgentIngestionRepository {
         return { ...stored, status: "created" };
       });
     } catch (error) {
+      // Every row ingestion writes belongs to the owner (foreign key to user).
+      if (isForeignKeyViolation(error)) throw new IngestionOwnerNotFoundError({ cause: error });
       // A concurrent request may have won the unique (owner, key) race. Its
       // transaction is now committed; retrying the read returns its exact rows.
       if (!isUniqueViolation(error)) throw error;

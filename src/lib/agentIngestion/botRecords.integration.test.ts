@@ -101,6 +101,22 @@ describe.skipIf(!integrationDbUrl())("bot records land on devices as Food Entrie
     if (t) await t.close();
   });
 
+  it("answers a clear 409 when LOCAL_OWNER_ID has no user account, and logs why", async () => {
+    process.env.LOCAL_OWNER_ID = "owner-without-account";
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await postFromBot(meal);
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({ error: "Agent ingestion owner has no account", code: "OWNER_NOT_FOUND" });
+      expect(JSON.stringify(body)).not.toMatch(/owner-without-account|foreign key|user_records/);
+      expect(consoleError).toHaveBeenCalled();
+    } finally {
+      process.env.LOCAL_OWNER_ID = OWNER;
+      consoleError.mockRestore();
+    }
+  });
+
   it("shows a meal from the bot as a Food Entry with its meal, kcal and macros", async () => {
     const response = await postFromBot(meal);
     expect(response.status).toBe(201);
