@@ -37,7 +37,7 @@ export type DeviceAccount = {
   signedIn(userId: string): 'same' | 'guest' | 'switched'
   /**
    * Syncs, ends the session with `endSession`, then clears the User Data.
-   * If changes could not be sent (offline), nothing is ended or cleared and
+   * If changes could not be sent (offline, or refused by the server), nothing is ended or cleared and
    * the count is returned, unless `discardUnsynced`.
    */
   signOut(endSession: () => Promise<unknown>, opts?: { discardUnsynced?: boolean }): Promise<SignOutResult>
@@ -83,7 +83,9 @@ export function createDeviceAccount({ storage, engine, clearUserData }: DeviceAc
 
     async signOut(endSession, { discardUnsynced = false } = {}) {
       await engine.sync()
-      const unsynced = engine.getStatus().pending
+      // Refused records are not on the server either: signing out would lose them.
+      const { pending, refused } = engine.getStatus()
+      const unsynced = pending + refused
       if (unsynced > 0 && !discardUnsynced) return { ok: false, unsynced }
       await endSession()
       forgetUserData()

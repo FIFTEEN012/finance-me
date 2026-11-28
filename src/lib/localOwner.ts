@@ -22,14 +22,6 @@ import {
   type SignOutResult,
 } from '@/lib/sync/deviceAccount'
 
-/**
- * localStorage key recording which account the persisted `finance-*` data
- * on this browser belongs to (absent = Guest Data). Persisted stores are
- * per-browser, not per-user, so without this marker one account's local rows
- * could be uploaded into another account after a sign-in on the same browser.
- */
-export { OWNER_MARKER_KEY }
-
 /** Old import-local flag; no longer written, removed with the owner's data. */
 const MIGRATED_FLAG_KEY = 'finance-migrated-to-neon'
 

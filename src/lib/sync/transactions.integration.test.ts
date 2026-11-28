@@ -245,7 +245,11 @@ describe.skipIf(!integrationDbUrl())("Transactions across devices", () => {
       pool.use(b);
       await b.engine.sync();
       expect(txs()).toEqual([expect.objectContaining({ id, ...lunch })]);
-      expect(food().map((e) => [e.id, e.foodExpenseId])).toEqual(foodIds.map((foodId) => [foodId, id]));
+      // Records saved together arrive in no particular order.
+      expect(food().map((e) => [e.id, e.foodExpenseId])).toEqual(
+        expect.arrayContaining(foodIds.map((foodId) => [foodId, id])),
+      );
+      expect(food()).toHaveLength(foodIds.length);
     });
 
     it.each([

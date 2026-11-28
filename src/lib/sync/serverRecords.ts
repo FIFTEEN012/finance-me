@@ -1,11 +1,23 @@
 import 'server-only'
 
 import { and, eq, getTableColumns, gt, isNull, sql, type SQL } from 'drizzle-orm'
+import { z } from 'zod'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '@/db/schema'
 import { financeCategories, syncResets, userRecords } from '@/db/schema'
 import { defaultCategories } from '@/lib/defaultCategories'
-import type { OwnTableKind, PullResponse, PushResult, ResetResponse, SyncChange, SyncRecord } from './contract'
+import {
+  DEFAULT_PULL_LIMIT,
+  OWN_TABLE_KINDS,
+  type OwnTableKind,
+  type PullResponse,
+  type PushResponse,
+  type PushResult,
+  type RecordKind,
+  type ResetResponse,
+  type SyncChange,
+  type SyncRecord,
+} from './contract'
 import { TABLE_KINDS, type TableKind } from './tableKinds'
 
 type Db = PostgresJsDatabase<typeof schema>
@@ -23,27 +35,42 @@ function toIso(value: Date | string): string {
   return (value instanceof Date ? value : new Date(value)).toISOString()
 }
 
-const tableKindOf = (kind: string): TableKind | undefined => TABLE_KINDS[kind as OwnTableKind]
+const tableKindOf = (kind: RecordKind): TableKind | undefined => TABLE_KINDS[kind as OwnTableKind]
 
-function sharedRecord(row: typeof userRecords.$inferSelect): SyncRecord {
+/**
+ * The sync columns every write sets: a delete is a tombstone whose
+ * `deleted_at` is its edit time; `updated_at` (the pull cursor) is the
+ * server's time.
+ */
+function syncStamp(editedAt: Date, deleted: boolean) {
+  return { editedAt, deletedAt: deleted ? editedAt : null, updatedAt: sql`now()` }
+}
+
+/** On conflict: take the incoming sync columns (with `newerThanStored` as the condition). */
+const TAKE_INCOMING_STAMP = {
+  editedAt: sql`excluded.edited_at`,
+  deletedAt: sql`excluded.deleted_at`,
+  updatedAt: sql`now()`,
+}
+
+/** A record as sent to devices; a tombstone carries no data. */
+function syncRecord(kind: RecordKind, id: string, editedAt: Date, deletedAt: Date | null, data: () => unknown): SyncRecord {
   return {
-    kind: row.kind,
-    id: row.id,
-    data: row.deletedAt ? null : row.data,
-    editedAt: toIso(row.editedAt),
-    deletedAt: row.deletedAt ? toIso(row.deletedAt) : null,
+    kind,
+    id,
+    data: deletedAt ? null : data(),
+    editedAt: toIso(editedAt),
+    deletedAt: deletedAt ? toIso(deletedAt) : null,
   }
 }
 
-function tableRecord(kind: string, spec: TableKind, row: Record<string, unknown>): SyncRecord {
-  const deletedAt = row.deletedAt as Date | null
-  return {
-    kind,
-    id: String(row.id),
-    data: deletedAt ? null : spec.toRecord(row),
-    editedAt: toIso(row.editedAt as Date),
-    deletedAt: deletedAt ? toIso(deletedAt) : null,
-  }
+function sharedRecord(row: typeof userRecords.$inferSelect): SyncRecord {
+  // Only RECORD_KINDS are ever written (the push schema refuses others).
+  return syncRecord(row.kind as RecordKind, row.id, row.editedAt, row.deletedAt, () => row.data)
+}
+
+function tableRecord(kind: OwnTableKind, spec: TableKind, row: Record<string, unknown>): SyncRecord {
+  return syncRecord(kind, String(row.id), row.editedAt as Date, row.deletedAt as Date | null, () => spec.toRecord(row))
 }
 
 /**
@@ -56,33 +83,154 @@ function newerThanStored(stored: { editedAt: unknown; deletedAt: unknown }): SQL
         AND excluded.deleted_at IS NOT NULL AND ${stored.deletedAt} IS NULL)`
 }
 
-/** Every record of `ownerId` received after `since` (all when absent), tombstones included. */
-export async function pullRecords(db: Db, ownerId: string, since?: string): Promise<PullResponse> {
-  const [{ now }] = await db.execute<{ now: Date | string }>(sql`select now() as now`)
-  const after = since ? new Date(since) : undefined
+/** A pull page token that is not one this server issued. */
+export class InvalidPageToken extends Error {}
 
-  const shared = await db
-    .select()
-    .from(userRecords)
-    .where(and(eq(userRecords.ownerId, ownerId), after ? gt(userRecords.updatedAt, after) : undefined))
-  const records = shared.map(sharedRecord)
+/**
+ * Where a paged pull stands, carried in the opaque `next` token: the cursor
+ * and generation as of the first page (so nothing committed meanwhile is
+ * skipped by the cursor), the source being read (0 = user_records, then each
+ * table kind) and the last record sent from it (server time to the
+ * microsecond, kind, id).
+ */
+const pageTokenSchema = z.object({
+  since: z.string().optional(),
+  cursor: z.string(),
+  generation: z.number().int().min(0),
+  source: z.number().int().min(0),
+  after: z.object({ at: z.string(), kind: z.string(), id: z.string() }).optional(),
+})
+type PageToken = z.infer<typeof pageTokenSchema>
 
-  for (const [kind, spec] of Object.entries(TABLE_KINDS)) {
-    const t = spec.table
-    const rows = (await db
-      .select()
-      .from(t)
-      .where(and(eq(t.ownerId, ownerId), after ? gt(t.updatedAt, after) : undefined))) as Record<string, unknown>[]
-    for (const row of rows) records.push(tableRecord(kind, spec, row))
+function encodePage(token: PageToken): string {
+  return Buffer.from(JSON.stringify(token)).toString('base64url')
+}
+
+function decodePage(page: string): PageToken {
+  try {
+    return pageTokenSchema.parse(JSON.parse(Buffer.from(page, 'base64url').toString('utf8')))
+  } catch {
+    throw new InvalidPageToken()
   }
+}
 
-  const cursor = new Date(new Date(now).getTime() - CURSOR_OVERLAP_MS).toISOString()
-  return { records, cursor }
+/** Server time of a row to the microsecond (JS dates stop at milliseconds). */
+const exactTime = (column: unknown) =>
+  sql<string>`to_char(${column} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US')`
+const afterTime = (at: string) => sql`(${at}::timestamp at time zone 'UTC')`
+
+type Source = {
+  kind?: string
+  read(tx: Tx, ownerId: string, after: Date | undefined, from: PageToken['after'], limit: number): Promise<{ record: SyncRecord; at: string }[]>
+}
+
+const SOURCES: Source[] = [
+  {
+    async read(tx, ownerId, after, from, limit) {
+      const t = userRecords
+      const rows = await tx
+        .select({ row: t, at: exactTime(t.updatedAt) })
+        .from(t)
+        .where(
+          and(
+            eq(t.ownerId, ownerId),
+            after ? gt(t.updatedAt, after) : undefined,
+            from
+              ? sql`(${t.updatedAt}, ${t.kind} collate "C", ${t.id} collate "C") > (${afterTime(from.at)}, ${from.kind}, ${from.id})`
+              : undefined,
+          ),
+        )
+        .orderBy(t.updatedAt, sql`${t.kind} collate "C"`, sql`${t.id} collate "C"`)
+        .limit(limit)
+      return rows.map(({ row, at }) => ({ record: sharedRecord(row), at }))
+    },
+  },
+  ...OWN_TABLE_KINDS.map(
+    (kind): Source => ({
+      kind,
+      async read(tx, ownerId, after, from, limit) {
+        const spec = TABLE_KINDS[kind]
+        const t = spec.table
+        const rows = (await tx
+          .select({ row: t, at: exactTime(t.updatedAt) } as never)
+          .from(t)
+          .where(
+            and(
+              eq(t.ownerId, ownerId),
+              after ? gt(t.updatedAt, after) : undefined,
+              from
+                ? sql`(${t.updatedAt}, ${t.id}::text collate "C") > (${afterTime(from.at)}, ${from.id})`
+                : undefined,
+            ),
+          )
+          .orderBy(t.updatedAt, sql`${t.id}::text collate "C"`)
+          .limit(limit)) as unknown as { row: Record<string, unknown>; at: string }[]
+        return rows.map(({ row, at }) => ({ record: tableRecord(kind, spec, row), at }))
+      },
+    }),
+  ),
+]
+
+/**
+ * Records of `ownerId` received after `since` (all when absent), tombstones
+ * included, at most `limit` per page; `next` is set while more follow.
+ */
+export async function pullRecords(
+  db: Db,
+  ownerId: string,
+  { since, page, limit = DEFAULT_PULL_LIMIT }: { since?: string; page?: string; limit?: number } = {},
+): Promise<PullResponse> {
+  const resumed = page ? decodePage(page) : undefined
+  // Under the owner's shared lock, so the generation and the records agree
+  // (a Reset cannot run in between).
+  return db.transaction(async (tx) => {
+    await lockOwner(tx, ownerId, 'push')
+    let token: PageToken
+    if (resumed) {
+      token = resumed
+    } else {
+      const [{ now }] = await tx.execute<{ now: Date | string }>(sql`select now() as now`)
+      const { generation } = await lastReset(tx, ownerId)
+      const cursor = new Date(new Date(now).getTime() - CURSOR_OVERLAP_MS).toISOString()
+      token = { since, cursor, generation, source: 0 }
+    }
+    const after = token.since ? new Date(token.since) : undefined
+
+    const records: SyncRecord[] = []
+    let source = token.source
+    let from = token.after
+    let next: string | undefined
+    while (source < SOURCES.length) {
+      const room = limit - records.length
+      if (room === 0) {
+        next = encodePage({ ...token, source, after: from })
+        break
+      }
+      const rows = await SOURCES[source].read(tx, ownerId, after, from, room + 1)
+      const taken = rows.slice(0, room)
+      records.push(...taken.map((r) => r.record))
+      if (rows.length > room) {
+        const last = taken[taken.length - 1]
+        from = { at: last.at, kind: last.record.kind, id: last.record.id }
+        next = encodePage({ ...token, source, after: from })
+        break
+      }
+      source++
+      from = undefined
+    }
+    return { records, cursor: token.cursor, generation: token.generation, ...(next ? { next } : {}) }
+  })
+}
+
+const accepted = (change: SyncChange): PushResult => ({ kind: change.kind, id: change.id, status: 'accepted' })
+
+/** The change lost (or could not be stored): the result carries what the server holds, if anything. */
+async function rejected(tx: Tx, ownerId: string, change: SyncChange): Promise<PushResult> {
+  const current = await storedRecord(tx, ownerId, change.kind, change.id)
+  return { kind: change.kind, id: change.id, status: 'rejected', ...(current ? { current } : {}) }
 }
 
 async function pushShared(tx: Tx, ownerId: string, change: SyncChange): Promise<PushResult> {
-  const editedAt = new Date(change.editedAt)
-  const deleted = change.data === null
   const written = await tx
     .insert(userRecords)
     .values({
@@ -90,33 +238,19 @@ async function pushShared(tx: Tx, ownerId: string, change: SyncChange): Promise<
       kind: change.kind,
       id: change.id,
       data: change.data,
-      editedAt,
-      deletedAt: deleted ? editedAt : null,
-      updatedAt: sql`now()`,
+      ...syncStamp(new Date(change.editedAt), change.data === null),
     })
     .onConflictDoUpdate({
       target: [userRecords.ownerId, userRecords.kind, userRecords.id],
-      set: {
-        data: sql`excluded.data`,
-        editedAt: sql`excluded.edited_at`,
-        deletedAt: sql`excluded.deleted_at`,
-        updatedAt: sql`now()`,
-      },
+      set: { data: sql`excluded.data`, ...TAKE_INCOMING_STAMP },
       setWhere: newerThanStored(userRecords),
     })
     .returning({ id: userRecords.id })
-  if (written.length > 0) return { kind: change.kind, id: change.id, status: 'accepted' }
-
-  const [current] = await tx
-    .select()
-    .from(userRecords)
-    .where(and(eq(userRecords.ownerId, ownerId), eq(userRecords.kind, change.kind), eq(userRecords.id, change.id)))
-  return { kind: change.kind, id: change.id, status: 'rejected', ...(current ? { current: sharedRecord(current) } : {}) }
+  return written.length > 0 ? accepted(change) : rejected(tx, ownerId, change)
 }
 
 async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: TableKind): Promise<PushResult> {
   const t = spec.table
-  const editedAt = new Date(change.editedAt)
   const deleted = change.data === null
   const usableId = spec.acceptsId?.(change.id) ?? true
   const row = !usableId ? null : deleted ? spec.emptyRow : spec.toRow(change.data!)
@@ -135,35 +269,16 @@ async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: Ta
         ...row,
         ownerId,
         id: change.id,
-        editedAt,
-        deletedAt: deleted ? editedAt : null,
-        updatedAt: sql`now()`,
+        ...syncStamp(new Date(change.editedAt), deleted),
       } as never)
       .onConflictDoUpdate({
         target: [t.ownerId, t.id],
-        set: {
-          ...replaced,
-          editedAt: sql`excluded.edited_at`,
-          deletedAt: sql`excluded.deleted_at`,
-          updatedAt: sql`now()`,
-        } as never,
+        set: { ...replaced, ...TAKE_INCOMING_STAMP } as never,
         setWhere: newerThanStored(t),
       })
       .returning({ id: t.id })
   }
-  if (written.length > 0) return { kind: change.kind, id: change.id, status: 'accepted' }
-
-  if (!usableId) return { kind: change.kind, id: change.id, status: 'rejected' }
-  const [current] = (await tx
-    .select()
-    .from(t)
-    .where(and(eq(t.ownerId, ownerId), eq(t.id, change.id)))) as Record<string, unknown>[]
-  return {
-    kind: change.kind,
-    id: change.id,
-    status: 'rejected',
-    ...(current ? { current: tableRecord(change.kind, spec, current) } : {}),
-  }
+  return written.length > 0 ? accepted(change) : rejected(tx, ownerId, change)
 }
 
 /** Advisory lock namespace for a user's sync writes. */
@@ -182,13 +297,14 @@ async function lockOwner(tx: Tx, ownerId: string, mode: 'push' | 'reset') {
   )
 }
 
-async function lastResetAt(tx: Tx, ownerId: string): Promise<Date | null> {
+/** The owner's Reset generation (0 = never reset) and when the last Reset ran. */
+async function lastReset(tx: Tx, ownerId: string): Promise<{ generation: number; resetAt: Date | null }> {
   const [row] = await tx.select().from(syncResets).where(eq(syncResets.ownerId, ownerId))
-  return row?.resetAt ?? null
+  return { generation: row?.generation ?? 0, resetAt: row?.resetAt ?? null }
 }
 
 /** The stored record (tombstone included), if the server has one. */
-async function storedRecord(tx: Tx, ownerId: string, kind: string, id: string): Promise<SyncRecord | undefined> {
+async function storedRecord(tx: Tx, ownerId: string, kind: RecordKind, id: string): Promise<SyncRecord | undefined> {
   const spec = tableKindOf(kind)
   if (!spec) {
     const [row] = await tx
@@ -203,23 +319,18 @@ async function storedRecord(tx: Tx, ownerId: string, kind: string, id: string): 
     .select()
     .from(t)
     .where(and(eq(t.ownerId, ownerId), eq(t.id, id)))) as Record<string, unknown>[]
-  return row ? tableRecord(kind, spec, row) : undefined
+  return row ? tableRecord(kind as OwnTableKind, spec, row) : undefined
 }
 
 /**
- * A change edited at or before the user's last Reset was made on data the
- * Reset wiped: it loses, and the device gets what the server holds now (or,
+ * A change queued before its device heard of the user's last Reset was made
+ * on data the Reset wiped: it loses, and the device gets what the server holds now (or,
  * for a record the server never had, a tombstone) so it drops its copy.
  */
 async function refuseFromBeforeReset(tx: Tx, ownerId: string, change: SyncChange, resetAt: Date): Promise<PushResult> {
-  const at = resetAt.toISOString()
-  const current = (await storedRecord(tx, ownerId, change.kind, change.id)) ?? {
-    kind: change.kind,
-    id: change.id,
-    data: null,
-    editedAt: at,
-    deletedAt: at,
-  }
+  const current =
+    (await storedRecord(tx, ownerId, change.kind, change.id)) ??
+    syncRecord(change.kind, change.id, resetAt, resetAt, () => null)
   return { kind: change.kind, id: change.id, status: 'rejected', current }
 }
 
@@ -227,23 +338,31 @@ async function refuseFromBeforeReset(tx: Tx, ownerId: string, change: SyncChange
  * Applies `changes` for `ownerId` in one transaction, last edit wins per
  * record (see `newerThanStored`). Kinds with a table of their own
  * (`TABLE_KINDS`) are written there; the rest go to `user_records`. A record
- * a kind cannot store (missing required fields) is refused, and so is any
- * change edited at or before the user's last Reset.
+ * a kind cannot store (missing required fields) is refused, and so is every
+ * change when `knownGeneration` (the Reset generation the device knew when it
+ * queued them) is older than the owner's current one. Edit times are never
+ * compared with the server clock.
  */
-export async function pushChanges(db: Db, ownerId: string, changes: SyncChange[]): Promise<PushResult[]> {
+export async function pushChanges(
+  db: Db,
+  ownerId: string,
+  changes: SyncChange[],
+  knownGeneration?: number,
+): Promise<PushResponse> {
   return db.transaction(async (tx) => {
     await lockOwner(tx, ownerId, 'push')
-    const resetAt = await lastResetAt(tx, ownerId)
+    const { generation, resetAt } = await lastReset(tx, ownerId)
+    const queuedBeforeReset = resetAt !== null && knownGeneration !== undefined && knownGeneration < generation
     const results: PushResult[] = []
     for (const change of changes) {
-      if (resetAt && Date.parse(change.editedAt) <= resetAt.getTime()) {
+      if (queuedBeforeReset) {
         results.push(await refuseFromBeforeReset(tx, ownerId, change, resetAt))
         continue
       }
       const spec = tableKindOf(change.kind)
       results.push(spec ? await pushToTable(tx, ownerId, change, spec) : await pushShared(tx, ownerId, change))
     }
-    return results
+    return { results, generation }
   })
 }
 
@@ -251,8 +370,8 @@ export async function pushChanges(db: Db, ownerId: string, changes: SyncChange[]
  * Reset (GLOSSARY), in one transaction: every live User Data record of
  * `ownerId` becomes a tombstone edited at the Reset time (server clock), the
  * default categories are written back live at that time (also those the user
- * had deleted; same ids on every device), and the Reset time is recorded so
- * later pushes of older edits are refused. Device Preferences are not on the
+ * had deleted; same ids on every device), and a new Reset generation starts
+ * so pushes a device queued before it heard of the Reset are refused. Device Preferences are not on the
  * server and are untouched; other users' rows are not touched.
  */
 export async function resetRecords(db: Db, ownerId: string): Promise<ResetResponse> {
@@ -260,34 +379,38 @@ export async function resetRecords(db: Db, ownerId: string): Promise<ResetRespon
     await lockOwner(tx, ownerId, 'reset')
     const [{ now }] = await tx.execute<{ now: Date | string }>(sql`select now() as now`)
     // Millisecond precision, like every edit time a device sends.
-    const resetAt = new Date(new Date(now).getTime())
+    const resetAt = new Date(now)
 
     await tx
       .update(userRecords)
-      .set({ data: null, editedAt: resetAt, deletedAt: resetAt, updatedAt: sql`now()` })
+      .set({ data: null, ...syncStamp(resetAt, true) })
       .where(and(eq(userRecords.ownerId, ownerId), isNull(userRecords.deletedAt)))
     for (const spec of Object.values(TABLE_KINDS)) {
       const t = spec.table
       await tx
         .update(t)
-        .set({ editedAt: resetAt, deletedAt: resetAt, updatedAt: sql`now()` } as never)
+        .set(syncStamp(resetAt, true) as never)
         .where(and(eq(t.ownerId, ownerId), isNull(t.deletedAt)))
     }
 
     for (const category of defaultCategories) {
       const row = TABLE_KINDS.category.toRow(category as unknown as Record<string, unknown>)!
-      const written = { ...row, editedAt: resetAt, deletedAt: null, updatedAt: sql`now()` }
+      const written = { ...row, ...syncStamp(resetAt, false) }
       await tx
         .insert(financeCategories)
         .values({ ...written, ownerId, id: category.id } as never)
         .onConflictDoUpdate({ target: [financeCategories.ownerId, financeCategories.id], set: written as never })
     }
 
-    await tx
+    const [{ generation }] = await tx
       .insert(syncResets)
-      .values({ ownerId, resetAt })
-      .onConflictDoUpdate({ target: syncResets.ownerId, set: { resetAt } })
+      .values({ ownerId, resetAt, generation: 1 })
+      .onConflictDoUpdate({
+        target: syncResets.ownerId,
+        set: { resetAt, generation: sql`${syncResets.generation} + 1` },
+      })
+      .returning({ generation: syncResets.generation })
 
-    return { resetAt: resetAt.toISOString() }
+    return { resetAt: resetAt.toISOString(), generation }
   })
 }

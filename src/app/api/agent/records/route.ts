@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getDatabase } from "../../../../db/client";
 import { isAuthorizedBearerToken } from "../../../../lib/agentIngestion/auth";
 import { AgentIngestionRepository } from "../../../../lib/agentIngestion/repository";
+import { IngestionOwnerNotFoundError } from "../../../../lib/agentIngestion/errors";
 import { getDataBackend } from "../../../../lib/dataBackend";
 import { agentIngestionRequestSchema } from "../../../../lib/agentIngestion/schema";
 
@@ -58,7 +59,14 @@ export async function POST(request: Request) {
       { status: result.status, kind: result.kind, record: result.record, auditEvent: result.auditEvent },
       { status: result.status === "created" ? 201 : 200 },
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof IngestionOwnerNotFoundError) {
+      console.error("Agent ingestion: LOCAL_OWNER_ID does not match any user account", error.cause);
+      return NextResponse.json(
+        { error: "Agent ingestion owner has no account", code: "OWNER_NOT_FOUND" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Unable to store ingestion record" }, { status: 500 });
   }
 }

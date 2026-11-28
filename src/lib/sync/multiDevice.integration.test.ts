@@ -31,6 +31,7 @@ import { createAppDevice, createDevice, type DeviceNetwork } from "@/test/syncDe
 import { APP_SYNC_KINDS } from "@/lib/sync/appKinds";
 import { useSupplyStore } from "@/store/useSupplyStore";
 import { startAutoSync } from "@/lib/sync/autoSync";
+import { MAX_CHANGE_DATA_BYTES, MAX_PUSH_BODY_BYTES, type PullResponse } from "@/lib/sync/contract";
 
 const ALICE = "user-alice";
 const BOB = "user-bob";
@@ -279,6 +280,137 @@ describe.skipIf(!integrationDbUrl())("Supplies sync across devices", () => {
       } finally {
         app.unregister();
       }
+    });
+  });
+
+  it("shows a record the server refused as a sync error, keeps it on the device, and clears the error once an edit is accepted", async () => {
+    const a = createDevice(network, ALICE, { kind: "category" });
+    a.add({ id: "cat-half", name: "" });
+    await a.engine.sync();
+
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", pending: 0, refused: 1 });
+    expect(a.items()).toEqual([{ id: "cat-half", name: "" }]);
+    const posts = a.requests.filter((m) => m === "POST").length;
+    await a.engine.sync();
+    expect(a.requests.filter((m) => m === "POST").length).toBe(posts);
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", refused: 1 });
+    expect(await a.signOut()).toEqual({ ok: false, unsynced: 1 });
+
+    a.tick(1_000);
+    a.edit("cat-half", { name: "ของใช้", type: "EXPENSE", icon: "Box", color: "#123456" });
+    await a.engine.sync();
+    expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0, refused: 0 });
+
+    const b = createDevice(network, ALICE, { kind: "category" });
+    await b.engine.sync();
+    expect(b.items()).toEqual([expect.objectContaining({ id: "cat-half", name: "ของใช้" })]);
+  });
+
+  describe("size limits", () => {
+    const post = (body: string) =>
+      changesRoute.POST(
+        new Request("http://localhost/api/sync/changes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        }),
+      );
+    const change = (data: Record<string, unknown>) => ({
+      kind: "supply",
+      id: soap.id,
+      editedAt: new Date().toISOString(),
+      data,
+    });
+
+    it("refuses a record or a request that is too large with a generic 413, and stores nothing", async () => {
+      holder.currentUserId = ALICE;
+      const bigRecord = await post(
+        JSON.stringify({ changes: [change({ ...soap, note: "x".repeat(MAX_CHANGE_DATA_BYTES) })] }),
+      );
+      const bigBody = await post(
+        JSON.stringify({ changes: [change(soap)], padding: "x".repeat(MAX_PUSH_BODY_BYTES) }),
+      );
+
+      expect(bigRecord.status).toBe(413);
+      expect(await bigRecord.json()).toEqual({ error: "ข้อมูลที่ซิงก์ใหญ่เกินไป" });
+      expect(bigBody.status).toBe(413);
+      const other = createDevice(network, ALICE);
+      await other.engine.sync();
+      expect(other.items()).toEqual([]);
+    });
+
+    it("accepts a settings-sized cover image (a 2 MB file as base64)", async () => {
+      const a = createDevice(network, ALICE);
+      const cover = "data:image/jpeg;base64," + "A".repeat(Math.ceil((2 * 1024 * 1024 * 4) / 3));
+      a.add({ ...soap, cover });
+      await a.engine.sync();
+      expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+      const b = createDevice(network, ALICE);
+      await b.engine.sync();
+      expect(b.items()).toEqual([{ ...soap, cover }]);
+    });
+
+    it("keeps a too-large record on the device as refused, without resending it, and syncs the rest", async () => {
+      const a = createDevice(network, ALICE);
+      const huge = { id: "huge", name: "ใหญ่", note: "x".repeat(MAX_CHANGE_DATA_BYTES) };
+      a.add(huge);
+      a.add(soap);
+      await a.engine.sync();
+      await a.engine.sync();
+
+      expect(a.engine.getStatus()).toMatchObject({ state: "error", pending: 0, refused: 1 });
+      expect(a.items()).toEqual([huge, soap]);
+      const b = createDevice(network, ALICE);
+      await b.engine.sync();
+      expect(b.items()).toEqual([soap]);
+
+      a.tick(1_000);
+      a.edit("huge", { note: "เล็กลงแล้ว" });
+      await a.engine.sync();
+      expect(a.engine.getStatus()).toMatchObject({ state: "synced", refused: 0 });
+    });
+
+    it("sends a queue larger than one request allows in several requests", async () => {
+      const a = createDevice(network, ALICE);
+      const note = "x".repeat(MAX_CHANGE_DATA_BYTES - 1_000);
+      const items = [1, 2, 3].map((n) => ({ id: `big-${n}`, name: `ใหญ่ ${n}`, note }));
+      items.forEach((item) => a.add(item));
+      await a.engine.sync();
+      expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+      expect(a.requests.filter((m) => m === "POST").length).toBeGreaterThanOrEqual(2);
+      const b = createDevice(network, ALICE);
+      await b.engine.sync();
+      expect(b.items().map((i) => i.id).sort()).toEqual(["big-1", "big-2", "big-3"]);
+    });
+  });
+
+  describe("pulling in pages", () => {
+    it("brings every record across several pages, including many saved in one request", async () => {
+      const a = createDevice(network, ALICE);
+      const items = Array.from({ length: 7 }, (_, n) => ({ id: `item-${n}`, name: `ของ ${n}` }));
+      items.forEach((item) => a.add(item));
+      await a.engine.sync(); // one push: every row gets the same server time
+
+      const b = createDevice(network, ALICE, { pullLimit: 3 });
+      await b.engine.sync();
+      expect(b.items().map((i) => i.id).sort()).toEqual(items.map((i) => i.id));
+      expect(b.requests.filter((m) => m === "GET").length).toBeGreaterThanOrEqual(3);
+
+      a.tick(1_000);
+      a.edit("item-4", { name: "แก้แล้ว" });
+      await a.engine.sync();
+      await b.engine.sync();
+      expect(b.items().find((i) => i.id === "item-4")?.name).toBe("แก้แล้ว");
+    });
+
+    it("refuses a malformed page token or limit", async () => {
+      holder.currentUserId = ALICE;
+      const badPage = await changesRoute.GET(new Request("http://localhost/api/sync/changes?page=nonsense"));
+      const badLimit = await changesRoute.GET(new Request("http://localhost/api/sync/changes?limit=0"));
+      expect(badPage.status).toBe(400);
+      expect(badLimit.status).toBe(400);
+      const ok = await changesRoute.GET(new Request("http://localhost/api/sync/changes?limit=1"));
+      expect(((await ok.json()) as PullResponse).records).toEqual([]);
     });
   });
 });

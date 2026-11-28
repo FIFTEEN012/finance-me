@@ -7,6 +7,7 @@ import {
   type SyncStorage,
 } from "@/lib/sync/engine";
 import { arrayKind } from "@/lib/sync/kinds";
+import type { RecordKind } from "@/lib/sync/contract";
 import { createDeviceAccount, type SignOutResult } from "@/lib/sync/deviceAccount";
 
 /**
@@ -73,12 +74,14 @@ export function createDevice(
     storage?: ReturnType<typeof memoryStorage>;
     items?: Item[];
     /** Record kind this device's items are synced as (default "supply"). */
-    kind?: string;
+    kind?: RecordKind;
     /**
      * Persist the items in this device's storage under this key, like the
      * app's persisted stores (`store.persist.rehydrate()` re-reads them).
      */
     persistKey?: string;
+    /** Records per pull page this device asks for (default: the server's). */
+    pullLimit?: number;
   } = {},
 ): Device {
   let clock = opts.startAt ?? Date.parse("2026-11-26T00:00:00Z");
@@ -122,6 +125,7 @@ export function createDevice(
     fetch: deviceFetch(network, () => device.userId, device),
     storage,
     now: () => clock,
+    pullLimit: opts.pullLimit,
   });
   device.engine.register(device.adapter);
   const account = createDeviceAccount({

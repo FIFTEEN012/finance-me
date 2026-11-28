@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { softDeleteRow } from "@/lib/sync/softDelete";
 import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeGoals } from "@/db/schema";
@@ -71,23 +72,8 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const db = getDatabase();
 
-  // Soft delete: the row stays as a tombstone so no device can upload it again.
-  const now = new Date();
-  const [deleted] = await db
-    .update(financeGoals)
-    .set({ deletedAt: now, editedAt: now, updatedAt: sql`now()` })
-    .where(
-      and(
-        eq(financeGoals.id, id),
-        eq(financeGoals.ownerId, user.id),
-        isNull(financeGoals.deletedAt)
-      )
-    )
-    .returning();
-
-  if (!deleted) {
+  if (!(await softDeleteRow(financeGoals, user.id, id))) {
     return NextResponse.json({ error: "Goal not found" }, { status: 404 });
   }
 

@@ -11,12 +11,14 @@ import { cn } from '@/lib/utils'
  */
 export function SyncStatusIndicator() {
   const user = useAuthStore((s) => s.user)
-  const { state, pending, syncing, lastSyncedAt } = useSyncStatus()
+  const { state, pending, refused, syncing, lastSyncedAt } = useSyncStatus()
   if (!user) return null
 
   const label =
     state === 'error'
-      ? 'ซิงก์ล้มเหลว แตะเพื่อลองใหม่'
+      ? refused
+        ? `ซิงก์ไม่ได้ ${refused} รายการ ลองแก้ไขรายการนั้นอีกครั้ง`
+        : 'ซิงก์ล้มเหลว แตะเพื่อลองใหม่'
       : state === 'pending'
         ? `ยังไม่ได้ซิงก์ ${pending} รายการ`
         : lastSyncedAt
@@ -39,6 +41,7 @@ export function SyncStatusIndicator() {
     >
       <Icon className={cn('h-4 w-4 stroke-[2.5px]', syncing && 'animate-spin')} />
       {state === 'pending' && <span className="text-[10px] font-black">{pending}</span>}
+      {state === 'error' && refused > 0 && <span className="text-[10px] font-black">{refused}</span>}
     </button>
   )
 }
