@@ -88,8 +88,14 @@ function safeRemove(key: string) {
   }
 }
 
-/** Empties the User Data stores and their persisted keys; Device Preferences stay. */
-function clearUserData() {
+/**
+ * Empties this browser's copy of User Data: the stores in memory and their
+ * persisted keys (plus the old migrated-to-neon flag). Device Preferences
+ * (dashboard layout, onboarding) are kept. Does not touch the sync engine's
+ * queue: callers reset it afterwards (deviceAccount on account switch and
+ * sign-out, resetUserData on Reset), so the removals are never uploaded.
+ */
+export function clearLocalUserData() {
   // Reset in-memory state first: persist's setState writes the (default) state
   // back to storage, and a later rehydrate from empty storage keeps whatever is
   // in memory, so stale rows must be gone from memory before keys are removed.
@@ -109,8 +115,6 @@ function clearUserData() {
     safeRemove(`${key}__modified_at`)
   }
   safeRemove(MIGRATED_FLAG_KEY)
-  // The sync engine is reset right after this (deviceAccount), so the
-  // removals reported by emptying the stores are never uploaded.
   rehydrateAllStores().catch(() => {})
 }
 
@@ -129,7 +133,11 @@ const browserStorage = {
 
 let account: DeviceAccount | null = null
 function deviceAccount(): DeviceAccount {
-  account ??= createDeviceAccount({ storage: browserStorage, engine: getAppSyncEngine(), clearUserData })
+  account ??= createDeviceAccount({
+    storage: browserStorage,
+    engine: getAppSyncEngine(),
+    clearUserData: clearLocalUserData,
+  })
   return account
 }
 

@@ -29,7 +29,9 @@ import { useBudgetStore } from '@/store/useBudgetStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useDebtStore } from '@/store/useDebtStore'
-import { useOnboardingStore } from '@/store/useOnboardingStore'
+import { resetUserData } from '@/lib/sync/reset'
+import { getAppSyncEngine } from '@/lib/sync/appEngine'
+import { clearLocalUserData } from '@/lib/localOwner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { authClient } from '@/lib/auth-client'
 import { signOutOfThisDevice } from '@/lib/signOut'
@@ -81,7 +83,7 @@ export default function SettingsPage() {
   const user = useAuthStore((state) => state.user)
   const { data: session } = authClient.useSession()
 
-  const { transactions, replaceTransactions, deleteTransactions } = useTransactionStore()
+  const { transactions, replaceTransactions } = useTransactionStore()
   const { budgets, replaceBudgets } = useBudgetStore()
   const { categories, replaceCategories } = useCategoryStore()
   const goals = useGoalStore((s) => s.goals)
@@ -93,6 +95,7 @@ export default function SettingsPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [resetConfirmText, setResetConfirmText] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -229,25 +232,30 @@ export default function SettingsPage() {
   }
 
   /* ── Reset Data ── */
+  // Reset: the server wipes the User Data of every device first; this device
+  // clears its own copy only once that succeeded. Signed out, only this
+  // device's Guest Data is cleared. Device Preferences (dashboard layout,
+  // onboarding) are kept.
   const handleReset = async () => {
-    deleteTransactions(transactions.map((t) => t.id))
-    replaceBudgets([])
-    useOnboardingStore.getState().reset()
-
-    // Delete in database via API
+    if (isResetting) return
+    setIsResetting(true)
     try {
-      await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: [], budgets: [] }),
+      const ok = await resetUserData({
+        fetch: (input, init) => fetch(input, init),
+        engine: getAppSyncEngine(),
+        clearLocal: clearLocalUserData,
+        signedIn: Boolean(session?.user?.id || user?.id),
       })
-    } catch {
-      // ignore
+      if (!ok) {
+        toast.error('รีเซ็ตข้อมูลไม่สำเร็จ ข้อมูลยังอยู่ครบ ลองใหม่อีกครั้ง')
+        return
+      }
+      setResetOpen(false)
+      setResetConfirmText('')
+      toast.success('รีเซ็ตข้อมูลทั้งหมดสำเร็จ')
+    } finally {
+      setIsResetting(false)
     }
-
-    setResetOpen(false)
-    setResetConfirmText('')
-    toast.success('รีเซ็ตข้อมูลทั้งหมดสำเร็จ')
   }
 
   // Active accent color info
@@ -880,7 +888,11 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-white/60">
               การกระทำนี้จะ <span className="font-semibold text-red-600">ลบถาวร</span>{' '}
-              รายการธุรกรรมและงบประมาณทั้งหมดใน Neon Database และไม่สามารถกู้คืนได้
+              {session?.user?.id || user?.id
+                ? 'ข้อมูลทั้งหมดของบัญชีนี้ในทุกเครื่อง'
+                : 'ข้อมูลทั้งหมดในเครื่องนี้'}{' '}
+              (หมวดหมู่กลับเป็นค่าเริ่มต้น) และไม่สามารถกู้คืนได้
+              การจัดวางแดชบอร์ดของเครื่องนี้ยังอยู่
             </p>
             <div className="space-y-2">
               <Label className="text-xs text-gray-500">
@@ -900,7 +912,7 @@ export default function SettingsPage() {
             </Button>
             <Button
               onClick={handleReset}
-              disabled={resetConfirmText !== 'RESET'}
+              disabled={resetConfirmText !== 'RESET' || isResetting}
               className="bg-red-600 hover:bg-red-700 text-white gap-1.5 disabled:opacity-40"
             >
               <Trash2 className="w-4 h-4" /> ลบถาวร

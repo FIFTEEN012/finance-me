@@ -49,6 +49,16 @@ export type RecordKind = (typeof RECORD_KINDS)[number]
 
 export const SYNC_CHANGES_PATH = '/api/sync/changes'
 
+/**
+ * POST → `ResetResponse`: Reset (GLOSSARY). Deletes every User Data record of
+ * the caller (tombstones, so every device drops them on its next pull) and
+ * recreates the default categories, in one transaction. From then on the
+ * server refuses any change edited at or before `resetAt`, so a device's
+ * queue from before the Reset cannot upload old data back.
+ */
+export const SYNC_RESET_PATH = '/api/sync/reset'
+export type ResetResponse = { resetAt: string }
+
 /** Most changes one push may carry; the engine sends larger queues in batches. */
 export const MAX_PUSH_CHANGES = 200
 

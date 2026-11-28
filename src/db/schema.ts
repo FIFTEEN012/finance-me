@@ -285,6 +285,17 @@ export const userRecords = pgTable(
   ],
 );
 
+/* ─── Sync Resets ───
+ * When each user last pressed Reset (server clock). Sync refuses any change
+ * edited at or before it, so a device's queue from before the Reset cannot
+ * upload old data back. */
+export const syncResets = pgTable("sync_resets", {
+  ownerId: text("owner_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  resetAt: timestamp("reset_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
 export const agentIngestionEvents = pgTable(
   "agent_ingestion_events",
   {
@@ -317,4 +328,5 @@ export const schema = {
   runningLogs,
   agentIngestionEvents,
   userRecords,
+  syncResets,
 };
