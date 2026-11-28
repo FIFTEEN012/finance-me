@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { createTestDb, insertUser, integrationDbUrl } from "./pgTestDb";
 
-describe.skipIf(!integrationDbUrl())("createTestDb serialization (real Postgres)", () => {
+// Each createTestDb waits for the lock other integration files hold, which
+// can take longer than the default 5 s when they run in parallel.
+describe.skipIf(!integrationDbUrl())("createTestDb serialization (real Postgres)", { timeout: 60_000 }, () => {
   it("does not wipe the database until the previous holder closes", async () => {
     const first = await createTestDb();
     await insertUser(first.db, "lock-holder");
