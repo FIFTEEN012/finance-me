@@ -1,4 +1,5 @@
 import type { StoreApi } from 'zustand'
+import type { RecordKind } from './contract'
 import type { RecordData, SyncKindAdapter } from './engine'
 
 type WithId = { id: string }
@@ -18,7 +19,7 @@ function isHydrating(store: unknown): boolean {
  * need no sync code. Rehydration from localStorage is not an edit.
  */
 export function arrayKind<S, F extends keyof S>(opts: {
-  kind: string
+  kind: RecordKind
   store: StoreApi<S>
   field: F & (S[F] extends WithId[] ? F : never)
   /**
@@ -82,7 +83,7 @@ export function arrayKind<S, F extends keyof S>(opts: {
  *   them is an edit.
  */
 export function singletonKind<S>(opts: {
-  kind: string
+  kind: RecordKind
   id: string
   store: StoreApi<S>
   fields: (keyof S)[]

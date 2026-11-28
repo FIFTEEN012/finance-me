@@ -7,6 +7,7 @@ import {
   type SyncStorage,
 } from "@/lib/sync/engine";
 import { arrayKind } from "@/lib/sync/kinds";
+import type { RecordKind } from "@/lib/sync/contract";
 import { createDeviceAccount, type SignOutResult } from "@/lib/sync/deviceAccount";
 
 /**
@@ -73,7 +74,7 @@ export function createDevice(
     storage?: ReturnType<typeof memoryStorage>;
     items?: Item[];
     /** Record kind this device's items are synced as (default "supply"). */
-    kind?: string;
+    kind?: RecordKind;
     /**
      * Persist the items in this device's storage under this key, like the
      * app's persisted stores (`store.persist.rehydrate()` re-reads them).

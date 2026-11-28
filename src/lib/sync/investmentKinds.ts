@@ -7,6 +7,7 @@ import type {
   PortfolioSnapshot,
 } from '@/types'
 import { arrayKind } from './kinds'
+import type { RecordKind } from './contract'
 import type { RecordData, SyncKindAdapter } from './engine'
 
 type PortfolioState = {
@@ -79,7 +80,7 @@ function isHydrating(store: unknown): boolean {
  * edits are found by diffing the list on every store change.
  */
 function keyedListKind<S, T>(opts: {
-  kind: string
+  kind: RecordKind
   store: StoreApi<S>
   read: (state: S) => T[]
   write: (items: T[]) => Partial<S>

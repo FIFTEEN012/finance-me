@@ -38,7 +38,8 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
   it('keeps local data on a legacy browser (no marker) and records the owner', async () => {
     data.set('finance-transactions', '{"state":{"transactions":[{"id":"a"}]},"version":0}')
     data.set('finance-migrated-to-neon', 'true')
-    const { ensureLocalDataBelongsTo, getStoredOwnerId, OWNER_MARKER_KEY } = await load()
+    const { ensureLocalDataBelongsTo, getStoredOwnerId } = await load()
+    const { OWNER_MARKER_KEY } = await import('@/lib/sync/deviceAccount')
 
     expect(ensureLocalDataBelongsTo('user-a')).toBe(false)
 

@@ -14,6 +14,7 @@ import {
 } from "../../db/schema";
 import { foodEntryFromMeal, weightFromHealthProfile, workoutSessionFrom } from "./botRecords";
 import type { AgentIngestionRequest } from "./schema";
+import type { SharedTableKind } from "@/lib/sync/contract";
 
 /** The small part of the Drizzle database boundary used by this repository. */
 export type IngestionDatabase = {
@@ -47,7 +48,8 @@ const domainTables = {
   run: runningLogs,
 } as const;
 
-const SHARED_RECORD_TYPES = ["food-entry", "workout-session"] as const;
+/** The `user_records` kinds a bot message becomes (contract.ts SHARED_TABLE_KINDS). */
+const SHARED_RECORD_TYPES = ["food-entry", "workout-session"] as const satisfies readonly SharedTableKind[];
 type SharedRecordType = (typeof SHARED_RECORD_TYPES)[number];
 
 function isUniqueViolation(error: unknown) {

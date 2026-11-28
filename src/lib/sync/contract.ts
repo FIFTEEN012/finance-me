@@ -45,6 +45,7 @@ export const SHARED_TABLE_KINDS = [
   'settings',
   'workout-plan',
 ] as const
+export type SharedTableKind = (typeof SHARED_TABLE_KINDS)[number]
 
 /**
  * Record kinds kept in a table of their own (ADR-0003). Each needs a mapping
@@ -94,7 +95,7 @@ export function jsonBytes(value: unknown): number {
 
 /** A record as the server holds it. `data` is null for a tombstone. */
 export type SyncRecord = {
-  kind: string
+  kind: RecordKind
   id: string
   data: unknown
   editedAt: string
@@ -129,7 +130,7 @@ export const pullQuerySchema = z.object({
 })
 
 export type PushResult = {
-  kind: string
+  kind: RecordKind
   id: string
   status: 'accepted' | 'rejected'
   /** On rejection: the stored record that won. */

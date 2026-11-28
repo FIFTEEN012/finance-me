@@ -6,6 +6,7 @@ import {
   SYNC_CHANGES_PATH,
   type PullResponse,
   type PushResponse,
+  type RecordKind,
   type SyncChange,
   type SyncRecord,
 } from './contract'
@@ -25,7 +26,7 @@ export type RecordData = Record<string, unknown>
 
 /** What the engine needs from a store holding one record kind. */
 export interface SyncKindAdapter {
-  kind: string
+  kind: RecordKind
   /** Every record held locally; uploaded once per device by the first sync. */
   snapshot(): { id: string; data: RecordData }[]
   /** Writes pulled records into the store (`data: null` = remove). */
@@ -67,7 +68,7 @@ export type SyncEngine = {
    * Queues a local change made at the engine's clock time, or at `editedAt`
    * when given (`data: null` = delete).
    */
-  record(kind: string, id: string, data: RecordData | null, editedAt?: string): void
+  record(kind: RecordKind, id: string, data: RecordData | null, editedAt?: string): void
   /** Push the queue, then pull. Never rejects; the outcome is in `getStatus()`. */
   sync(): Promise<void>
   getStatus(): SyncStatus
@@ -219,7 +220,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now, pu
     if (left.length !== queue.length) writeQueue(left)
   }
 
-  function record(kind: string, id: string, data: RecordData | null, editedAt?: string) {
+  function record(kind: RecordKind, id: string, data: RecordData | null, editedAt?: string) {
     if (applying) return
     // Store the record as JSON would send it (drops undefined fields).
     const plain = data === null ? null : (JSON.parse(JSON.stringify(data)) as RecordData)
@@ -229,7 +230,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now, pu
       editedAt: editedAt ?? new Date(now()).toISOString(),
       data: plain,
       generation: knownGeneration(),
-    } as QueuedChange)
+    })
   }
 
   function applyRecords(records: SyncRecord[]) {
@@ -273,7 +274,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now, pu
     for (const adapter of pending) {
       for (const { id, data } of adapter.snapshot()) {
         if (queuedKeys.has(keyOf(adapter.kind, id))) continue
-        queue.push({ kind: adapter.kind, id, editedAt: PRE_SYNC_EDITED_AT, data, generation } as QueuedChange)
+        queue.push({ kind: adapter.kind, id, editedAt: PRE_SYNC_EDITED_AT, data, generation })
       }
       uploaded.add(adapter.kind)
     }

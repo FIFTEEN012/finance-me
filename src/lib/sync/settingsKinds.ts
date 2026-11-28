@@ -1,6 +1,7 @@
 import type { StoreApi } from 'zustand'
 import { useSettingsStore } from '@/store/useSettingsStore'
 import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
+import type { RecordKind } from './contract'
 import type { RecordData, SyncKindAdapter } from './engine'
 import { singletonKind } from './kinds'
 
@@ -11,7 +12,7 @@ import { singletonKind } from './kinds'
  * still never overwrite a saved record, since pre-sync data uploads as the
  * oldest possible edit. A deleted record or missing field = the store's default.
  */
-function fieldsKind<S>(kind: string, store: StoreApi<S>, fields: (keyof S & string)[]): SyncKindAdapter {
+function fieldsKind<S>(kind: RecordKind, store: StoreApi<S>, fields: (keyof S & string)[]): SyncKindAdapter {
   return singletonKind({
     kind,
     id: kind,
