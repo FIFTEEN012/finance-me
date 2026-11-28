@@ -289,7 +289,10 @@ describe.skipIf(!integrationDbUrl())("Recurring rules, bill splits, settings and
       pool.use(b);
       await b.engine.sync();
       expect(useRecurringStore.getState().generateDue()).toBe(0);
-      expect(useTransactionStore.getState().transactions).toEqual([]);
+      // B has A's transaction, synced, and no second one.
+      expect(useTransactionStore.getState().transactions).toEqual([
+        expect.objectContaining({ date: "2026-12-15", amount: 500 }),
+      ]);
       expect(useRecurringStore.getState().recurrings[0].lastGeneratedDate).toBe("2026-12-15");
     });
 
@@ -322,7 +325,10 @@ describe.skipIf(!integrationDbUrl())("Recurring rules, bill splits, settings and
       await b.engine.sync();
       stopB();
       expect(recordedOnB).toEqual([]);
-      expect(useTransactionStore.getState().transactions).toEqual([]);
+      // B has A's transaction, synced, and did not record another.
+      expect(useTransactionStore.getState().transactions).toEqual([
+        expect.objectContaining({ date: "2026-12-15", amount: 500 }),
+      ]);
     });
   });
 });

@@ -27,6 +27,7 @@ import { FoodPhotoButton } from '@/components/nutrition/FoodPhotoButton'
 import { useNutritionStore } from '@/store/useNutritionStore'
 import { isFoodCategory } from '@/lib/foodCategory'
 import { FoodDraft, foodDraftsFromInputs, foodInputsFromDrafts } from '@/lib/nutrition'
+import { saveNewTransaction, saveTransactionEdit } from '@/lib/saveTransaction'
 
 const schema = z.object({
   type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
@@ -46,7 +47,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ open, onOpenChange, editingTransaction }: TransactionFormProps) {
-  const { addTransaction, updateTransaction, getAllTags } = useTransactionStore()
+  const { getAllTags } = useTransactionStore()
   const { categories } = useCategoryStore()
   const [tags, setTags] = useState<string[]>([])
   const [foodDrafts, setFoodDrafts] = useState<FoodDraft[]>([])
@@ -119,38 +120,15 @@ export function TransactionForm({ open, onOpenChange, editingTransaction }: Tran
         date: `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`,
       }
 
+      // Saved on this device first; the sync engine uploads it (with its Food Entries) when online.
+      // A save that cannot succeed throws before anything is created.
       if (editingTransaction) {
-        const res = await fetch(`/api/transactions/${editingTransaction.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'Failed to update transaction')
-        }
-        updateTransaction(editingTransaction.id, payload)
+        saveTransactionEdit(editingTransaction.id, payload)
         toast.success('แก้ไขรายการสำเร็จ')
       } else {
-        const res = await fetch('/api/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'Failed to create transaction')
-        }
-        const json = await res.json()
-        const createdId = json.transaction?.id || crypto.randomUUID()
-        useTransactionStore.getState().replaceTransactions([
-          { ...payload, id: createdId, createdAt: new Date().toISOString() },
-          ...useTransactionStore.getState().transactions,
-        ])
-        // Only after the Food Expense is saved: link the typed Food Entries to it.
         const foodInputs = showFoodEntries ? foodInputsFromDrafts(foodDrafts, payload.date) : []
+        saveNewTransaction(payload, foodInputs)
         if (foodInputs.length > 0) {
-          useNutritionStore.getState().addFoodForExpense(createdId, foodInputs)
           const kcal = foodInputs.reduce((sum, f) => sum + f.kcal, 0)
           toast.success(`เพิ่มรายการสำเร็จ พร้อมอาหาร ${foodInputs.length} รายการ ${kcal.toLocaleString('th-TH')} kcal`)
         } else {

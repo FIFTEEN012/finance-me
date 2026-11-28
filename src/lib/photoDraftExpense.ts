@@ -1,8 +1,7 @@
 'use client'
 
-import type { Transaction } from '@/types'
 import { useNutritionStore, type FoodInput } from '@/store/useNutritionStore'
-import { useTransactionStore } from '@/store/useTransactionStore'
+import { saveNewTransaction } from '@/lib/saveTransaction'
 
 /** The "save expense too" part of a Photo Draft. */
 export interface PhotoDraftExpense {
@@ -20,11 +19,12 @@ function describeFood(entries: FoodInput[]): string {
 }
 
 /**
- * Saves the ticked rows of a Photo Draft as Food Entries. With `expense`, first saves one
- * Food Expense on the same day to the server and links every saved Food Entry to it.
+ * Saves the ticked rows of a Photo Draft as Food Entries. With `expense`, also saves one
+ * Food Expense on the same day and links every saved Food Entry to it (see
+ * `saveNewTransaction`: the sync engine uploads them together).
  *
- * Rejects, saving neither the Food Entries nor the expense, when the server does not
- * save the expense (an error status or a network error).
+ * Rejects, saving neither the Food Entries nor the expense, when the expense cannot be
+ * saved (e.g. an amount that is not above zero).
  */
 export async function savePhotoDraft(
   entries: FoodInput[],
@@ -35,30 +35,15 @@ export async function savePhotoDraft(
     return { foodIds: entries.map((input) => nutrition.addFood(input)) }
   }
 
-  const payload: Omit<Transaction, 'id' | 'createdAt'> = {
-    type: 'EXPENSE',
-    categoryId: expense.categoryId,
-    amount: expense.amount,
-    description: describeFood(entries),
-    date: entries[0].date,
-  }
-  const res = await fetch('/api/transactions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || 'Failed to create transaction')
-  }
-  const json = await res.json()
-  const expenseId: string = json.transaction?.id || crypto.randomUUID()
-
-  const transactions = useTransactionStore.getState()
-  transactions.replaceTransactions([
-    { ...payload, id: expenseId, createdAt: new Date().toISOString() },
-    ...transactions.transactions,
-  ])
-  // Only after the Food Expense is saved: link the Food Entries to it.
-  return { foodIds: useNutritionStore.getState().addFoodForExpense(expenseId, entries), expenseId }
+  const { id, foodIds } = saveNewTransaction(
+    {
+      type: 'EXPENSE',
+      categoryId: expense.categoryId,
+      amount: expense.amount,
+      description: describeFood(entries),
+      date: entries[0].date,
+    },
+    entries,
+  )
+  return { foodIds, expenseId: id }
 }

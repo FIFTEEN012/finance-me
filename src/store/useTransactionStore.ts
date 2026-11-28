@@ -28,6 +28,11 @@ interface TransactionStore {
   replaceTransactions: (transactions: Transaction[]) => void
 }
 
+/**
+ * Transactions on this device. Every change made here reaches the server and
+ * other devices through the sync engine (`src/lib/sync/appKinds.ts`), so the
+ * actions only change local state.
+ */
 export const useTransactionStore = create<TransactionStore>()(
   persist(
     (set, get) => ({
@@ -38,25 +43,10 @@ export const useTransactionStore = create<TransactionStore>()(
         set((s) => ({
           transactions: [newTx, ...s.transactions],
         }))
-        if (typeof window !== 'undefined') {
-          fetch('/api/transactions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newTx),
-          }).catch(() => {})
-        }
         return id
       },
       addGeneratedTransactions: (transactions) => {
         set((s) => ({ transactions: [...transactions, ...s.transactions] }))
-        if (typeof window !== 'undefined') {
-          // /api/sync upserts by id. If this fails, useInitialData pushes the unsynced rows on next load.
-          fetch('/api/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transactions }),
-          }).catch(() => {})
-        }
       },
       updateTransaction: (id, t) => {
         set((s) => ({
@@ -64,33 +54,18 @@ export const useTransactionStore = create<TransactionStore>()(
             tx.id === id ? { ...tx, ...t } : tx
           ),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/transactions/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(t),
-          }).catch(() => {})
-        }
       },
       deleteTransaction: (id) => {
         set((s) => ({
           transactions: s.transactions.filter((tx) => tx.id !== id),
         }))
         useNutritionStore.getState().unlinkFoodExpenses([id])
-        if (typeof window !== 'undefined') {
-          fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
-        }
       },
       deleteTransactions: (ids) => {
         set((s) => ({
           transactions: s.transactions.filter((tx) => !ids.includes(tx.id)),
         }))
         useNutritionStore.getState().unlinkFoodExpenses(ids)
-        if (typeof window !== 'undefined') {
-          ids.forEach((id) => {
-            fetch(`/api/transactions/${id}`, { method: 'DELETE' }).catch(() => {})
-          })
-        }
       },
       splitTransaction: (id, parts) => {
         const original = get().transactions.find((tx) => tx.id === id)

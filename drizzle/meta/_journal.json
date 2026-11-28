@@ -50,6 +50,13 @@
       "when": 1795680512392,
       "tag": "0006_sync_existing_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795681276361,
+      "tag": "0007_sync_transactions",
+      "breakpoints": true
     }
   ]
 }

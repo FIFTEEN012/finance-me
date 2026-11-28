@@ -16,9 +16,10 @@ import { useTransactionStore } from '@/store/useTransactionStore'
 import { useQuickAddStore } from '@/store/useQuickAddStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { bulkTransactionSchema } from '@/lib/bulkTransactionSchema'
+import { assertSavableTransaction, saveNewTransaction } from '@/lib/saveTransaction'
 import { quickAddAiResultSchema } from '@/lib/quickAddAiSchema'
 import { cn, formatCurrency } from '@/lib/utils'
-import type { Transaction, TransactionType } from '@/types'
+import type { TransactionType } from '@/types'
 
 type Entry = {
   key: string
@@ -274,24 +275,11 @@ export function QuickAddTransaction() {
     setErrors({})
     setFormError('')
     try {
-      const response = await fetch('/api/transactions/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed.data),
-      })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || 'บันทึกรายการไม่สำเร็จ')
-      if (!Array.isArray(result.transactions) || result.transactions.length !== parsed.data.transactions.length || result.transactions.some((item: { id?: string }) => !item?.id)) {
-        throw new Error('ข้อมูลตอบกลับไม่ครบ กรุณาโหลดหน้าธุรกรรมใหม่ก่อนลองอีกครั้ง')
-      }
-
-      const created: Transaction[] = parsed.data.transactions.map((item, index) => ({
-        ...item,
-        id: result.transactions[index].id,
-        createdAt: result.transactions[index].createdAt || new Date().toISOString(),
-      }))
-      const store = useTransactionStore.getState()
-      store.replaceTransactions([...created, ...store.transactions])
+      // Saved on this device; the sync engine uploads them. All rows are checked before any is saved.
+      const inputs = parsed.data.transactions
+      inputs.forEach(assertSavableTransaction)
+      // Added last-first so the list shows them in the order typed.
+      const created = [...inputs].reverse().map((item) => saveNewTransaction(item).id)
       toast.success(`บันทึกแล้ว ${created.length} รายการ`)
       close()
     } catch (error) {

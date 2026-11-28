@@ -59,6 +59,11 @@ export function recurringTransactionId(ruleId: string, date: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20)}`
 }
 
+/** Whether `tx` is an occurrence one of `rules` generated (its id is the rule's id for that date). */
+export function isRecurringOccurrence(tx: { id: string; date: string }, rules: { id: string }[]): boolean {
+  return rules.some((rule) => recurringTransactionId(rule.id, tx.date) === tx.id)
+}
+
 export function computeDueTransactions(
   rules: RecurringTransaction[],
   today: string,

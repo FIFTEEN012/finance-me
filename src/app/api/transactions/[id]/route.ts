@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeTransactions } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,8 @@ export async function PUT(
   const db = getDatabase();
 
   const updateData: Record<string, any> = {
-    updatedAt: new Date(),
+    editedAt: new Date(),
+    updatedAt: sql`now()`,
   };
 
   if (body.type !== undefined) updateData.transactionType = body.type;
@@ -49,7 +50,8 @@ export async function PUT(
     .where(
       and(
         eq(financeTransactions.id, id),
-        eq(financeTransactions.ownerId, user.id)
+        eq(financeTransactions.ownerId, user.id),
+        isNull(financeTransactions.deletedAt)
       )
     )
     .returning();
@@ -77,12 +79,16 @@ export async function DELETE(
   const { id } = await params;
   const db = getDatabase();
 
+  // Kept as a tombstone so no device can upload it again (ADR-0003).
+  const now = new Date();
   const [deleted] = await db
-    .delete(financeTransactions)
+    .update(financeTransactions)
+    .set({ deletedAt: now, editedAt: now, updatedAt: sql`now()` })
     .where(
       and(
         eq(financeTransactions.id, id),
-        eq(financeTransactions.ownerId, user.id)
+        eq(financeTransactions.ownerId, user.id),
+        isNull(financeTransactions.deletedAt)
       )
     )
     .returning();

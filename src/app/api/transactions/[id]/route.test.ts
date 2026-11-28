@@ -67,12 +67,13 @@ describe("/api/transactions/[id] route", () => {
     expect(data.transaction).toEqual(fakeUpdated);
   });
 
-  it("deletes transaction when found", async () => {
-    mockDb.delete.mockReturnValueOnce({
+  it("deletes a transaction it finds by keeping it as a tombstone", async () => {
+    const set = vi.fn().mockReturnValueOnce({
       where: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([{ id: "tx-1" }]),
       }),
     });
+    mockDb.update.mockReturnValueOnce({ set });
 
     const req = new Request("http://localhost/api/transactions/tx-1", {
       method: "DELETE",
@@ -82,5 +83,7 @@ describe("/api/transactions/[id] route", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
+    expect(mockDb.delete).not.toHaveBeenCalled();
+    expect(set).toHaveBeenCalledWith(expect.objectContaining({ deletedAt: expect.any(Date) }));
   });
 });

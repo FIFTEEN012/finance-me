@@ -74,10 +74,12 @@ export const financeTransactions = pgTable(
     linkedInvestmentOrderId: text("linked_investment_order_id"),
     householdId: uuid("household_id"),
     date: text("date"),
+    ...syncColumns,
   },
   (table) => [
     primaryKey({ columns: [table.ownerId, table.id] }),
     check("finance_transactions_amount_positive", sql`${table.amount} > 0`),
+    index("finance_transactions_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
   ],
 );
 
