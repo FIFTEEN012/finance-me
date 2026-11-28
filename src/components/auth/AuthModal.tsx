@@ -12,10 +12,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-client'
-import { migrateLocalDataToNeon } from '@/lib/migrateLocalData'
-import { pullFromNeon } from '@/lib/neonSync'
 import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
-import { useAuthStore } from '@/store/useAuthStore'
+import { getAppSyncEngine } from '@/lib/sync/appEngine'
+import { useAuthStore, type AuthUser } from '@/store/useAuthStore'
+
+/**
+ * After a sign-in or sign-up: the local data becomes this user's (Guest Data
+ * is uploaded once by the sync engine, another account's data is cleared),
+ * then one sync so their User Data is here when the dialog closes.
+ */
+async function claimAndSync(user: AuthUser) {
+  useAuthStore.getState().setUser(user)
+  ensureLocalDataBelongsTo(user.id)
+  await getAppSyncEngine().sync()
+}
 
 const schema = z.object({
   name:     z.string().optional(),
@@ -59,13 +69,7 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
         })
 
         if (res.data?.user) {
-          useAuthStore.getState().setUser(res.data.user)
-          // Drop another account's local data before anything is uploaded
-          ensureLocalDataBelongsTo(res.data.user.id)
-          // Auto migrate local items to Neon if any exist
-          await migrateLocalDataToNeon()
-          // Pull and sync latest records
-          await pullFromNeon()
+          await claimAndSync(res.data.user)
           toast.success('เข้าสู่ระบบสำเร็จ — ข้อมูลเชื่อมต่อกับ Neon PostgreSQL แล้ว')
           onOpenChange(false)
           return
@@ -80,16 +84,8 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
         })
 
         if (res.data?.user) {
-          useAuthStore.getState().setUser(res.data.user)
-          // Drop another account's local data before anything is uploaded
-          ensureLocalDataBelongsTo(res.data.user.id)
-          const migrateRes = await migrateLocalDataToNeon()
-          await pullFromNeon()
-          if (migrateRes.ok && migrateRes.count) {
-            toast.success(`สมัครสมาชิกสำเร็จ — นำเข้าข้อมูลเดิม ${migrateRes.count} รายการขึ้น Neon แล้ว`)
-          } else {
-            toast.success('สมัครสมาชิกและสร้างบัญชี Neon สำเร็จ')
-          }
+          await claimAndSync(res.data.user)
+          toast.success('สมัครสมาชิกสำเร็จ — ข้อมูลในเครื่องนี้เป็นของบัญชีคุณแล้ว')
           onOpenChange(false)
           return
         }
