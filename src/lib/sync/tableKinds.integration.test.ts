@@ -214,7 +214,8 @@ describe.skipIf(!integrationDbUrl())("Table-backed kinds sync across devices", (
     await b.engine.sync();
 
     expect(b.items()).toEqual([goal]);
-    expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", pending: 0, refused: 1 });
+    expect(a.items()).toHaveLength(2);
   });
 
   it("refuses transactions the table cannot hold (non-uuid id, amount not above zero) without holding up the others", async () => {
@@ -231,7 +232,8 @@ describe.skipIf(!integrationDbUrl())("Table-backed kinds sync across devices", (
     await b.engine.sync();
 
     expect(b.items()).toEqual([transaction]);
-    expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+    // The removed one is gone from this device anyway; the other two stay, shown as refused.
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", pending: 0, refused: 2 });
   });
 
   describe("the app's stores", () => {

@@ -281,4 +281,27 @@ describe.skipIf(!integrationDbUrl())("Supplies sync across devices", () => {
       }
     });
   });
+
+  it("shows a record the server refused as a sync error, keeps it on the device, and clears the error once an edit is accepted", async () => {
+    const a = createDevice(network, ALICE, { kind: "category" });
+    a.add({ id: "cat-half", name: "" });
+    await a.engine.sync();
+
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", pending: 0, refused: 1 });
+    expect(a.items()).toEqual([{ id: "cat-half", name: "" }]);
+    const posts = a.requests.filter((m) => m === "POST").length;
+    await a.engine.sync();
+    expect(a.requests.filter((m) => m === "POST").length).toBe(posts);
+    expect(a.engine.getStatus()).toMatchObject({ state: "error", refused: 1 });
+    expect(await a.signOut()).toEqual({ ok: false, unsynced: 1 });
+
+    a.tick(1_000);
+    a.edit("cat-half", { name: "ของใช้", type: "EXPENSE", icon: "Box", color: "#123456" });
+    await a.engine.sync();
+    expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0, refused: 0 });
+
+    const b = createDevice(network, ALICE, { kind: "category" });
+    await b.engine.sync();
+    expect(b.items()).toEqual([expect.objectContaining({ id: "cat-half", name: "ของใช้" })]);
+  });
 });

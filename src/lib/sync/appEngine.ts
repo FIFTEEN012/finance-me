@@ -53,7 +53,7 @@ export function useRecordSync(
   }, [signedInUserId, claimLocalData])
 }
 
-const SERVER_STATUS: SyncStatus = { state: 'synced', pending: 0, syncing: false, lastSyncedAt: null }
+const SERVER_STATUS: SyncStatus = { state: 'synced', pending: 0, refused: 0, syncing: false, lastSyncedAt: null }
 
 export function useSyncStatus(): SyncStatus {
   return useSyncExternalStore(

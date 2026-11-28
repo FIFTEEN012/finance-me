@@ -39,13 +39,20 @@ export interface SyncKindAdapter {
 /**
  * - `synced`: nothing waiting to upload.
  * - `pending`: local changes not on the server yet (offline, or not synced yet).
- * - `error`: the server refused the last sync.
+ * - `error`: the server refused the last sync, or refused records (`refused`)
+ *   that stay on this device but are not on the server.
  */
 export type SyncState = 'synced' | 'pending' | 'error'
 
 export type SyncStatus = {
   state: SyncState
   pending: number
+  /**
+   * Local records the server refused to store (e.g. missing required fields).
+   * They stay on this device and are not retried; an accepted later edit or
+   * delete of the record clears it.
+   */
+  refused: number
   syncing: boolean
   lastSyncedAt: string | null
 }
@@ -84,6 +91,8 @@ export const SYNC_ENGINE_KEYS = {
   uploadedKinds: 'finance-sync-uploaded-kinds',
   /** The last Reset generation the server reported (absent = none heard yet). */
   generation: 'finance-sync-generation',
+  /** Records (kind + id) the server refused to store. */
+  refused: 'finance-sync-refused',
 } as const
 
 /** Edit time any real edit beats, e.g. for records uploaded from pre-sync local data. */
@@ -105,7 +114,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   let applying = false
   let running: Promise<void> | null = null
   let rerun = false
-  let status: SyncStatus = { state: 'synced', pending: 0, syncing: false, lastSyncedAt: null }
+  let status: SyncStatus = { state: 'synced', pending: 0, refused: 0, syncing: false, lastSyncedAt: null }
 
   const keyOf = (kind: string, id: string) => `${kind}\u0000${id}`
 
@@ -134,6 +143,23 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   function setStatus(patch: Partial<SyncStatus>) {
     status = { ...status, ...patch }
     for (const listener of listeners) listener(status)
+  }
+
+  const readRefused = () => readJson<string[]>(SYNC_ENGINE_KEYS.refused, [])
+  /**
+   * Notes which sent records the server refused to store. A refused delete is
+   * not kept: the record is gone from this device anyway.
+   */
+  function noteRefusals(sent: QueuedChange[], results: PushResponse['results']) {
+    const refused = new Set(readRefused())
+    const deletes = new Set(sent.filter((c) => c.data === null).map((c) => keyOf(c.kind, c.id)))
+    for (const r of results) {
+      const key = keyOf(r.kind, r.id)
+      if (r.status === 'rejected' && !r.current && !deletes.has(key)) refused.add(key)
+      else refused.delete(key)
+    }
+    writeJson(SYNC_ENGINE_KEYS.refused, [...refused])
+    setStatus({ refused: refused.size })
   }
 
   const knownGeneration = () => readJson<number | null>(SYNC_ENGINE_KEYS.generation, null) ?? undefined
@@ -240,6 +266,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
       })) as PushResponse
       const winners = response.results.flatMap((r) => (r.status === 'rejected' && r.current ? [r.current] : []))
       dequeue(batch)
+      noteRefusals(batch, response.results)
       if (winners.length) applyRecords(winners)
       heardGeneration(response.generation)
     }
@@ -261,7 +288,11 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
       await push()
       await pull()
       const pending = readQueue().length
-      setStatus({ state: pending ? 'pending' : 'synced', pending, lastSyncedAt: new Date(now()).toISOString() })
+      setStatus({
+        state: status.refused ? 'error' : pending ? 'pending' : 'synced',
+        pending,
+        lastSyncedAt: new Date(now()).toISOString(),
+      })
     } catch (error) {
       const pending = readQueue().length
       setStatus({ state: error instanceof ServerRefused ? 'error' : pending ? 'pending' : status.state, pending })
@@ -289,7 +320,13 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   }
 
   const initialPending = readQueue().length
-  status = { ...status, pending: initialPending, state: initialPending ? 'pending' : 'synced' }
+  const initialRefused = readRefused().length
+  status = {
+    ...status,
+    pending: initialPending,
+    refused: initialRefused,
+    state: initialRefused ? 'error' : initialPending ? 'pending' : 'synced',
+  }
 
   return {
     register(adapter) {
@@ -319,7 +356,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
         heardGeneration(afterReset.generation)
         writeJson(SYNC_ENGINE_KEYS.uploadedKinds, [...adapters.keys()])
       }
-      setStatus({ state: 'synced', pending: 0, lastSyncedAt: null })
+      setStatus({ state: 'synced', pending: 0, refused: 0, lastSyncedAt: null })
     },
   }
 }
