@@ -20,7 +20,10 @@ export type SyncRoute = {
 };
 
 export type DeviceNetwork = {
+  /** Handles `/api/sync/changes` (and any path not in `routes`). */
   route: SyncRoute;
+  /** Other route handlers by path, e.g. `{ "/api/sync/reset": resetRoute }`. */
+  routes?: Record<string, Partial<SyncRoute>>;
   /** Makes the mocked session return this user for the next handler call. */
   signInAs: (userId: string) => void;
 };
@@ -100,7 +103,10 @@ function deviceFetch(
     const req = new Request(new URL(String(input), "http://localhost"), init);
     device.requests.push(req.method);
     network.signInAs(userId);
-    return req.method === "GET" ? network.route.GET(req) : network.route.POST(req);
+    const route = network.routes?.[new URL(req.url).pathname] ?? network.route;
+    const handler = req.method === "GET" ? route.GET : route.POST;
+    if (!handler) return new Response(null, { status: 405 });
+    return handler(req);
   };
 }
 
@@ -116,14 +122,17 @@ export function createAppDevice(
 ) {
   let clock = opts.startAt ?? Date.parse("2026-11-26T00:00:00Z");
   const device = { offline: false, requests: [] as string[], storage: memoryStorage() };
+  const fetchAsDevice = deviceFetch(network, userId, device);
   const engine = createSyncEngine({
-    fetch: deviceFetch(network, userId, device),
+    fetch: fetchAsDevice,
     storage: device.storage,
     now: () => clock,
   });
   const stops = adapters.map((adapter) => engine.register(adapter));
   return Object.assign(device, {
     engine,
+    /** This device's network: offline when `offline` is set, signed in as its user. */
+    fetch: fetchAsDevice,
     tick: (ms: number) => {
       clock += ms;
     },

@@ -64,6 +64,13 @@
       "when": 1795681377059,
       "tag": "0008_bot_records_to_user_records",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795846072922,
+      "tag": "0009_sync_resets",
+      "breakpoints": true
     }
   ]
 }

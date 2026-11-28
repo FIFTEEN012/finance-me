@@ -81,7 +81,12 @@ function safeRemove(key: string) {
   }
 }
 
-function clearPreviousOwnerData() {
+/**
+ * Empties this browser's copy of User Data: the stores in memory and their
+ * persisted keys. Device Preferences (dashboard layout, onboarding) are kept.
+ * Does not touch the sync engine's queue; callers reset it afterwards.
+ */
+export function clearLocalUserData() {
   // Reset in-memory state first: persist's setState writes the (default) state
   // back to storage, and a later rehydrate from empty storage keeps whatever is
   // in memory, so stale rows must be gone from memory before keys are removed.
@@ -100,6 +105,10 @@ function clearPreviousOwnerData() {
     safeRemove(`${key}__synced_at`)
     safeRemove(`${key}__modified_at`)
   }
+}
+
+function clearPreviousOwnerData() {
+  clearLocalUserData()
   safeRemove(MIGRATED_FLAG_KEY)
   // After the stores are emptied: their removals must not be uploaded to the
   // new account, and its first sync must not count as already uploaded.

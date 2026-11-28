@@ -1,10 +1,11 @@
 import 'server-only'
 
-import { and, eq, getTableColumns, gt, sql, type SQL } from 'drizzle-orm'
+import { and, eq, getTableColumns, gt, isNull, sql, type SQL } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '@/db/schema'
-import { userRecords } from '@/db/schema'
-import type { OwnTableKind, PullResponse, PushResult, SyncChange, SyncRecord } from './contract'
+import { financeCategories, syncResets, userRecords } from '@/db/schema'
+import { defaultCategories } from '@/lib/defaultCategories'
+import type { OwnTableKind, PullResponse, PushResult, ResetResponse, SyncChange, SyncRecord } from './contract'
 import { TABLE_KINDS, type TableKind } from './tableKinds'
 
 type Db = PostgresJsDatabase<typeof schema>
@@ -165,19 +166,128 @@ async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: Ta
   }
 }
 
+/** Advisory lock namespace for a user's sync writes. */
+const SYNC_LOCK_SPACE = 33_023
+
+/**
+ * Pushes take the owner's lock shared, a Reset takes it exclusively: a push
+ * never runs half before and half after a Reset, so it cannot slip a record
+ * from before the Reset in after it.
+ */
+async function lockOwner(tx: Tx, ownerId: string, mode: 'push' | 'reset') {
+  await tx.execute(
+    mode === 'reset'
+      ? sql`select pg_advisory_xact_lock(${SYNC_LOCK_SPACE}, hashtext(${ownerId}))`
+      : sql`select pg_advisory_xact_lock_shared(${SYNC_LOCK_SPACE}, hashtext(${ownerId}))`,
+  )
+}
+
+async function lastResetAt(tx: Tx, ownerId: string): Promise<Date | null> {
+  const [row] = await tx.select().from(syncResets).where(eq(syncResets.ownerId, ownerId))
+  return row?.resetAt ?? null
+}
+
+/** The stored record (tombstone included), if the server has one. */
+async function storedRecord(tx: Tx, ownerId: string, kind: string, id: string): Promise<SyncRecord | undefined> {
+  const spec = tableKindOf(kind)
+  if (!spec) {
+    const [row] = await tx
+      .select()
+      .from(userRecords)
+      .where(and(eq(userRecords.ownerId, ownerId), eq(userRecords.kind, kind), eq(userRecords.id, id)))
+    return row ? sharedRecord(row) : undefined
+  }
+  if (!(spec.acceptsId?.(id) ?? true)) return undefined
+  const t = spec.table
+  const [row] = (await tx
+    .select()
+    .from(t)
+    .where(and(eq(t.ownerId, ownerId), eq(t.id, id)))) as Record<string, unknown>[]
+  return row ? tableRecord(kind, spec, row) : undefined
+}
+
+/**
+ * A change edited at or before the user's last Reset was made on data the
+ * Reset wiped: it loses, and the device gets what the server holds now (or,
+ * for a record the server never had, a tombstone) so it drops its copy.
+ */
+async function refuseFromBeforeReset(tx: Tx, ownerId: string, change: SyncChange, resetAt: Date): Promise<PushResult> {
+  const at = resetAt.toISOString()
+  const current = (await storedRecord(tx, ownerId, change.kind, change.id)) ?? {
+    kind: change.kind,
+    id: change.id,
+    data: null,
+    editedAt: at,
+    deletedAt: at,
+  }
+  return { kind: change.kind, id: change.id, status: 'rejected', current }
+}
+
 /**
  * Applies `changes` for `ownerId` in one transaction, last edit wins per
  * record (see `newerThanStored`). Kinds with a table of their own
  * (`TABLE_KINDS`) are written there; the rest go to `user_records`. A record
- * a kind cannot store (missing required fields) is refused.
+ * a kind cannot store (missing required fields) is refused, and so is any
+ * change edited at or before the user's last Reset.
  */
 export async function pushChanges(db: Db, ownerId: string, changes: SyncChange[]): Promise<PushResult[]> {
   return db.transaction(async (tx) => {
+    await lockOwner(tx, ownerId, 'push')
+    const resetAt = await lastResetAt(tx, ownerId)
     const results: PushResult[] = []
     for (const change of changes) {
+      if (resetAt && Date.parse(change.editedAt) <= resetAt.getTime()) {
+        results.push(await refuseFromBeforeReset(tx, ownerId, change, resetAt))
+        continue
+      }
       const spec = tableKindOf(change.kind)
       results.push(spec ? await pushToTable(tx, ownerId, change, spec) : await pushShared(tx, ownerId, change))
     }
     return results
+  })
+}
+
+/**
+ * Reset (GLOSSARY), in one transaction: every live User Data record of
+ * `ownerId` becomes a tombstone edited at the Reset time (server clock), the
+ * default categories are written back live at that time (also those the user
+ * had deleted; same ids on every device), and the Reset time is recorded so
+ * later pushes of older edits are refused. Device Preferences are not on the
+ * server and are untouched; other users' rows are not touched.
+ */
+export async function resetRecords(db: Db, ownerId: string): Promise<ResetResponse> {
+  return db.transaction(async (tx) => {
+    await lockOwner(tx, ownerId, 'reset')
+    const [{ now }] = await tx.execute<{ now: Date | string }>(sql`select now() as now`)
+    // Millisecond precision, like every edit time a device sends.
+    const resetAt = new Date(new Date(now).getTime())
+
+    await tx
+      .update(userRecords)
+      .set({ data: null, editedAt: resetAt, deletedAt: resetAt, updatedAt: sql`now()` })
+      .where(and(eq(userRecords.ownerId, ownerId), isNull(userRecords.deletedAt)))
+    for (const spec of Object.values(TABLE_KINDS)) {
+      const t = spec.table
+      await tx
+        .update(t)
+        .set({ editedAt: resetAt, deletedAt: resetAt, updatedAt: sql`now()` } as never)
+        .where(and(eq(t.ownerId, ownerId), isNull(t.deletedAt)))
+    }
+
+    for (const category of defaultCategories) {
+      const row = TABLE_KINDS.category.toRow(category as unknown as Record<string, unknown>)!
+      const written = { ...row, editedAt: resetAt, deletedAt: null, updatedAt: sql`now()` }
+      await tx
+        .insert(financeCategories)
+        .values({ ...written, ownerId, id: category.id } as never)
+        .onConflictDoUpdate({ target: [financeCategories.ownerId, financeCategories.id], set: written as never })
+    }
+
+    await tx
+      .insert(syncResets)
+      .values({ ownerId, resetAt })
+      .onConflictDoUpdate({ target: syncResets.ownerId, set: { resetAt } })
+
+    return { resetAt: resetAt.toISOString() }
   })
 }
