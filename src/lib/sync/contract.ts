@@ -4,10 +4,14 @@ import { z } from 'zod'
  * Wire contract of `/api/sync/changes` (ADR-0003), shared by the route and
  * the client sync engine.
  *
- * - GET  `?since=<cursor>` → `PullResponse`: every record of the caller
- *   changed after the cursor, tombstones included, and the next cursor.
- *   No `since` = everything. The cursor is opaque to clients.
- * - POST `PushRequest` → `PushResponse`: one result per change. A change is
+ * - GET  `?since=<cursor>[&limit=<n>]` → `PullResponse`: every record of the
+ *   caller changed after the cursor, tombstones included, and the next
+ *   cursor. No `since` = everything. The cursor is opaque to clients. At most
+ *   `limit` records come per page; while `next` is set, ask for
+ *   `?page=<next>` (same `limit`) and keep the cursor of the last page.
+ * - POST `PushRequest` → `PushResponse`: one result per change. A body over
+ *   `MAX_PUSH_BODY_BYTES`, or a record over `MAX_CHANGE_DATA_BYTES`, is
+ *   refused whole with 413. A change is
  *   accepted only if its `editedAt` is newer than the stored record's
  *   (last edit wins per record); a rejected change carries the record that
  *   won so the device can take it.
@@ -69,6 +73,25 @@ export type ResetResponse = { resetAt: string; generation: number }
 /** Most changes one push may carry; the engine sends larger queues in batches. */
 export const MAX_PUSH_CHANGES = 200
 
+/**
+ * Largest record the server stores: its `data` as JSON, in UTF-8 bytes. Room
+ * for the settings record's report cover image: the app takes files up to
+ * 2 MB, about 2.7 MB as a base64 data URL.
+ */
+export const MAX_CHANGE_DATA_BYTES = 3 * 1024 * 1024
+
+/** Largest push body; the engine splits its queue to stay under it. */
+export const MAX_PUSH_BODY_BYTES = 6 * 1024 * 1024
+
+/** Records per pull page when the device does not ask, and the most it may ask for. */
+export const DEFAULT_PULL_LIMIT = 500
+export const MAX_PULL_LIMIT = 1000
+
+/** Size of `value` sent as JSON, in UTF-8 bytes. */
+export function jsonBytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).length
+}
+
 /** A record as the server holds it. `data` is null for a tombstone. */
 export type SyncRecord = {
   kind: string
@@ -98,7 +121,12 @@ export const pushRequestSchema = z.object({
   generation: z.number().int().min(0).optional(),
 })
 
-export const sinceSchema = isoTime.optional()
+export const pullQuerySchema = z.object({
+  since: isoTime.optional(),
+  /** Continuation token from the previous page's `next`. */
+  page: z.string().min(1).max(2000).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PULL_LIMIT).optional(),
+})
 
 export type PushResult = {
   kind: string
@@ -109,4 +137,10 @@ export type PushResult = {
 }
 
 export type PushResponse = { results: PushResult[]; generation: number }
-export type PullResponse = { records: SyncRecord[]; cursor: string; generation: number }
+export type PullResponse = {
+  records: SyncRecord[]
+  cursor: string
+  generation: number
+  /** Set while more pages follow: ask for `?page=<next>`. */
+  next?: string
+}

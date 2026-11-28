@@ -79,6 +79,8 @@ export function createDevice(
      * app's persisted stores (`store.persist.rehydrate()` re-reads them).
      */
     persistKey?: string;
+    /** Records per pull page this device asks for (default: the server's). */
+    pullLimit?: number;
   } = {},
 ): Device {
   let clock = opts.startAt ?? Date.parse("2026-11-26T00:00:00Z");
@@ -122,6 +124,7 @@ export function createDevice(
     fetch: deviceFetch(network, () => device.userId, device),
     storage,
     now: () => clock,
+    pullLimit: opts.pullLimit,
   });
   device.engine.register(device.adapter);
   const account = createDeviceAccount({

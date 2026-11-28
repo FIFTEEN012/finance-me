@@ -1,5 +1,8 @@
 import {
+  MAX_CHANGE_DATA_BYTES,
+  MAX_PUSH_BODY_BYTES,
   MAX_PUSH_CHANGES,
+  jsonBytes,
   SYNC_CHANGES_PATH,
   type PullResponse,
   type PushResponse,
@@ -82,6 +85,8 @@ export type SyncEngineOptions = {
   fetch: typeof fetch
   storage: SyncStorage
   now?: () => number
+  /** Records per pull page to ask for (default: the server's). */
+  pullLimit?: number
 }
 
 /** localStorage keys owned by the engine. */
@@ -108,7 +113,10 @@ class ServerRefused extends Error {}
  */
 type QueuedChange = SyncChange & { generation?: number }
 
-export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: SyncEngineOptions): SyncEngine {
+/** Room left in a push body for everything but the changes themselves. */
+const PUSH_BODY_OVERHEAD = 1024
+
+export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now, pullLimit }: SyncEngineOptions): SyncEngine {
   const adapters = new Map<string, SyncKindAdapter>()
   const listeners = new Set<(status: SyncStatus) => void>()
   let applying = false
@@ -146,6 +154,35 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   }
 
   const readRefused = () => readJson<string[]>(SYNC_ENGINE_KEYS.refused, [])
+  /**
+   * Takes records too large for the server out of the queue, as refused:
+   * sending them would only be refused again (413).
+   */
+  function setAsideTooLarge() {
+    const queue = readQueue()
+    const tooLarge = queue.filter((c) => c.data !== null && jsonBytes(c.data) > MAX_CHANGE_DATA_BYTES)
+    if (tooLarge.length === 0) return
+    const refused = new Set([...readRefused(), ...tooLarge.map((c) => keyOf(c.kind, c.id))])
+    writeJson(SYNC_ENGINE_KEYS.refused, [...refused])
+    setStatus({ refused: refused.size })
+    writeQueue(queue.filter((c) => !tooLarge.includes(c)))
+  }
+
+  /** The next push: the head of the queue, one Reset generation, within the request limits. */
+  function nextBatch(queue: QueuedChange[]): QueuedChange[] {
+    const generation = queue[0].generation
+    const batch: QueuedChange[] = []
+    let bytes = PUSH_BODY_OVERHEAD
+    for (const change of queue) {
+      if (batch.length === MAX_PUSH_CHANGES || change.generation !== generation) break
+      const size = jsonBytes(change) + 1
+      if (batch.length > 0 && bytes + size > MAX_PUSH_BODY_BYTES) break
+      batch.push(change)
+      bytes += size
+    }
+    return batch
+  }
+
   /**
    * Notes which sent records the server refused to store. A refused delete is
    * not kept: the record is gone from this device anyway.
@@ -245,17 +282,15 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   }
 
   async function push() {
-    // Bounded, so a queue that cannot be shortened (storage blocked) cannot loop forever.
-    const batches = Math.ceil(readQueue().length / MAX_PUSH_CHANGES)
-    // A batch never mixes changes queued under different Reset generations.
-    const queued = readQueue()
-    const runs = queued.filter((c, i) => i === 0 || c.generation !== queued[i - 1].generation).length
-    for (let i = 0; i < batches + runs; i++) {
+    setAsideTooLarge()
+    // Bounded (each push sends at least one change), so a queue that cannot
+    // be shortened (storage blocked) cannot loop forever.
+    const most = readQueue().length
+    for (let i = 0; i < most; i++) {
       const queue = readQueue()
       if (queue.length === 0) return
-      const generation = queue[0].generation
-      const end = queue.findIndex((c) => c.generation !== generation)
-      const batch = queue.slice(0, end === -1 ? MAX_PUSH_CHANGES : Math.min(end, MAX_PUSH_CHANGES))
+      const batch = nextBatch(queue)
+      const generation = batch[0].generation
       const response = (await request(SYNC_CHANGES_PATH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -274,11 +309,20 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
 
   async function pull() {
     const cursor = readJson<string | null>(SYNC_ENGINE_KEYS.cursor, null)
-    const url = cursor ? `${SYNC_CHANGES_PATH}?since=${encodeURIComponent(cursor)}` : SYNC_CHANGES_PATH
-    const body = (await request(url)) as PullResponse
-    applyRecords(body.records)
-    writeJson(SYNC_ENGINE_KEYS.cursor, body.cursor)
-    heardGeneration(body.generation)
+    const limit: Record<string, string> = pullLimit ? { limit: String(pullLimit) } : {}
+    let query: Record<string, string> = { ...(cursor ? { since: cursor } : {}), ...limit }
+    // Page after page; the cursor is kept only once the last page is in.
+    for (;;) {
+      const search = new URLSearchParams(query).toString()
+      const body = (await request(search ? `${SYNC_CHANGES_PATH}?${search}` : SYNC_CHANGES_PATH)) as PullResponse
+      applyRecords(body.records)
+      heardGeneration(body.generation)
+      if (!body.next) {
+        writeJson(SYNC_ENGINE_KEYS.cursor, body.cursor)
+        return
+      }
+      query = { page: body.next, ...limit }
+    }
   }
 
   async function runOnce() {

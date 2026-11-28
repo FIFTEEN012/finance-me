@@ -1,18 +1,20 @@
 import 'server-only'
 
 import { and, eq, getTableColumns, gt, isNull, sql, type SQL } from 'drizzle-orm'
+import { z } from 'zod'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '@/db/schema'
 import { financeCategories, syncResets, userRecords } from '@/db/schema'
 import { defaultCategories } from '@/lib/defaultCategories'
-import type {
-  OwnTableKind,
-  PullResponse,
-  PushResponse,
-  PushResult,
-  ResetResponse,
-  SyncChange,
-  SyncRecord,
+import {
+  DEFAULT_PULL_LIMIT,
+  type OwnTableKind,
+  type PullResponse,
+  type PushResponse,
+  type PushResult,
+  type ResetResponse,
+  type SyncChange,
+  type SyncRecord,
 } from './contract'
 import { TABLE_KINDS, type TableKind } from './tableKinds'
 
@@ -64,33 +66,141 @@ function newerThanStored(stored: { editedAt: unknown; deletedAt: unknown }): SQL
         AND excluded.deleted_at IS NOT NULL AND ${stored.deletedAt} IS NULL)`
 }
 
-/** Every record of `ownerId` received after `since` (all when absent), tombstones included. */
-export async function pullRecords(db: Db, ownerId: string, since?: string): Promise<PullResponse> {
+/** A pull page token that is not one this server issued. */
+export class InvalidPageToken extends Error {}
+
+/**
+ * Where a paged pull stands, carried in the opaque `next` token: the cursor
+ * and generation as of the first page (so nothing committed meanwhile is
+ * skipped by the cursor), the source being read (0 = user_records, then each
+ * table kind) and the last record sent from it (server time to the
+ * microsecond, kind, id).
+ */
+const pageTokenSchema = z.object({
+  since: z.string().optional(),
+  cursor: z.string(),
+  generation: z.number().int().min(0),
+  source: z.number().int().min(0),
+  after: z.object({ at: z.string(), kind: z.string(), id: z.string() }).optional(),
+})
+type PageToken = z.infer<typeof pageTokenSchema>
+
+function encodePage(token: PageToken): string {
+  return Buffer.from(JSON.stringify(token)).toString('base64url')
+}
+
+function decodePage(page: string): PageToken {
+  try {
+    return pageTokenSchema.parse(JSON.parse(Buffer.from(page, 'base64url').toString('utf8')))
+  } catch {
+    throw new InvalidPageToken()
+  }
+}
+
+/** Server time of a row to the microsecond (JS dates stop at milliseconds). */
+const exactTime = (column: unknown) =>
+  sql<string>`to_char(${column} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US')`
+const afterTime = (at: string) => sql`(${at}::timestamp at time zone 'UTC')`
+
+type Source = {
+  kind?: string
+  read(tx: Tx, ownerId: string, after: Date | undefined, from: PageToken['after'], limit: number): Promise<{ record: SyncRecord; at: string }[]>
+}
+
+const SOURCES: Source[] = [
+  {
+    async read(tx, ownerId, after, from, limit) {
+      const t = userRecords
+      const rows = await tx
+        .select({ row: t, at: exactTime(t.updatedAt) })
+        .from(t)
+        .where(
+          and(
+            eq(t.ownerId, ownerId),
+            after ? gt(t.updatedAt, after) : undefined,
+            from
+              ? sql`(${t.updatedAt}, ${t.kind} collate "C", ${t.id} collate "C") > (${afterTime(from.at)}, ${from.kind}, ${from.id})`
+              : undefined,
+          ),
+        )
+        .orderBy(t.updatedAt, sql`${t.kind} collate "C"`, sql`${t.id} collate "C"`)
+        .limit(limit)
+      return rows.map(({ row, at }) => ({ record: sharedRecord(row), at }))
+    },
+  },
+  ...Object.entries(TABLE_KINDS).map(
+    ([kind, spec]): Source => ({
+      kind,
+      async read(tx, ownerId, after, from, limit) {
+        const t = spec.table
+        const rows = (await tx
+          .select({ row: t, at: exactTime(t.updatedAt) } as never)
+          .from(t)
+          .where(
+            and(
+              eq(t.ownerId, ownerId),
+              after ? gt(t.updatedAt, after) : undefined,
+              from
+                ? sql`(${t.updatedAt}, ${t.id}::text collate "C") > (${afterTime(from.at)}, ${from.id})`
+                : undefined,
+            ),
+          )
+          .orderBy(t.updatedAt, sql`${t.id}::text collate "C"`)
+          .limit(limit)) as unknown as { row: Record<string, unknown>; at: string }[]
+        return rows.map(({ row, at }) => ({ record: tableRecord(kind, spec, row), at }))
+      },
+    }),
+  ),
+]
+
+/**
+ * Records of `ownerId` received after `since` (all when absent), tombstones
+ * included, at most `limit` per page; `next` is set while more follow.
+ */
+export async function pullRecords(
+  db: Db,
+  ownerId: string,
+  { since, page, limit = DEFAULT_PULL_LIMIT }: { since?: string; page?: string; limit?: number } = {},
+): Promise<PullResponse> {
+  const resumed = page ? decodePage(page) : undefined
   // Under the owner's shared lock, so the generation and the records agree
   // (a Reset cannot run in between).
   return db.transaction(async (tx) => {
     await lockOwner(tx, ownerId, 'push')
-    const [{ now }] = await tx.execute<{ now: Date | string }>(sql`select now() as now`)
-    const after = since ? new Date(since) : undefined
-
-    const shared = await tx
-      .select()
-      .from(userRecords)
-      .where(and(eq(userRecords.ownerId, ownerId), after ? gt(userRecords.updatedAt, after) : undefined))
-    const records = shared.map(sharedRecord)
-
-    for (const [kind, spec] of Object.entries(TABLE_KINDS)) {
-      const t = spec.table
-      const rows = (await tx
-        .select()
-        .from(t)
-        .where(and(eq(t.ownerId, ownerId), after ? gt(t.updatedAt, after) : undefined))) as Record<string, unknown>[]
-      for (const row of rows) records.push(tableRecord(kind, spec, row))
+    let token: PageToken
+    if (resumed) {
+      token = resumed
+    } else {
+      const [{ now }] = await tx.execute<{ now: Date | string }>(sql`select now() as now`)
+      const { generation } = await lastReset(tx, ownerId)
+      const cursor = new Date(new Date(now).getTime() - CURSOR_OVERLAP_MS).toISOString()
+      token = { since, cursor, generation, source: 0 }
     }
+    const after = token.since ? new Date(token.since) : undefined
 
-    const cursor = new Date(new Date(now).getTime() - CURSOR_OVERLAP_MS).toISOString()
-    const { generation } = await lastReset(tx, ownerId)
-    return { records, cursor, generation }
+    const records: SyncRecord[] = []
+    let source = token.source
+    let from = token.after
+    let next: string | undefined
+    while (source < SOURCES.length) {
+      const room = limit - records.length
+      if (room === 0) {
+        next = encodePage({ ...token, source, after: from })
+        break
+      }
+      const rows = await SOURCES[source].read(tx, ownerId, after, from, room + 1)
+      const taken = rows.slice(0, room)
+      records.push(...taken.map((r) => r.record))
+      if (rows.length > room) {
+        const last = taken[taken.length - 1]
+        from = { at: last.at, kind: last.record.kind, id: last.record.id }
+        next = encodePage({ ...token, source, after: from })
+        break
+      }
+      source++
+      from = undefined
+    }
+    return { records, cursor: token.cursor, generation: token.generation, ...(next ? { next } : {}) }
   })
 }
 
