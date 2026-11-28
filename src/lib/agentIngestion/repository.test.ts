@@ -7,6 +7,7 @@ import {
   financeTransactions,
   mealLogs,
   runningLogs,
+  userRecords,
   workoutLogs,
 } from "../../db/schema";
 import { AgentIngestionRepository } from "./repository";
@@ -59,10 +60,10 @@ describe("agent ingestion repository", () => {
   });
 
   it.each([
-    ["meal", { mealType: "lunch", food: "Rice", cost: "0.01", loggedAt: request.data.occurredAt }],
-    ["workout", { exercise: "Squats", sets: 3, loggedAt: request.data.occurredAt }],
-    ["run", { distanceKm: 5.25, durationMinutes: 30, runType: "easy", loggedAt: request.data.occurredAt }],
-  ] as const)("ingests a %s with its matching audit event", async (kind, data) => {
+    ["meal", "food-entry", { mealType: "lunch", food: "Rice", cost: "0.01", loggedAt: request.data.occurredAt }],
+    ["workout", "workout-session", { exercise: "Squats", sets: 3, loggedAt: request.data.occurredAt }],
+    ["run", "workout-session", { distanceKm: 5.25, durationMinutes: 30, runType: "easy", loggedAt: request.data.occurredAt }],
+  ] as const)("ingests a %s as a %s record with its matching audit event", async (kind, recordType, data) => {
     const repository = new AgentIngestionRepository(createFakeDatabase());
     const result = await repository.ingest("owner-1", {
       ...request,
@@ -72,7 +73,8 @@ describe("agent ingestion repository", () => {
     } as never);
 
     expect(result.kind).toBe(kind);
-    expect(result.auditEvent).toMatchObject({ recordType: kind, recordId: result.record.id });
+    expect(result.record).toMatchObject({ ownerId: "owner-1", kind: recordType });
+    expect(result.auditEvent).toMatchObject({ recordType, recordId: result.record.id });
   });
 
   it("rolls back the domain row when the domain insert fails", async () => {
@@ -170,7 +172,7 @@ function createFakeDatabase(options: {
   simulateConcurrentWinner?: boolean;
   countResult?: number;
 } = {}) {
-  const domainTables = [financeTransactions, mealLogs, workoutLogs, runningLogs];
+  const domainTables = [financeTransactions, mealLogs, workoutLogs, runningLogs, userRecords];
   const rows = new Map<object, Record<string, unknown>[]>();
   let committedWinner: { table: object; row: Record<string, unknown> }[] = [];
   let failReadBackActive = false;

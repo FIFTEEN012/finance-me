@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import { and, count, desc, eq } from "drizzle-orm";
 
 import {
@@ -7,8 +9,10 @@ import {
   financeTransactions,
   mealLogs,
   runningLogs,
+  userRecords,
   workoutLogs,
 } from "../../db/schema";
+import { foodEntryFromMeal, weightFromHealthProfile, workoutSessionFrom } from "./botRecords";
 import type { AgentIngestionRequest } from "./schema";
 
 /** The small part of the Drizzle database boundary used by this repository. */
@@ -29,12 +33,22 @@ type StoredResult = {
 
 type IngestionResult = StoredResult & { status: "created" | "deduplicated" };
 
+/**
+ * Where an audit event's record lives, by its `record_type`. Transactions
+ * (and meals, workouts and runs recorded before #31) are rows of their own
+ * tables, found by uuid id. Meals, workouts and runs recorded since are
+ * `user_records` rows of the record type's kind (ADR-0003), so they sync to
+ * devices as Food Entries and Workout Sessions.
+ */
 const domainTables = {
   transaction: financeTransactions,
   meal: mealLogs,
   workout: workoutLogs,
   run: runningLogs,
 } as const;
+
+const SHARED_RECORD_TYPES = ["food-entry", "workout-session"] as const;
+type SharedRecordType = (typeof SHARED_RECORD_TYPES)[number];
 
 function isUniqueViolation(error: unknown) {
   return (
@@ -45,34 +59,97 @@ function isUniqueViolation(error: unknown) {
   );
 }
 
-function domainTableForRecordType(recordType: unknown) {
+function isSharedRecordType(recordType: unknown): recordType is SharedRecordType {
+  return SHARED_RECORD_TYPES.includes(recordType as SharedRecordType);
+}
+
+/** Reads the record an audit event points at, or undefined if it is gone. */
+async function readRecord(tx: IngestionTransaction, ownerId: string, auditEvent: Record<string, any>) {
+  const { recordType, recordId } = auditEvent;
+  if (isSharedRecordType(recordType)) {
+    const rows = await tx
+      .select()
+      .from(userRecords)
+      .where(
+        and(
+          eq(userRecords.ownerId, ownerId),
+          eq(userRecords.kind, recordType),
+          eq(userRecords.id, String(recordId)),
+        ),
+      )
+      .limit(1);
+    return rows[0] as Record<string, any> | undefined;
+  }
   if (typeof recordType !== "string" || !Object.hasOwn(domainTables, recordType)) {
     throw new Error(`Unknown ingestion record type: ${String(recordType)}`);
   }
-  return domainTables[recordType as AgentIngestionRequest["kind"]];
+  const table = domainTables[recordType as keyof typeof domainTables];
+  const rows = await tx
+    .select()
+    .from(table)
+    .where(and(eq(table.id, recordId), eq(table.ownerId, ownerId)))
+    .limit(1);
+  return rows[0] as Record<string, any> | undefined;
 }
 
-function recordValues(ownerId: string, request: AgentIngestionRequest) {
-  const common = {
-    ownerId,
-    source: request.source,
-    sourceMessageId: request.sourceMessageId,
-  };
+/** The message kind the bot sent (meal/workout/run/transaction) for an audit event. */
+function messageKind(auditEvent: Record<string, any>): AgentIngestionRequest["kind"] {
+  return isSharedRecordType(auditEvent.recordType) ? auditEvent.payload?.kind : auditEvent.recordType;
+}
 
-  switch (request.kind) {
-    case "transaction":
-      return {
-        ...common,
+async function resolveEvent(tx: IngestionTransaction, ownerId: string, auditEvent: Record<string, any>) {
+  const record = await readRecord(tx, ownerId, auditEvent);
+  if (!record) {
+    throw new Error(`Ingestion audit event ${auditEvent.id} references a missing record`);
+  }
+  return { kind: messageKind(auditEvent), record, auditEvent };
+}
+
+async function profileWeight(tx: IngestionTransaction, ownerId: string) {
+  const rows = await tx
+    .select()
+    .from(userRecords)
+    .where(
+      and(
+        eq(userRecords.ownerId, ownerId),
+        eq(userRecords.kind, "health-profile"),
+        eq(userRecords.id, "health-profile"),
+      ),
+    )
+    .limit(1);
+  return weightFromHealthProfile(rows[0]?.data);
+}
+
+/** Inserts the record a message becomes; returns its record type and row. */
+async function insertRecord(tx: IngestionTransaction, ownerId: string, request: AgentIngestionRequest) {
+  if (request.kind === "transaction") {
+    const rows = await tx
+      .insert(financeTransactions)
+      .values({
+        ownerId,
+        source: request.source,
+        sourceMessageId: request.sourceMessageId,
         ...request.data,
         occurredAt: new Date(request.data.occurredAt),
-      };
-    case "meal":
-      return { ...common, ...request.data, loggedAt: new Date(request.data.loggedAt) };
-    case "workout":
-      return { ...common, ...request.data, loggedAt: new Date(request.data.loggedAt) };
-    case "run":
-      return { ...common, ...request.data, loggedAt: new Date(request.data.loggedAt) };
+      })
+      .returning();
+    return { recordType: "transaction", record: rows[0] };
   }
+
+  const now = new Date();
+  const meta = { id: randomUUID(), createdAt: now.toISOString() };
+  const [kind, data] =
+    request.kind === "meal"
+      ? (["food-entry", foodEntryFromMeal(request.data, meta)] as const)
+      : ([
+          "workout-session",
+          workoutSessionFrom(request, { ...meta, weightKg: await profileWeight(tx, ownerId) }),
+        ] as const);
+  const rows = await tx
+    .insert(userRecords)
+    .values({ ownerId, kind, id: meta.id, data, editedAt: now })
+    .returning();
+  return { recordType: kind, record: rows[0] };
 }
 
 async function findExisting(
@@ -92,18 +169,7 @@ async function findExisting(
     .limit(1);
   const auditEvent = events[0];
   if (!auditEvent) return undefined;
-
-  const table = domainTableForRecordType(auditEvent.recordType);
-  const records = await tx
-    .select()
-    .from(table)
-    .where(and(eq(table.id, auditEvent.recordId), eq(table.ownerId, ownerId)))
-    .limit(1);
-  const record = records[0];
-  if (!record) {
-    throw new Error(`Ingestion audit event ${auditEvent.id} references a missing record`);
-  }
-  return { kind: auditEvent.recordType, record, auditEvent };
+  return resolveEvent(tx, ownerId, auditEvent);
 }
 
 export class AgentIngestionRepository {
@@ -120,9 +186,7 @@ export class AgentIngestionRepository {
         const existing = await findExisting(tx, ownerId, request.idempotencyKey);
         if (existing) return { ...existing, status: "deduplicated" };
 
-        const table = domainTables[request.kind];
-        const insertedRecords = await tx.insert(table).values(recordValues(ownerId, request)).returning();
-        const record = insertedRecords[0];
+        const { recordType, record } = await insertRecord(tx, ownerId, request);
         if (!record) throw new Error("Domain insert returned no row");
 
         const insertedEvents = await tx
@@ -132,7 +196,7 @@ export class AgentIngestionRepository {
             source: request.source,
             sourceMessageId: request.sourceMessageId,
             idempotencyKey: request.idempotencyKey,
-            recordType: request.kind,
+            recordType,
             recordId: record.id,
             payload: request,
           })
@@ -170,17 +234,9 @@ export class AgentIngestionRepository {
         .select({ count: count() })
         .from(agentIngestionEvents)
         .where(eq(agentIngestionEvents.ownerId, ownerId));
-      const records = await Promise.all(events.map(async (auditEvent: Record<string, any>) => {
-        const table = domainTableForRecordType(auditEvent.recordType);
-        const rows = await tx
-          .select()
-          .from(table)
-          .where(and(eq(table.id, auditEvent.recordId), eq(table.ownerId, ownerId)))
-          .limit(1);
-        const record = rows[0];
-        if (!record) throw new Error(`Ingestion audit event ${auditEvent.id} references a missing record`);
-        return { kind: auditEvent.recordType, record, auditEvent };
-      }));
+      const records = await Promise.all(
+        events.map((auditEvent: Record<string, any>) => resolveEvent(tx, ownerId, auditEvent)),
+      );
       return { records, total: Number(totalRows[0]?.count ?? 0) };
     });
   }

@@ -57,6 +57,13 @@
       "when": 1795681276361,
       "tag": "0007_sync_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795681377059,
+      "tag": "0008_bot_records_to_user_records",
+      "breakpoints": true
     }
   ]
 }
