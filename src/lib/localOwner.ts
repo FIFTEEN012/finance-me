@@ -15,15 +15,22 @@ import { useWorkoutPlanStore } from '@/store/useWorkoutPlanStore'
 import { useSupplyStore } from '@/store/useSupplyStore'
 import { useNutritionStore } from '@/store/useNutritionStore'
 import { getAppSyncEngine } from '@/lib/sync/appEngine'
+import {
+  OWNER_MARKER_KEY,
+  createDeviceAccount,
+  type DeviceAccount,
+  type SignOutResult,
+} from '@/lib/sync/deviceAccount'
 
 /**
  * localStorage key recording which account the persisted `finance-*` data
- * on this browser belongs to. Persisted stores are per-browser, not per-user,
- * so without this marker one account's local rows could be uploaded into
- * another account after a sign-in on the same browser.
+ * on this browser belongs to (absent = Guest Data). Persisted stores are
+ * per-browser, not per-user, so without this marker one account's local rows
+ * could be uploaded into another account after a sign-in on the same browser.
  */
-export const OWNER_MARKER_KEY = 'finance-owner-id'
+export { OWNER_MARKER_KEY }
 
+/** Old import-local flag; no longer written, removed with the owner's data. */
 const MIGRATED_FLAG_KEY = 'finance-migrated-to-neon'
 
 type ResettableStore = {
@@ -81,7 +88,8 @@ function safeRemove(key: string) {
   }
 }
 
-function clearPreviousOwnerData() {
+/** Empties the User Data stores and their persisted keys; Device Preferences stay. */
+function clearUserData() {
   // Reset in-memory state first: persist's setState writes the (default) state
   // back to storage, and a later rehydrate from empty storage keeps whatever is
   // in memory, so stale rows must be gone from memory before keys are removed.
@@ -101,38 +109,56 @@ function clearPreviousOwnerData() {
     safeRemove(`${key}__modified_at`)
   }
   safeRemove(MIGRATED_FLAG_KEY)
-  // After the stores are emptied: their removals must not be uploaded to the
-  // new account, and its first sync must not count as already uploaded.
-  getAppSyncEngine().reset()
-
+  // The sync engine is reset right after this (deviceAccount), so the
+  // removals reported by emptying the stores are never uploaded.
   rehydrateAllStores().catch(() => {})
 }
 
+/** localStorage, looked up on every call (blocked site data: reads nothing). */
+const browserStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key)
+    } catch {
+      return null
+    }
+  },
+  setItem: (key: string, value: string) => localStorage.setItem(key, value),
+  removeItem: (key: string) => localStorage.removeItem(key),
+}
+
+let account: DeviceAccount | null = null
+function deviceAccount(): DeviceAccount {
+  account ??= createDeviceAccount({ storage: browserStorage, engine: getAppSyncEngine(), clearUserData })
+  return account
+}
+
 /**
- * Make sure the persisted local data on this browser belongs to `userId`.
+ * Make sure the local data on this browser belongs to `userId`; call when
+ * they are signed in, before the first sync (src/lib/sync/deviceAccount.ts).
  *
- * - Marker present and different: clear the previous owner's persisted data
- *   (store keys, their __synced_at/__modified_at markers and the
- *   migrated-to-neon flag), reset the in-memory stores, record `userId`,
- *   return true. Device Preferences (dashboard layout, onboarding) are kept.
- * - No marker (legacy browser): keep the local data as before, record
- *   `userId`, return false.
- * - Same owner: return false.
- *
- * Must run before any upload of local data (import-local, /api/sync POST).
+ * - Same owner: nothing changes, nothing is uploaded again; returns false.
+ * - No marker (Guest Data, or a browser from before the marker): the local
+ *   data becomes theirs and the next sync uploads it once; returns false.
+ * - Another account's data (its session ended without signing out): it is
+ *   cleared first (store keys, their __synced_at/__modified_at markers, the
+ *   old migrated-to-neon flag, in-memory stores, the sync queue); returns
+ *   true. Device Preferences (dashboard layout, onboarding) are kept.
  */
 export function ensureLocalDataBelongsTo(userId: string): boolean {
   if (!hasWindow() || !userId) return false
+  return deviceAccount().signedIn(userId) === 'switched'
+}
 
-  const stored = getStoredOwnerId()
-  if (stored === userId) return false
-
-  if (stored === null) {
-    setStoredOwnerId(userId)
-    return false
-  }
-
-  clearPreviousOwnerData()
-  setStoredOwnerId(userId)
-  return true
+/**
+ * Signs out: sends queued changes, ends the session with `endSession`, then
+ * clears this browser's User Data so the next person sees none of it.
+ * Returns `{ ok: false, unsynced }` without signing out when changes could
+ * not be sent, unless `discardUnsynced`.
+ */
+export function signOutAndClearLocalData(
+  endSession: () => Promise<unknown>,
+  opts?: { discardUnsynced?: boolean },
+): Promise<SignOutResult> {
+  return deviceAccount().signOut(endSession, opts)
 }

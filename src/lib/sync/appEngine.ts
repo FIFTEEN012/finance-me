@@ -37,12 +37,20 @@ export function getAppSyncEngine(): SyncEngine {
   return engine
 }
 
-/** Keeps User Data records syncing while someone is signed in. Mount once (AppShell). */
-export function useRecordSync(signedInUserId: string | null | undefined) {
+/**
+ * Keeps User Data records syncing while someone is signed in. Mount once (AppShell).
+ * `claimLocalData` runs before the first sync of each signed-in user, so the
+ * local data is theirs before anything is uploaded (localOwner).
+ */
+export function useRecordSync(
+  signedInUserId: string | null | undefined,
+  claimLocalData: (userId: string) => unknown,
+) {
   useEffect(() => {
     if (!signedInUserId || typeof window === 'undefined') return
+    claimLocalData(signedInUserId)
     return startAutoSync(getAppSyncEngine(), { events: window, visibility: document })
-  }, [signedInUserId])
+  }, [signedInUserId, claimLocalData])
 }
 
 const SERVER_STATUS: SyncStatus = { state: 'synced', pending: 0, syncing: false, lastSyncedAt: null }

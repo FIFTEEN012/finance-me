@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { useAuthStore } from '@/store/useAuthStore'
 import { rehydrateAllStores } from '@/lib/cloudSync'
-import { ensureLocalDataBelongsTo } from '@/lib/localOwner'
 
 export function useInitialData() {
   const { data: session, isPending } = authClient.useSession()
@@ -33,14 +32,10 @@ export function useInitialData() {
 
   useEffect(() => {
     if (!isPending) {
-      if (session?.user) {
-        setUser(session.user)
-        // Drop another account's local data before any upload decision
-        ensureLocalDataBelongsTo(session.user.id)
-        refreshData()
-      } else {
-        setUser(null)
-      }
+      // Signed out, the local data is Guest Data and the app works on it as is.
+      // Signed in, the record sync (useRecordSync) claims it for the user first.
+      setUser(session?.user ?? null)
+      refreshData()
       setLoading(false)
     }
   }, [session, isPending, setUser, setLoading, refreshData])

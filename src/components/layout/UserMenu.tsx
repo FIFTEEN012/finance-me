@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
-import { authClient } from '@/lib/auth-client'
+import { signOutOfThisDevice } from '@/lib/signOut'
 import { cn } from '@/lib/utils'
 
 interface UserMenuProps {
@@ -28,9 +28,7 @@ export function UserMenu({ triggerClassName, menuContentClassName }: UserMenuPro
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
-      await authClient.signOut()
-      useAuthStore.getState().setUser(null)
-      toast.success('ออกจากระบบเรียบร้อยแล้ว')
+      if (await signOutOfThisDevice()) toast.success('ออกจากระบบเรียบร้อยแล้ว')
     } catch {
       toast.error('ไม่สามารถออกจากระบบได้')
     } finally {

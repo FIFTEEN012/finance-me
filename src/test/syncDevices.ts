@@ -6,6 +6,7 @@ import {
   type SyncStorage,
 } from "@/lib/sync/engine";
 import { arrayKind } from "@/lib/sync/kinds";
+import { createDeviceAccount, type SignOutResult } from "@/lib/sync/deviceAccount";
 
 /**
  * Harness for the multi-device sync tests: each Device is one browser, with
@@ -50,11 +51,17 @@ export type Device = {
   offline: boolean;
   /** Advances this device's clock by `ms`. */
   tick(ms: number): void;
+  /** Who the server sees on this browser's requests (null = signed out: 401). */
+  userId: string | null;
+  /** Signs in as `userId` the way the app does, then syncs. */
+  signIn(userId: string): Promise<void>;
+  /** Signs out the way the app does (sync, end the session, clear User Data). */
+  signOut(opts?: { discardUnsynced?: boolean }): Promise<SignOutResult>;
 };
 
 export function createDevice(
   network: DeviceNetwork,
-  userId: string,
+  userId: string | null,
   opts: {
     startAt?: number;
     storage?: ReturnType<typeof memoryStorage>;
@@ -82,24 +89,45 @@ export function createDevice(
     tick: (ms) => {
       clock += ms;
     },
+    userId,
+    signIn: async (id) => {
+      device.userId = id;
+      account.signedIn(id);
+      await device.engine.sync();
+    },
+    signOut: (signOutOpts) =>
+      account.signOut(async () => {
+        device.userId = null;
+      }, signOutOpts),
   };
 
-  device.engine = createSyncEngine({ fetch: deviceFetch(network, userId, device), storage, now: () => clock });
+  device.engine = createSyncEngine({
+    fetch: deviceFetch(network, () => device.userId, device),
+    storage,
+    now: () => clock,
+  });
   device.engine.register(arrayKind({ kind: opts.kind ?? "supply", store, field: "items" }));
+  const account = createDeviceAccount({
+    storage,
+    engine: device.engine,
+    clearUserData: () => store.setState({ items: [] }),
+  });
   return device;
 }
 
 /** A fetch that runs the real route handler in-process, signed in as `userId`. */
 function deviceFetch(
   network: DeviceNetwork,
-  userId: string,
+  userId: string | (() => string | null),
   device: { offline: boolean; requests: string[] },
 ): typeof fetch {
   return async (input, init) => {
     if (device.offline) throw new TypeError("Failed to fetch");
     const req = new Request(new URL(String(input), "http://localhost"), init);
     device.requests.push(req.method);
-    network.signInAs(userId);
+    const user = typeof userId === "function" ? userId() : userId;
+    if (user === null) return Response.json({ error: "unauthorized" }, { status: 401 });
+    network.signInAs(user);
     return req.method === "GET" ? network.route.GET(req) : network.route.POST(req);
   };
 }
