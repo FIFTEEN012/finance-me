@@ -22,7 +22,7 @@ export function bangkokDate(instant: string | Date): string {
  * its Thai label, ignoring case and surrounding space; anything else is
  * 'other'.
  */
-export function activityForExercise(exercise: string): string {
+export function sessionTypeForExercise(exercise: string): string {
   const text = exercise.trim().toLowerCase();
   const match = EXERCISES.find((e) => e.value === text || e.label.toLowerCase() === text);
   return match?.value ?? "other";
@@ -54,17 +54,17 @@ export function workoutSessionFrom(
   message: { kind: "workout"; data: WorkoutRecord } | { kind: "run"; data: RunRecord },
   meta: RecordMeta & { weightKg?: number },
 ): ExerciseEntry {
-  const activity = message.kind === "run" ? "run" : activityForExercise(message.data.exercise);
+  const sessionType = message.kind === "run" ? "run" : sessionTypeForExercise(message.data.exercise);
   const minutes = message.data.durationMinutes ?? 0;
   const name =
-    activity === "other" && message.kind === "workout" ? message.data.exercise : exerciseLabel(activity);
+    sessionType === "other" && message.kind === "workout" ? message.data.exercise : exerciseLabel(sessionType);
   return {
     id: meta.id,
     date: bangkokDate(message.data.loggedAt),
-    activity,
+    activity: sessionType,
     name,
     minutes,
-    kcal: estimateBurn(activity, minutes, meta.weightKg ?? FALLBACK_WEIGHT_KG),
+    kcal: estimateBurn(sessionType, minutes, meta.weightKg ?? FALLBACK_WEIGHT_KG),
     createdAt: meta.createdAt,
   };
 }
