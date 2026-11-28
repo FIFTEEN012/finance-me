@@ -14,6 +14,7 @@ interface BudgetStore {
   replaceBudgets: (budgets: Budget[]) => void
 }
 
+// Changes reach the server through the sync engine (src/lib/sync/appKinds.ts).
 export const useBudgetStore = create<BudgetStore>()(
   persist(
     (set, get) => ({
@@ -24,13 +25,6 @@ export const useBudgetStore = create<BudgetStore>()(
         set((s) => ({
           budgets: [...s.budgets, newBudget],
         }))
-        if (typeof window !== 'undefined') {
-          fetch('/api/budgets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newBudget),
-          }).catch(() => {})
-        }
       },
       updateBudget: (id, b) => {
         set((s) => ({
@@ -38,21 +32,11 @@ export const useBudgetStore = create<BudgetStore>()(
             budget.id === id ? { ...budget, ...b } : budget
           ),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/budgets/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(b),
-          }).catch(() => {})
-        }
       },
       deleteBudget: (id) => {
         set((s) => ({
           budgets: s.budgets.filter((b) => b.id !== id),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/budgets/${id}`, { method: 'DELETE' }).catch(() => {})
-        }
       },
       getBudgetsByMonth: (month, year) =>
         get().budgets.filter((b) => b.month === month && b.year === year),

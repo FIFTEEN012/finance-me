@@ -29,9 +29,13 @@ import { useBudgetStore } from '@/store/useBudgetStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useDebtStore } from '@/store/useDebtStore'
-import { useOnboardingStore } from '@/store/useOnboardingStore'
+import { resetUserData } from '@/lib/sync/reset'
+import { countItems, downloadBackup, importBackup, parseBackup, type BackupFile } from '@/lib/backupFile'
+import { getAppSyncEngine } from '@/lib/sync/appEngine'
+import { clearLocalUserData } from '@/lib/localOwner'
 import { useAuthStore } from '@/store/useAuthStore'
 import { authClient } from '@/lib/auth-client'
+import { signOutOfThisDevice } from '@/lib/signOut'
 import { cn } from '@/lib/utils'
 
 /* ── Constants ── */
@@ -59,16 +63,6 @@ const CURRENCY_OPTIONS: { value: CurrencyCode; label: string; symbol: string }[]
   { value: 'GBP', label: 'ปอนด์อังกฤษ',    symbol: '£'  },
 ]
 
-interface BackupData {
-  version: number
-  exportedAt: string
-  transactions: any[]
-  budgets: any[]
-  categories: any[]
-  goals?: any[]
-  debts?: any[]
-}
-
 type TabKey = 'account' | 'appearance' | 'data'
 
 export default function SettingsPage() {
@@ -80,18 +74,19 @@ export default function SettingsPage() {
   const user = useAuthStore((state) => state.user)
   const { data: session } = authClient.useSession()
 
-  const { transactions, replaceTransactions, deleteTransactions } = useTransactionStore()
-  const { budgets, replaceBudgets } = useBudgetStore()
-  const { categories, replaceCategories } = useCategoryStore()
+  const transactions = useTransactionStore((s) => s.transactions)
+  const budgets = useBudgetStore((s) => s.budgets)
+  const categories = useCategoryStore((s) => s.categories)
   const goals = useGoalStore((s) => s.goals)
   const debts = useDebtStore((s) => s.debts)
 
   // Dialogs & Import state
   const fileRef = useRef<HTMLInputElement>(null)
-  const [importData, setImportData] = useState<BackupData | null>(null)
+  const [importData, setImportData] = useState<BackupFile | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [resetConfirmText, setResetConfirmText] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -112,10 +107,10 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await authClient.signOut()
-      useAuthStore.getState().setUser(null)
-      setLogoutOpen(false)
-      toast.success('ออกจากระบบเรียบร้อยแล้ว')
+      if (await signOutOfThisDevice()) {
+        setLogoutOpen(false)
+        toast.success('ออกจากระบบเรียบร้อยแล้ว')
+      }
     } catch {
       toast.error('ไม่สามารถออกจากระบบได้')
     } finally {
@@ -125,22 +120,7 @@ export default function SettingsPage() {
 
   /* ── Backup Export ── */
   const handleExport = () => {
-    const data = {
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      transactions,
-      budgets,
-      categories,
-      goals,
-      debts,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `financeme-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBackup()
     toast.success('ส่งออกไฟล์ข้อมูลสำรองสำเร็จ')
   }
 
@@ -152,32 +132,7 @@ export default function SettingsPage() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       try {
-        const raw = JSON.parse(ev.target?.result as string)
-        let normalized: BackupData | null = null
-
-        if (raw && typeof raw === 'object' && raw.stores && typeof raw.stores === 'object') {
-          const s = raw.stores as Record<string, any>
-          normalized = {
-            version: raw.version || 2,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            transactions: s['finance-transactions']?.state?.transactions || [],
-            budgets: s['finance-budgets']?.state?.budgets || [],
-            categories: s['finance-categories']?.state?.categories || [],
-            goals: s['finance-goals']?.state?.goals || [],
-            debts: s['finance-debts']?.state?.debts || [],
-          }
-        } else if (raw && typeof raw === 'object' && Array.isArray(raw.transactions)) {
-          normalized = {
-            version: raw.version || 1,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            transactions: Array.isArray(raw.transactions) ? raw.transactions : [],
-            budgets: Array.isArray(raw.budgets) ? raw.budgets : [],
-            categories: Array.isArray(raw.categories) ? raw.categories : [],
-            goals: Array.isArray(raw.goals) ? raw.goals : [],
-            debts: Array.isArray(raw.debts) ? raw.debts : [],
-          }
-        }
-
+        const normalized = parseBackup(ev.target?.result as string)
         if (!normalized) {
           toast.error('ไฟล์ไม่ถูกต้อง — ไม่ใช่ไฟล์ backup ของระบบ')
           return
@@ -190,63 +145,47 @@ export default function SettingsPage() {
     reader.readAsText(file)
   }
 
+  // The imported data syncs through the sync engine like any other edit.
   const handleConfirmImport = async () => {
     if (!importData) return
     setIsImporting(true)
     try {
-      if (importData.transactions?.length) {
-        replaceTransactions(importData.transactions as Parameters<typeof replaceTransactions>[0])
-      }
-      if (importData.budgets?.length) {
-        replaceBudgets(importData.budgets as Parameters<typeof replaceBudgets>[0])
-      }
-      if (importData.categories?.length) {
-        replaceCategories(importData.categories as Parameters<typeof replaceCategories>[0])
-      }
-
-      await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactions: importData.transactions || [],
-          budgets: importData.budgets || [],
-          categories: importData.categories || [],
-          goals: importData.goals || [],
-          debts: importData.debts || [],
-        }),
-      })
-
-      toast.success(`นำเข้าและบันทึกฐานข้อมูลสำเร็จ — ${importData.transactions.length} รายการ`)
+      await importBackup(importData)
+      toast.success(`นำเข้าข้อมูลสำเร็จ — ${countItems(importData.stores).transactions} รายการ`)
       setImportData(null)
     } catch (e) {
       console.error(e)
-      toast.success(`นำเข้าสำเร็จ — ${importData.transactions.length} รายการ`)
-      setImportData(null)
+      toast.error('นำเข้าข้อมูลไม่สำเร็จ')
     } finally {
       setIsImporting(false)
     }
   }
 
   /* ── Reset Data ── */
+  // Reset: the server wipes the User Data of every device first; this device
+  // clears its own copy only once that succeeded. Signed out, only this
+  // device's Guest Data is cleared. Device Preferences (dashboard layout,
+  // onboarding) are kept.
   const handleReset = async () => {
-    deleteTransactions(transactions.map((t) => t.id))
-    replaceBudgets([])
-    useOnboardingStore.getState().reset()
-
-    // Delete in database via API
+    if (isResetting) return
+    setIsResetting(true)
     try {
-      await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: [], budgets: [] }),
+      const ok = await resetUserData({
+        fetch: (input, init) => fetch(input, init),
+        engine: getAppSyncEngine(),
+        clearLocal: clearLocalUserData,
+        signedIn: Boolean(session?.user?.id || user?.id),
       })
-    } catch {
-      // ignore
+      if (!ok) {
+        toast.error('รีเซ็ตข้อมูลไม่สำเร็จ ข้อมูลยังอยู่ครบ ลองใหม่อีกครั้ง')
+        return
+      }
+      setResetOpen(false)
+      setResetConfirmText('')
+      toast.success('รีเซ็ตข้อมูลทั้งหมดสำเร็จ')
+    } finally {
+      setIsResetting(false)
     }
-
-    setResetOpen(false)
-    setResetConfirmText('')
-    toast.success('รีเซ็ตข้อมูลทั้งหมดสำเร็จ')
   }
 
   // Active accent color info
@@ -830,13 +769,13 @@ export default function SettingsPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-white/40">รายการธุรกรรม</span>
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {importData.transactions.length}
+                    {countItems(importData.stores).transactions}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-white/40">งบประมาณ</span>
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {importData.budgets.length}
+                    {countItems(importData.stores).budgets}
                   </span>
                 </div>
               </div>
@@ -879,7 +818,11 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-white/60">
               การกระทำนี้จะ <span className="font-semibold text-red-600">ลบถาวร</span>{' '}
-              รายการธุรกรรมและงบประมาณทั้งหมดใน Neon Database และไม่สามารถกู้คืนได้
+              {session?.user?.id || user?.id
+                ? 'ข้อมูลทั้งหมดของบัญชีนี้ในทุกเครื่อง'
+                : 'ข้อมูลทั้งหมดในเครื่องนี้'}{' '}
+              (หมวดหมู่กลับเป็นค่าเริ่มต้น) และไม่สามารถกู้คืนได้
+              การจัดวางแดชบอร์ดของเครื่องนี้ยังอยู่
             </p>
             <div className="space-y-2">
               <Label className="text-xs text-gray-500">
@@ -899,7 +842,7 @@ export default function SettingsPage() {
             </Button>
             <Button
               onClick={handleReset}
-              disabled={resetConfirmText !== 'RESET'}
+              disabled={resetConfirmText !== 'RESET' || isResetting}
               className="bg-red-600 hover:bg-red-700 text-white gap-1.5 disabled:opacity-40"
             >
               <Trash2 className="w-4 h-4" /> ลบถาวร

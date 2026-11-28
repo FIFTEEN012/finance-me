@@ -11,6 +11,7 @@ import {
   financeTransactions,
   mealLogs,
   runningLogs,
+  userRecords,
   workoutLogs,
 } from "./schema";
 
@@ -144,5 +145,14 @@ describe("local PostgreSQL schema contract", () => {
       expect(constraintSql).toContain(">= 0");
       expect(constraintSql).not.toMatch(/(^|[^>])> 0/);
     });
+  });
+
+  it("keys user_records by (owner_id, kind, id) with edit, delete and receive times", () => {
+    const config = getTableConfig(userRecords);
+
+    expect(config.primaryKeys[0].columns.map((c) => c.name)).toEqual(["owner_id", "kind", "id"]);
+    expect(config.columns.map((c) => c.name)).toEqual(
+      expect.arrayContaining(["data", "edited_at", "deleted_at", "updated_at"]),
+    );
   });
 });

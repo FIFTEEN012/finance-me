@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { softDeleteRow } from "@/lib/sync/softDelete";
 import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeGoals } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,10 @@ export async function PUT(
   const db = getDatabase();
 
   const updateData: Record<string, any> = {
-    updatedAt: new Date(),
+    // A change made here is an edit like any device's: it takes part in
+    // last-edit-wins and reaches every device on its next pull.
+    editedAt: new Date(),
+    updatedAt: sql`now()`,
   };
 
   if (body.name !== undefined) updateData.name = body.name;
@@ -41,7 +45,8 @@ export async function PUT(
     .where(
       and(
         eq(financeGoals.id, id),
-        eq(financeGoals.ownerId, user.id)
+        eq(financeGoals.ownerId, user.id),
+        isNull(financeGoals.deletedAt)
       )
     )
     .returning();
@@ -67,19 +72,8 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const db = getDatabase();
 
-  const [deleted] = await db
-    .delete(financeGoals)
-    .where(
-      and(
-        eq(financeGoals.id, id),
-        eq(financeGoals.ownerId, user.id)
-      )
-    )
-    .returning();
-
-  if (!deleted) {
+  if (!(await softDeleteRow(financeGoals, user.id, id))) {
     return NextResponse.json({ error: "Goal not found" }, { status: 404 });
   }
 

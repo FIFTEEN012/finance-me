@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { softDeleteRow } from "@/lib/sync/softDelete";
 import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeTransactions } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,8 @@ export async function PUT(
   const db = getDatabase();
 
   const updateData: Record<string, any> = {
-    updatedAt: new Date(),
+    editedAt: new Date(),
+    updatedAt: sql`now()`,
   };
 
   if (body.type !== undefined) updateData.transactionType = body.type;
@@ -49,7 +51,8 @@ export async function PUT(
     .where(
       and(
         eq(financeTransactions.id, id),
-        eq(financeTransactions.ownerId, user.id)
+        eq(financeTransactions.ownerId, user.id),
+        isNull(financeTransactions.deletedAt)
       )
     )
     .returning();
@@ -75,19 +78,8 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const db = getDatabase();
 
-  const [deleted] = await db
-    .delete(financeTransactions)
-    .where(
-      and(
-        eq(financeTransactions.id, id),
-        eq(financeTransactions.ownerId, user.id)
-      )
-    )
-    .returning();
-
-  if (!deleted) {
+  if (!(await softDeleteRow(financeTransactions, user.id, id))) {
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   }
 

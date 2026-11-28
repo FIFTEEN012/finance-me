@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server-auth";
 import { getDatabase } from "@/db/client";
 import { financeCategories } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { foodFlagFrom } from "@/lib/foodCategory";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function GET() {
   const rows = await db
     .select()
     .from(financeCategories)
-    .where(eq(financeCategories.ownerId, user.id));
+    .where(and(eq(financeCategories.ownerId, user.id), isNull(financeCategories.deletedAt)));
 
   return NextResponse.json({ categories: rows });
 }

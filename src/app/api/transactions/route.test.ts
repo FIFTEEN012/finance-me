@@ -25,7 +25,7 @@ vi.mock("@/lib/server-auth", () => ({
   getCurrentUser: vi.fn(async () => mockUser),
 }));
 
-import { GET, POST } from "./route";
+import { GET } from "./route";
 import { getCurrentUser } from "@/lib/server-auth";
 
 describe("/api/transactions route", () => {
@@ -57,49 +57,5 @@ describe("/api/transactions route", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.transactions).toEqual(fakeRows);
-  });
-
-  it("validates required fields on POST", async () => {
-    const req = new Request("http://localhost/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 100 }),
-    });
-
-    const res = await POST(req);
-    expect(res.status).toBe(400);
-  });
-
-  it("creates a transaction and returns 201", async () => {
-    const fakeCreated = {
-      id: "tx-new",
-      ownerId: "user-123",
-      amount: "150.00",
-      description: "Lunch",
-      transactionType: "EXPENSE",
-    };
-
-    mockDb.insert.mockReturnValueOnce({
-      values: vi.fn().mockReturnValueOnce({
-        returning: vi.fn().mockResolvedValueOnce([fakeCreated]),
-      }),
-    });
-
-    const req = new Request("http://localhost/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "EXPENSE",
-        amount: 150,
-        description: "Lunch",
-        categoryId: "cat-food",
-        date: "2026-09-09",
-      }),
-    });
-
-    const res = await POST(req);
-    expect(res.status).toBe(201);
-    const data = await res.json();
-    expect(data.transaction).toEqual(fakeCreated);
   });
 });

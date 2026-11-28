@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countItems } from './DataManager'
+import { countItems } from './backupFile'
 
 const move = { moveId: 'squat', sets: 3, count: 12, restSeconds: 60 }
 

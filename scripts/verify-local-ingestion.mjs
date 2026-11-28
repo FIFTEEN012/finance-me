@@ -117,8 +117,11 @@ async function run() {
 
   // Step 2: Check Schema Tables
   logHeader('2. Verifying Schema Tables');
+  // Meals, workouts and runs land in user_records (food-entry / workout-session);
+  // meal_logs, workout_logs and running_logs only hold what the bot wrote before.
   const requiredTables = [
     'finance_transactions',
+    'user_records',
     'meal_logs',
     'workout_logs',
     'running_logs',
@@ -151,10 +154,10 @@ async function run() {
     logHeader('Cleaning Test Owner Data');
     try {
       for (const table of requiredTables) {
-        const res = await sql.unsafe(
-          `DELETE FROM "${table}" WHERE owner_id = $1`,
-          [LOCAL_OWNER_ID]
-        );
+        const res =
+          table === 'user_records'
+            ? await sql`DELETE FROM user_records WHERE owner_id = ${LOCAL_OWNER_ID} AND kind IN ('food-entry', 'workout-session')`
+            : await sql.unsafe(`DELETE FROM "${table}" WHERE owner_id = $1`, [LOCAL_OWNER_ID]);
         logInfo(`Deleted records from ${table}: ${res.count}`);
       }
       logPass(`Cleaned all records for owner '${LOCAL_OWNER_ID}'`);
@@ -472,20 +475,23 @@ async function run() {
   logHeader('9. Direct Database Row Reconciliation');
   try {
     const [txCount] = await sql`SELECT count(*)::int as c FROM finance_transactions WHERE owner_id = ${LOCAL_OWNER_ID}`;
+    const [foodCount] = await sql`SELECT count(*)::int as c FROM user_records WHERE owner_id = ${LOCAL_OWNER_ID} AND kind = 'food-entry'`;
+    const [sessionCount] = await sql`SELECT count(*)::int as c FROM user_records WHERE owner_id = ${LOCAL_OWNER_ID} AND kind = 'workout-session'`;
     const [mealCount] = await sql`SELECT count(*)::int as c FROM meal_logs WHERE owner_id = ${LOCAL_OWNER_ID}`;
     const [workoutCount] = await sql`SELECT count(*)::int as c FROM workout_logs WHERE owner_id = ${LOCAL_OWNER_ID}`;
     const [runCount] = await sql`SELECT count(*)::int as c FROM running_logs WHERE owner_id = ${LOCAL_OWNER_ID}`;
     const [auditCount] = await sql`SELECT count(*)::int as c FROM agent_ingestion_events WHERE owner_id = ${LOCAL_OWNER_ID}`;
 
     logInfo(`Postgres Row Counts for Owner '${LOCAL_OWNER_ID}':`);
-    console.log(`    - finance_transactions:  ${txCount.c}`);
-    console.log(`    - meal_logs:             ${mealCount.c}`);
-    console.log(`    - workout_logs:          ${workoutCount.c}`);
-    console.log(`    - running_logs:          ${runCount.c}`);
-    console.log(`    - agent_ingestion_events:${auditCount.c}`);
+    console.log(`    - finance_transactions:          ${txCount.c}`);
+    console.log(`    - user_records food-entry:       ${foodCount.c}`);
+    console.log(`    - user_records workout-session:  ${sessionCount.c}`);
+    console.log(`    - agent_ingestion_events:        ${auditCount.c}`);
+    console.log(`    - old bot tables (meal/workout/running_logs): ${mealCount.c}/${workoutCount.c}/${runCount.c}`);
 
-    // Audit count must equal sum of domain rows for 1-to-1 ingestion events
-    const domainTotal = txCount.c + mealCount.c + workoutCount.c + runCount.c;
+    // Audit count must equal the records ingestion creates (one per event):
+    // transactions, food entries (meals) and workout sessions (workouts, runs).
+    const domainTotal = txCount.c + foodCount.c + sessionCount.c;
     if (auditCount.c === domainTotal) {
       logPass(`Audit event count (${auditCount.c}) matches total domain records (${domainTotal})`);
       passedTests++;

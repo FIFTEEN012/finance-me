@@ -36,6 +36,48 @@
       "when": 1795571391951,
       "tag": "0004_category_is_food",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795679835774,
+      "tag": "0005_user_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795680512392,
+      "tag": "0006_sync_existing_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795681276361,
+      "tag": "0007_sync_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795681377059,
+      "tag": "0008_bot_records_to_user_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795846072922,
+      "tag": "0009_sync_resets",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795847444098,
+      "tag": "0010_sync_reset_generation",
+      "breakpoints": true
     }
   ]
 }

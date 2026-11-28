@@ -18,6 +18,7 @@ interface GoalStore {
   replaceGoals: (goals: Goal[]) => void
 }
 
+// Changes reach the server through the sync engine (src/lib/sync/appKinds.ts).
 export const useGoalStore = create<GoalStore>()(
   persist(
     (set, get) => ({
@@ -29,31 +30,14 @@ export const useGoalStore = create<GoalStore>()(
         set((s) => ({
           goals: [...s.goals, newGoal],
         }))
-        if (typeof window !== 'undefined') {
-          fetch('/api/goals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newGoal),
-          }).catch(() => {})
-        }
       },
       updateGoal: (id, g) => {
         set((s) => ({
           goals: s.goals.map((goal) => (goal.id === id ? { ...goal, ...g } : goal)),
         }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/goals/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(g),
-          }).catch(() => {})
-        }
       },
       deleteGoal: (id) => {
         set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }))
-        if (typeof window !== 'undefined') {
-          fetch(`/api/goals/${id}`, { method: 'DELETE' }).catch(() => {})
-        }
       },
       addSaving: (id, amount) => {
         const goal = get().goals.find((g) => g.id === id)
@@ -100,9 +84,12 @@ export const useGoalStore = create<GoalStore>()(
 
             results[g.id] = newlyReached
 
+            const savedAmount = Math.round(portfolioValueTHB)
+            if (savedAmount === g.savedAmount && newlyReached.length === 0) return g
+
             return {
               ...g,
-              savedAmount: Math.round(portfolioValueTHB),
+              savedAmount,
               milestonesCelebrated: [...celebrated, ...newlyReached],
             }
           }),

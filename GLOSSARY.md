@@ -63,3 +63,17 @@ How much of a Supply is estimated to be left: days in use against the Usual Life
 
 **Supply Shape** (รูปทรงของใช้):
 The physical form a Supply is drawn as (bottle, tube, bag, box, roll, can, sachet), chosen from a fixed list.
+
+## Accounts and devices
+
+**User Data** (ข้อมูลของผู้ใช้):
+Everything the user records about their money, health and supplies, plus their own settings. It belongs to the signed-in user and is the same on every device.
+
+**Device Preference** (ค่าของเครื่อง):
+A choice that applies only to the device it was made on, such as dashboard layout or onboarding progress. It never follows the user to another device.
+
+**Guest Data** (ข้อมูลก่อนเข้าสู่ระบบ):
+User Data recorded before signing in. It becomes the user's own User Data once, at their first sign-in on that device.
+
+**Reset** (รีเซ็ตข้อมูล):
+Erasing all of a user's User Data on every device, returning categories to their defaults. Device Preferences are kept.

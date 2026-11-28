@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
   numeric,
@@ -23,6 +24,18 @@ const identityAndAuditColumns = {
   sourceMessageId: text("source_message_id").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+};
+
+/**
+ * Sync columns of the tables synced as record kinds (ADR-0003), same meaning
+ * as in `user_records`: `edited_at` is the editing device's clock and decides
+ * last-edit-wins; `deleted_at` marks a tombstone (the row stays, so no device
+ * can upload the record again). Each table's `updated_at` is the server's
+ * receive time, bumped on every write, and is what pulls page by.
+ */
+const syncColumns = {
+  editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 };
 
 /* ─── Household Sharing (Couple / Family) ─── */
@@ -61,10 +74,12 @@ export const financeTransactions = pgTable(
     linkedInvestmentOrderId: text("linked_investment_order_id"),
     householdId: uuid("household_id"),
     date: text("date"),
+    ...syncColumns,
   },
   (table) => [
     primaryKey({ columns: [table.ownerId, table.id] }),
     check("finance_transactions_amount_positive", sql`${table.amount} > 0`),
+    index("finance_transactions_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
   ],
 );
 
@@ -84,8 +99,12 @@ export const financeCategories = pgTable(
     isFood: boolean("is_food"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_categories_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Budgets ─── */
@@ -102,8 +121,12 @@ export const financeBudgets = pgTable(
     allowRollover: boolean("allow_rollover").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_budgets_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Goals ─── */
@@ -120,10 +143,19 @@ export const financeGoals = pgTable(
     description: text("description"),
     icon: text("icon").notNull(),
     color: text("color").notNull(),
+    // Percentages whose celebration was already shown, e.g. [25, 50].
+    milestonesCelebrated: jsonb("milestones_celebrated"),
+    // Saved amount follows the investment portfolio value.
+    linkedPortfolio: boolean("linked_portfolio"),
+    // The goal's own createdAt (taken from the synced record).
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_goals_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Debts ─── */
@@ -141,10 +173,20 @@ export const financeDebts = pgTable(
     note: text("note"),
     status: text("status").default("ACTIVE").notNull(),
     payments: jsonb("payments").default([]).notNull(),
+    // App-only fields; NULL on rows saved before sync (the app falls back).
+    category: text("category"),
+    color: text("color"),
+    startDate: text("start_date"),
+    initialTransactionId: text("initial_transaction_id"),
+    // The debt's own createdAt (taken from the synced record).
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ...syncColumns,
   },
-  (table) => [primaryKey({ columns: [table.ownerId, table.id] })],
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.id] }),
+    index("finance_debts_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
 );
 
 /* ─── Settings ─── */
@@ -220,6 +262,41 @@ export const runningLogs = pgTable(
   ],
 );
 
+/* ─── User Records (ADR-0003) ───
+ * One row per record of every User Data kind that has no table of its own
+ * (supply, food-entry, …). `data` is the whole client record; a delete keeps
+ * the row as a tombstone (`deleted_at` set, `data` null). `edited_at` is the
+ * editing device's clock and decides last-edit-wins; `updated_at` is the
+ * server's receive time and is what pulls page by. */
+export const userRecords = pgTable(
+  "user_records",
+  {
+    ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    id: text("id").notNull(),
+    data: jsonb("data"),
+    editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.kind, table.id] }),
+    index("user_records_owner_id_updated_at_idx").on(table.ownerId, table.updatedAt),
+  ],
+);
+
+/* ─── Sync Resets ───
+ * Each user's Reset generation (how many Resets so far) and when the last one
+ * ran. Sync refuses changes a device queued under an older generation, before
+ * it heard of the Reset, so its queue cannot upload old data back. */
+export const syncResets = pgTable("sync_resets", {
+  ownerId: text("owner_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  resetAt: timestamp("reset_at", { withTimezone: true, mode: "date" }).notNull(),
+  generation: integer("generation").notNull().default(0),
+});
+
 export const agentIngestionEvents = pgTable(
   "agent_ingestion_events",
   {
@@ -251,4 +328,6 @@ export const schema = {
   workoutLogs,
   runningLogs,
   agentIngestionEvents,
+  userRecords,
+  syncResets,
 };
