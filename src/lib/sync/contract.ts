@@ -11,6 +11,13 @@ import { z } from 'zod'
  *   accepted only if its `editedAt` is newer than the stored record's
  *   (last edit wins per record); a rejected change carries the record that
  *   won so the device can take it.
+ *
+ * Both answer with the user's Reset `generation` (how many Resets so far).
+ * A device remembers the last one it heard and sends it with each push: a
+ * push from an older generation was queued before the device heard of a
+ * Reset, so every change in it is refused (with what the server holds now,
+ * or a tombstone). A device that has not heard any yet (fresh, or just
+ * signed in) sends none, and its changes are judged by last edit wins.
  */
 
 /**
@@ -52,12 +59,12 @@ export const SYNC_CHANGES_PATH = '/api/sync/changes'
 /**
  * POST → `ResetResponse`: Reset (GLOSSARY). Deletes every User Data record of
  * the caller (tombstones, so every device drops them on its next pull) and
- * recreates the default categories, in one transaction. From then on the
- * server refuses any change edited at or before `resetAt`, so a device's
- * queue from before the Reset cannot upload old data back.
+ * recreates the default categories, in one transaction, and starts a new
+ * Reset generation: a device's queue from before it heard of the Reset
+ * cannot upload old data back.
  */
 export const SYNC_RESET_PATH = '/api/sync/reset'
-export type ResetResponse = { resetAt: string }
+export type ResetResponse = { resetAt: string; generation: number }
 
 /** Most changes one push may carry; the engine sends larger queues in batches. */
 export const MAX_PUSH_CHANGES = 200
@@ -87,6 +94,8 @@ export type SyncChange = z.infer<typeof changeSchema>
 
 export const pushRequestSchema = z.object({
   changes: z.array(changeSchema).min(1).max(MAX_PUSH_CHANGES),
+  /** The Reset generation the device knew when it queued these changes; absent = none heard yet. */
+  generation: z.number().int().min(0).optional(),
 })
 
 export const sinceSchema = isoTime.optional()
@@ -99,5 +108,5 @@ export type PushResult = {
   current?: SyncRecord
 }
 
-export type PushResponse = { results: PushResult[] }
-export type PullResponse = { records: SyncRecord[]; cursor: string }
+export type PushResponse = { results: PushResult[]; generation: number }
+export type PullResponse = { records: SyncRecord[]; cursor: string; generation: number }

@@ -62,8 +62,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const results = await pushChanges(getDatabase(), user.id, parsed.data.changes);
-    return NextResponse.json({ results });
+    return NextResponse.json(
+      await pushChanges(getDatabase(), user.id, parsed.data.changes, parsed.data.generation),
+    );
   } catch (error) {
     console.error("Sync push failed:", error);
     return NextResponse.json(FAILED, { status: 500 });

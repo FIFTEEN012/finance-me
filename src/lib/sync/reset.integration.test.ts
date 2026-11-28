@@ -40,6 +40,8 @@ import { useSupplyStore } from "@/store/useSupplyStore";
 import { useGoalStore } from "@/store/useGoalStore";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { useOnboardingStore } from "@/store/useOnboardingStore";
+import { useRecurringStore } from "@/store/useRecurringStore";
+import { todayKey } from "@/lib/recurring";
 import type { Transaction } from "@/types";
 
 /**
@@ -68,6 +70,7 @@ const STORES = [
   useGoalStore,
   useDashboardStore,
   useOnboardingStore,
+  useRecurringStore,
 ];
 
 /** A record every kind accepts (table kinds need their required fields). */
@@ -104,6 +107,15 @@ async function seedEveryKind(userId: string) {
     await d.engine.sync();
   }
 }
+
+/** Runs a Reset for `userId` straight through the route. */
+async function resetOnServer(userId: string) {
+  network.signInAs(userId);
+  const res = await resetRoute.POST();
+  expect(res.status).toBe(200);
+}
+
+const DAY = 24 * 60 * 60_000;
 
 /** Live (not deleted) records the server holds for `userId`. */
 async function liveOnServer(userId: string) {
@@ -256,6 +268,79 @@ describe.skipIf(!integrationDbUrl())("Reset across devices", () => {
     const fresh = useTransactionStore.getState().addTransaction({ ...lunch, description: "หลังรีเซ็ต" });
     await b.engine.sync();
     expect((await liveOnServer(ALICE)).map((r) => r.id)).toContain(fresh);
+  });
+
+  it("keeps a recurring occurrence recorded after the Reset, on this device and the others", async () => {
+    const a = pool.create(ALICE, { startAt: START });
+    const b = pool.create(ALICE, { startAt: START });
+    pool.use(b);
+    await b.engine.sync();
+    pool.use(a);
+    expect(await pressReset(a)).toBe(true);
+
+    const startDate = todayKey(new Date(Date.now() - 3 * DAY));
+    useRecurringStore.getState().addRecurring({
+      categoryId: "cat-expense-1",
+      type: "EXPENSE",
+      amount: 500,
+      description: "ค่าเน็ต",
+      frequency: "monthly",
+      startDate,
+    });
+    expect(useRecurringStore.getState().generateDue()).toBe(1);
+    const occurrence = txs()[0].id;
+    await a.engine.sync();
+    await a.engine.sync();
+    expect(txs().map((tx) => tx.id)).toEqual([occurrence]);
+    expect((await liveOnServer(ALICE)).map((r) => r.id)).toContain(occurrence);
+
+    pool.use(b);
+    await b.engine.sync();
+    expect(txs().map((tx) => tx.id)).toEqual([occurrence]);
+  });
+
+  it("uploads and keeps Guest Data when a browser first signs in after the user's Reset", async () => {
+    const a = createDevice(network, ALICE, { items: [{ id: "old", name: "ของเก่า" }], startAt: START });
+    await a.engine.sync();
+    await resetOnServer(ALICE);
+
+    const guest = createDevice(network, null, { items: [{ id: "guest-soap", name: "สบู่" }], startAt: START });
+    await guest.signIn(ALICE);
+    await guest.engine.sync();
+    expect(guest.items().map((i) => i.id)).toEqual(["guest-soap"]);
+    expect((await liveOnServer(ALICE)).map((r) => r.id)).toContain("guest-soap");
+
+    await a.engine.sync();
+    expect(a.items().map((i) => i.id)).toEqual(["guest-soap"]);
+  });
+
+  it("judges a device by whether it has heard of the Reset, not by its clock", async () => {
+    // A clock a day behind the server: its edits after the Reset still count.
+    const slow = createDevice(network, ALICE, { items: [{ id: "slow-old", name: "ก่อน" }], startAt: Date.now() - DAY });
+    // A clock a day ahead: what it queued before hearing of the Reset is still dropped.
+    const fast = createDevice(network, ALICE, { startAt: Date.now() + DAY });
+    await slow.engine.sync();
+    await fast.engine.sync();
+    fast.offline = true;
+    fast.add({ id: "fast-offline", name: "ออฟไลน์" });
+    await fast.engine.sync();
+
+    await resetOnServer(ALICE);
+
+    await slow.engine.sync();
+    expect(slow.items()).toEqual([]);
+    slow.tick(1_000);
+    slow.add({ id: "slow-new", name: "หลังรีเซ็ต" });
+    await slow.engine.sync();
+    expect(slow.items().map((i) => i.id)).toEqual(["slow-new"]);
+    expect(slow.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+
+    fast.offline = false;
+    await fast.engine.sync();
+    expect(fast.items().map((i) => i.id)).toEqual(["slow-new"]);
+    const live = (await liveOnServer(ALICE)).map((r) => r.id);
+    expect(live).toContain("slow-new");
+    expect(live).not.toContain("fast-offline");
   });
 
   it("clears nothing on the device when the Reset fails, and the server keeps everything", async () => {

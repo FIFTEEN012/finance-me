@@ -1,4 +1,4 @@
-import { SYNC_RESET_PATH } from './contract'
+import { SYNC_RESET_PATH, type ResetResponse } from './contract'
 import type { SyncEngine } from './engine'
 
 /**
@@ -26,16 +26,19 @@ export async function resetUserData(deps: {
     deps.engine.reset()
     return true
   }
+  let generation: number
   try {
     const res = await deps.fetch(SYNC_RESET_PATH, { method: 'POST' })
     if (!res.ok) return false
+    ;({ generation } = (await res.json()) as ResetResponse)
   } catch {
     return false
   }
   // Emptying the stores queues deletes; resetting the engine afterwards drops
-  // them along with everything queued before the Reset.
+  // them along with everything queued before the Reset. The emptied stores
+  // hold nothing to upload.
   deps.clearLocal()
-  deps.engine.reset()
+  deps.engine.reset({ generation })
   await deps.engine.sync()
   return true
 }

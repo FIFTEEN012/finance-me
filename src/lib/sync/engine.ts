@@ -62,8 +62,13 @@ export type SyncEngine = {
   sync(): Promise<void>
   getStatus(): SyncStatus
   subscribe(listener: (status: SyncStatus) => void): () => void
-  /** Forgets the queue, cursor and first-upload marks (e.g. another account signed in). */
-  reset(): void
+  /**
+   * Forgets the queue, cursor, first-upload marks and Reset generation (e.g.
+   * another account signed in). After this device ran a Reset, pass the new
+   * `generation` instead: the device then holds only what the Reset left, so
+   * nothing local is uploaded again.
+   */
+  reset(afterReset?: { generation: number }): void
 }
 
 export type SyncEngineOptions = {
@@ -77,6 +82,8 @@ export const SYNC_ENGINE_KEYS = {
   queue: 'finance-sync-queue',
   cursor: 'finance-sync-cursor',
   uploadedKinds: 'finance-sync-uploaded-kinds',
+  /** The last Reset generation the server reported (absent = none heard yet). */
+  generation: 'finance-sync-generation',
 } as const
 
 /** Edit time any real edit beats, e.g. for records uploaded from pre-sync local data. */
@@ -84,6 +91,13 @@ export const OLDEST_EDITED_AT = new Date(0).toISOString()
 const PRE_SYNC_EDITED_AT = OLDEST_EDITED_AT
 
 class ServerRefused extends Error {}
+
+/**
+ * A queued change, stamped with the Reset generation this device knew when it
+ * was queued (absent = none heard yet). The server refuses changes queued
+ * under an older generation than its own: they predate a Reset.
+ */
+type QueuedChange = SyncChange & { generation?: number }
 
 export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: SyncEngineOptions): SyncEngine {
   const adapters = new Map<string, SyncKindAdapter>()
@@ -111,8 +125,8 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     }
   }
 
-  const readQueue = () => readJson<SyncChange[]>(SYNC_ENGINE_KEYS.queue, [])
-  const writeQueue = (queue: SyncChange[]) => {
+  const readQueue = () => readJson<QueuedChange[]>(SYNC_ENGINE_KEYS.queue, [])
+  const writeQueue = (queue: QueuedChange[]) => {
     writeJson(SYNC_ENGINE_KEYS.queue, queue)
     setStatus({ pending: queue.length, ...(queue.length && status.state === 'synced' ? { state: 'pending' } : {}) })
   }
@@ -122,8 +136,13 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     for (const listener of listeners) listener(status)
   }
 
+  const knownGeneration = () => readJson<number | null>(SYNC_ENGINE_KEYS.generation, null) ?? undefined
+  function heardGeneration(generation: number) {
+    if (typeof generation === 'number') writeJson(SYNC_ENGINE_KEYS.generation, generation)
+  }
+
   /** Adds or replaces the queued change for that record. */
-  function enqueue(change: SyncChange) {
+  function enqueue(change: QueuedChange) {
     const queue = readQueue().filter((c) => keyOf(c.kind, c.id) !== keyOf(change.kind, change.id))
     queue.push(change)
     writeQueue(queue)
@@ -141,13 +160,19 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     if (applying) return
     // Store the record as JSON would send it (drops undefined fields).
     const plain = data === null ? null : (JSON.parse(JSON.stringify(data)) as RecordData)
-    enqueue({ kind, id, editedAt: editedAt ?? new Date(now()).toISOString(), data: plain } as SyncChange)
+    enqueue({
+      kind,
+      id,
+      editedAt: editedAt ?? new Date(now()).toISOString(),
+      data: plain,
+      generation: knownGeneration(),
+    } as QueuedChange)
   }
 
   function applyRecords(records: SyncRecord[]) {
     const queued = new Map(readQueue().map((c) => [keyOf(c.kind, c.id), c]))
     const byKind = new Map<string, { id: string; data: RecordData | null }[]>()
-    const superseded: SyncChange[] = []
+    const superseded: QueuedChange[] = []
     for (const r of records) {
       const adapter = adapters.get(r.kind)
       if (!adapter) continue
@@ -181,10 +206,11 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     if (pending.length === 0) return
     const queue = readQueue()
     const queuedKeys = new Set(queue.map((c) => keyOf(c.kind, c.id)))
+    const generation = knownGeneration()
     for (const adapter of pending) {
       for (const { id, data } of adapter.snapshot()) {
         if (queuedKeys.has(keyOf(adapter.kind, id))) continue
-        queue.push({ kind: adapter.kind, id, editedAt: PRE_SYNC_EDITED_AT, data } as SyncChange)
+        queue.push({ kind: adapter.kind, id, editedAt: PRE_SYNC_EDITED_AT, data, generation } as QueuedChange)
       }
       uploaded.add(adapter.kind)
     }
@@ -195,17 +221,27 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   async function push() {
     // Bounded, so a queue that cannot be shortened (storage blocked) cannot loop forever.
     const batches = Math.ceil(readQueue().length / MAX_PUSH_CHANGES)
-    for (let i = 0; i < batches; i++) {
-      const batch = readQueue().slice(0, MAX_PUSH_CHANGES)
-      if (batch.length === 0) return
-      const { results } = (await request(SYNC_CHANGES_PATH, {
+    // A batch never mixes changes queued under different Reset generations.
+    const queued = readQueue()
+    const runs = queued.filter((c, i) => i === 0 || c.generation !== queued[i - 1].generation).length
+    for (let i = 0; i < batches + runs; i++) {
+      const queue = readQueue()
+      if (queue.length === 0) return
+      const generation = queue[0].generation
+      const end = queue.findIndex((c) => c.generation !== generation)
+      const batch = queue.slice(0, end === -1 ? MAX_PUSH_CHANGES : Math.min(end, MAX_PUSH_CHANGES))
+      const response = (await request(SYNC_CHANGES_PATH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ changes: batch }),
+        body: JSON.stringify({
+          changes: batch.map(({ generation: _queuedUnder, ...change }) => change),
+          ...(generation === undefined ? {} : { generation }),
+        }),
       })) as PushResponse
-      const winners = results.flatMap((r) => (r.status === 'rejected' && r.current ? [r.current] : []))
+      const winners = response.results.flatMap((r) => (r.status === 'rejected' && r.current ? [r.current] : []))
       dequeue(batch)
       if (winners.length) applyRecords(winners)
+      heardGeneration(response.generation)
     }
   }
 
@@ -215,6 +251,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     const body = (await request(url)) as PullResponse
     applyRecords(body.records)
     writeJson(SYNC_ENGINE_KEYS.cursor, body.cursor)
+    heardGeneration(body.generation)
   }
 
   async function runOnce() {
@@ -270,13 +307,17 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
       listeners.add(listener)
       return () => listeners.delete(listener)
     },
-    reset() {
+    reset(afterReset) {
       for (const key of Object.values(SYNC_ENGINE_KEYS)) {
         try {
           storage.removeItem(key)
         } catch {
           // ignore
         }
+      }
+      if (afterReset) {
+        heardGeneration(afterReset.generation)
+        writeJson(SYNC_ENGINE_KEYS.uploadedKinds, [...adapters.keys()])
       }
       setStatus({ state: 'synced', pending: 0, lastSyncedAt: null })
     },
