@@ -12,7 +12,9 @@ import { investmentKinds, monthlyExpenseKinds } from './investmentKinds'
 import { useRecurringStore } from '@/store/useRecurringStore'
 import { useBillSplitStore } from '@/store/useBillSplitStore'
 import { settingsKind, workoutPlanKind } from './settingsKinds'
-import type { SyncKindAdapter } from './engine'
+import { OLDEST_EDITED_AT, type SyncKindAdapter } from './engine'
+import { useTransactionStore } from '@/store/useTransactionStore'
+import { isRecurringOccurrence } from '@/lib/recurring'
 
 /**
  * The record kinds this app syncs through the engine, each bound to the store
@@ -22,6 +24,15 @@ import type { SyncKindAdapter } from './engine'
  */
 export const APP_SYNC_KINDS: SyncKindAdapter[] = [
   arrayKind({ kind: 'supply', store: useSupplyStore, field: 'items' }),
+  arrayKind({
+    kind: 'transaction',
+    store: useTransactionStore,
+    field: 'transactions',
+    // Every device records the same occurrence under the same id; recording it
+    // must never beat a real edit or delete made elsewhere.
+    addedAt: (tx) =>
+      isRecurringOccurrence(tx, useRecurringStore.getState().recurrings) ? OLDEST_EDITED_AT : undefined,
+  }),
   arrayKind({ kind: 'category', store: useCategoryStore, field: 'categories' }),
   arrayKind({ kind: 'budget', store: useBudgetStore, field: 'budgets' }),
   arrayKind({ kind: 'goal', store: useGoalStore, field: 'goals' }),

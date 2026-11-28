@@ -30,9 +30,10 @@ export interface SyncKindAdapter {
   /**
    * Starts reporting local edits as they happen; returns an unsubscribe.
    * Edits made inside `apply` are ignored by the engine, so applying a pull
-   * never queues a push.
+   * never queues a push. `editedAt` overrides the edit time (default: now),
+   * e.g. the oldest possible time for a record any real edit should beat.
    */
-  watch?(onChange: (id: string, data: RecordData | null) => void): () => void
+  watch?(onChange: (id: string, data: RecordData | null, editedAt?: string) => void): () => void
 }
 
 /**
@@ -52,8 +53,11 @@ export type SyncStatus = {
 export type SyncEngine = {
   /** Binds a record kind to its store; returns a function that unbinds it. */
   register(adapter: SyncKindAdapter): () => void
-  /** Queues a local change made at the engine's clock time (`data: null` = delete). */
-  record(kind: string, id: string, data: RecordData | null): void
+  /**
+   * Queues a local change made at the engine's clock time, or at `editedAt`
+   * when given (`data: null` = delete).
+   */
+  record(kind: string, id: string, data: RecordData | null, editedAt?: string): void
   /** Push the queue, then pull. Never rejects; the outcome is in `getStatus()`. */
   sync(): Promise<void>
   getStatus(): SyncStatus
@@ -75,8 +79,9 @@ export const SYNC_ENGINE_KEYS = {
   uploadedKinds: 'finance-sync-uploaded-kinds',
 } as const
 
-/** Edit time given to records uploaded from pre-sync local data: any real edit on the server wins. */
-const PRE_SYNC_EDITED_AT = new Date(0).toISOString()
+/** Edit time any real edit beats, e.g. for records uploaded from pre-sync local data. */
+export const OLDEST_EDITED_AT = new Date(0).toISOString()
+const PRE_SYNC_EDITED_AT = OLDEST_EDITED_AT
 
 class ServerRefused extends Error {}
 
@@ -132,11 +137,11 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
     if (left.length !== queue.length) writeQueue(left)
   }
 
-  function record(kind: string, id: string, data: RecordData | null) {
+  function record(kind: string, id: string, data: RecordData | null, editedAt?: string) {
     if (applying) return
     // Store the record as JSON would send it (drops undefined fields).
     const plain = data === null ? null : (JSON.parse(JSON.stringify(data)) as RecordData)
-    enqueue({ kind, id, editedAt: new Date(now()).toISOString(), data: plain } as SyncChange)
+    enqueue({ kind, id, editedAt: editedAt ?? new Date(now()).toISOString(), data: plain } as SyncChange)
   }
 
   function applyRecords(records: SyncRecord[]) {
@@ -252,7 +257,7 @@ export function createSyncEngine({ fetch: fetchImpl, storage, now = Date.now }: 
   return {
     register(adapter) {
       adapters.set(adapter.kind, adapter)
-      const stop = adapter.watch?.((id, data) => record(adapter.kind, id, data))
+      const stop = adapter.watch?.((id, data, editedAt) => record(adapter.kind, id, data, editedAt))
       return () => {
         stop?.()
         if (adapters.get(adapter.kind) === adapter) adapters.delete(adapter.kind)

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { financeBudgets, financeCategories, financeDebts, financeGoals } from '@/db/schema'
+import { financeBudgets, financeCategories, financeDebts, financeGoals, financeTransactions } from '@/db/schema'
 import { foodFlagFrom } from '@/lib/foodCategory'
 import { normalizeDebt } from '@/lib/debtRecord'
 import type { OwnTableKind } from './contract'
@@ -21,7 +21,12 @@ export type ClientRecord = Record<string, unknown>
 /** Column values keyed by the drizzle field name (not the SQL name). */
 export type RowValues = Record<string, unknown>
 
-export type SyncedTable = typeof financeCategories | typeof financeBudgets | typeof financeGoals | typeof financeDebts
+export type SyncedTable =
+  | typeof financeCategories
+  | typeof financeBudgets
+  | typeof financeGoals
+  | typeof financeDebts
+  | typeof financeTransactions
 
 export type TableKind = {
   table: SyncedTable
@@ -37,6 +42,13 @@ export type TableKind = {
    * server never had: the tombstone still has to be stored.
    */
   emptyRow: RowValues
+  /**
+   * Values written only when the row is first created (e.g. where it came
+   * from); an edit from a device never replaces them.
+   */
+  insertOnly?: RowValues
+  /** Whether the table can hold a record with this id (default: any). */
+  acceptsId?(id: string): boolean
 }
 
 const text = (v: unknown): string | null => (typeof v === 'string' ? v : null)
@@ -168,8 +180,59 @@ const debt: TableKind = {
   emptyRow: { person: '', type: 'I_OWE', originalAmount: '0', remainingAmount: '0' },
 }
 
-/**
- * Every own-table kind. #30 adds `transaction` here (plus its name in
- * `OWN_TABLE_KINDS` and `syncColumns` on `finance_transactions`).
- */
-export const TABLE_KINDS: Record<OwnTableKind, TableKind> = { category, budget, goal, debt }
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TRANSACTION_TYPES = new Set(['INCOME', 'EXPENSE', 'TRANSFER'])
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+/** App dates are Thai local days; a row without one (from the bot) takes the day it happened in Bangkok. */
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000
+const bangkokDay = (v: unknown): string =>
+  new Date(new Date(String(v instanceof Date ? v.toISOString() : v)).getTime() + BANGKOK_OFFSET_MS)
+    .toISOString()
+    .slice(0, 10)
+
+const transaction: TableKind = {
+  table: financeTransactions,
+  // The id column is uuid: any other id would fail the whole push.
+  acceptsId: (id) => UUID.test(id),
+  toRow(d) {
+    const type = typeof d.type === 'string' && TRANSACTION_TYPES.has(d.type) ? d.type : null
+    const value = typeof d.amount === 'number' && Number.isFinite(d.amount) ? d.amount : NaN
+    const date = typeof d.date === 'string' && DATE_KEY.test(d.date) ? d.date : null
+    const categoryId = nonEmpty(d.categoryId)
+    // The table only holds positive amounts (CHECK amount > 0, two decimals).
+    if (!type || !(Math.round(value * 100) > 0) || !date || !categoryId || typeof d.description !== 'string') return null
+    return {
+      transactionType: type,
+      amount: value.toFixed(2),
+      description: d.description,
+      categoryId,
+      date,
+      occurredAt: new Date(`${date}T12:00:00Z`),
+      note: text(d.note),
+      tags: Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === 'string') : null,
+      transferKind: text(d.transferKind),
+      linkedInvestmentOrderId: text(d.linkedInvestmentOrderId),
+      createdAt: time(d.createdAt) ?? new Date(),
+    }
+  },
+  toRecord: (r) =>
+    compact({
+      id: r.id,
+      categoryId: r.categoryId ?? 'uncategorized',
+      type: r.transactionType,
+      amount: Number(r.amount),
+      description: r.description,
+      note: r.note,
+      tags: r.tags,
+      linkedInvestmentOrderId: r.linkedInvestmentOrderId,
+      transferKind: r.transferKind,
+      date: r.date ?? bangkokDay(r.occurredAt),
+      createdAt: iso(r.createdAt),
+    }),
+  emptyRow: { transactionType: 'EXPENSE', amount: '0.01', description: '' },
+  // Rows from the bot keep their source and message id when edited in the app.
+  insertOnly: { source: 'app', sourceMessageId: 'sync' },
+}
+
+/** Every own-table kind. */
+export const TABLE_KINDS: Record<OwnTableKind, TableKind> = { category, budget, goal, debt, transaction }

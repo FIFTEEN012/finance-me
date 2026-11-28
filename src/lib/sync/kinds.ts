@@ -21,8 +21,13 @@ export function arrayKind<S, F extends keyof S>(opts: {
   kind: string
   store: StoreApi<S>
   field: F & (S[F] extends WithId[] ? F : never)
+  /**
+   * Edit time for a newly added item instead of now, e.g. `OLDEST_EDITED_AT`
+   * for an item any real edit or delete elsewhere should beat.
+   */
+  addedAt?: (item: S[F] extends (infer T)[] ? T : never) => string | undefined
 }): SyncKindAdapter {
-  const { kind, store, field } = opts
+  const { kind, store, field, addedAt } = opts
   const itemsOf = (state: S) => (state[field] as unknown as WithId[]) ?? []
 
   return {
@@ -53,7 +58,10 @@ export function arrayKind<S, F extends keyof S>(opts: {
         const nextIds = new Set<string>()
         for (const item of next) {
           nextIds.add(item.id)
-          if (prevById.get(item.id) !== item) onChange(item.id, item as unknown as RecordData)
+          const old = prevById.get(item.id)
+          if (old === item) continue
+          const editedAt = old === undefined ? addedAt?.(item as never) : undefined
+          onChange(item.id, item as unknown as RecordData, editedAt)
         }
         for (const item of before) if (!nextIds.has(item.id)) onChange(item.id, null)
       })

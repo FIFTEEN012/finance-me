@@ -293,7 +293,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
   }
 
   const handleImport = () => {
-    const toImport = parsedRows.filter((r) => r.include && r.date && r.amount !== null && r.categoryId)
+    const toImport = parsedRows.filter((r) => r.include && r.date && r.amount !== null && r.amount > 0 && r.categoryId)
     if (toImport.length === 0) { toast.error('ไม่มีรายการที่เลือก'); return }
 
     for (const row of toImport) {
@@ -309,7 +309,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
     handleClose(false)
   }
 
-  const validCount = parsedRows.filter((r) => r.include && r.date && r.amount !== null && r.categoryId).length
+  const validCount = parsedRows.filter((r) => r.include && r.date && r.amount !== null && r.amount > 0 && r.categoryId).length
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

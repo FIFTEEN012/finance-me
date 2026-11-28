@@ -8,7 +8,7 @@ import {
   financeGoals,
   financeDebts,
 } from "@/db/schema";
-import { and, eq, desc, isNull } from "drizzle-orm";
+import { and, eq, desc, isNull, sql } from "drizzle-orm";
 import { foodFlagFrom } from "@/lib/foodCategory";
 import { normalizeDebt } from "@/lib/debtRecord";
 
@@ -35,7 +35,7 @@ export async function GET() {
       db
         .select()
         .from(financeTransactions)
-        .where(eq(financeTransactions.ownerId, user.id))
+        .where(and(eq(financeTransactions.ownerId, user.id), isNull(financeTransactions.deletedAt)))
         .orderBy(desc(financeTransactions.occurredAt)),
       db
         .select()
@@ -208,10 +208,13 @@ export async function POST(request: Request) {
             date: tx.date || new Date().toISOString().split("T")[0],
             source: "neon-sync",
             sourceMessageId: "sync",
-            updatedAt: new Date(),
+            editedAt: new Date(),
+            updatedAt: sql`now()`,
           })
           .onConflictDoUpdate({
             target: [financeTransactions.ownerId, financeTransactions.id],
+            // A deleted transaction stays deleted (ADR-0003).
+            setWhere: isNull(financeTransactions.deletedAt),
             set: {
               transactionType: txType,
               amount: String(amountNum),
@@ -223,7 +226,8 @@ export async function POST(request: Request) {
               transferKind: tx.transferKind || null,
               linkedInvestmentOrderId: tx.linkedInvestmentOrderId || null,
               date: tx.date || new Date().toISOString().split("T")[0],
-              updatedAt: new Date(),
+              editedAt: new Date(),
+              updatedAt: sql`now()`,
             },
           });
       }

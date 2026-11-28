@@ -117,7 +117,8 @@ async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: Ta
   const t = spec.table
   const editedAt = new Date(change.editedAt)
   const deleted = change.data === null
-  const row = deleted ? spec.emptyRow : spec.toRow(change.data!)
+  const usableId = spec.acceptsId?.(change.id) ?? true
+  const row = !usableId ? null : deleted ? spec.emptyRow : spec.toRow(change.data!)
 
   let written: unknown[] = []
   if (row) {
@@ -129,6 +130,7 @@ async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: Ta
     written = await tx
       .insert(t)
       .values({
+        ...spec.insertOnly,
         ...row,
         ownerId,
         id: change.id,
@@ -150,6 +152,7 @@ async function pushToTable(tx: Tx, ownerId: string, change: SyncChange, spec: Ta
   }
   if (written.length > 0) return { kind: change.kind, id: change.id, status: 'accepted' }
 
+  if (!usableId) return { kind: change.kind, id: change.id, status: 'rejected' }
   const [current] = (await tx
     .select()
     .from(t)

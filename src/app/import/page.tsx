@@ -244,7 +244,8 @@ export default function ImportPage() {
 
   async function doImport() {
     setImporting(true)
-    const selected = rows.filter((r) => r.selected)
+    // The server only keeps amounts above zero.
+    const selected = rows.filter((r) => r.selected && r.amount > 0)
     let count = 0
 
     for (const row of selected) {

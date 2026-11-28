@@ -40,7 +40,7 @@ export const SHARED_TABLE_KINDS = [
  * in `TABLE_KINDS` (`src/lib/sync/tableKinds.ts`) and an adapter in
  * `appKinds.ts`.
  */
-export const OWN_TABLE_KINDS = ['category', 'budget', 'goal', 'debt'] as const
+export const OWN_TABLE_KINDS = ['category', 'budget', 'goal', 'debt', 'transaction'] as const
 export type OwnTableKind = (typeof OWN_TABLE_KINDS)[number]
 
 /** Every kind the server accepts; it refuses kinds not listed here. */

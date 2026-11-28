@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransactionStore } from '@/store/useTransactionStore'
+import { getAppSyncEngine } from '@/lib/sync/appEngine'
 import { useAuthStore } from '@/store/useAuthStore'
 
 export const FINANCE_DIRTY_EVENT = 'finance:store-dirty'
@@ -25,65 +25,27 @@ export function triggerSyncNow() {
 }
 
 /**
- * Push all local store items to Neon PostgreSQL via /api/sync
+ * Runs the sync engine once (push queued changes, then pull). All User Data,
+ * transactions included, syncs through it now (src/lib/sync/appKinds.ts); the
+ * old /api/sync round trip would overwrite the engine's records.
  */
-export async function pushToNeon(): Promise<SyncResult> {
-  try {
-    // Categories, budgets, goals and debts sync through the sync engine
-    // (src/lib/sync/appKinds.ts); only transactions still go this way.
-    const transactions = useTransactionStore.getState().transactions
-
-    const res = await fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactions }),
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      return { ok: false, error: err.error || 'Failed to sync with Neon' }
-    }
-
-    return { ok: true }
-  } catch (err: any) {
-    return { ok: false, error: err?.message || 'Network error during sync' }
-  }
+async function syncEngineOnce(): Promise<SyncResult> {
+  const engine = getAppSyncEngine()
+  await engine.sync()
+  const status = engine.getStatus()
+  if (status.state === 'error') return { ok: false, error: 'ซิงก์ข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง' }
+  if (status.state === 'pending') return { ok: false, error: 'ยังเชื่อมต่อเซิร์ฟเวอร์ไม่ได้ จะซิงก์ให้เมื่อออนไลน์' }
+  return { ok: true }
 }
 
-/**
- * Pull all data from Neon PostgreSQL via /api/sync and merge into local stores
- */
+/** Uploads local changes (through the sync engine). */
+export async function pushToNeon(): Promise<SyncResult> {
+  return syncEngineOnce()
+}
+
+/** Downloads everyone else's changes (through the sync engine). */
 export async function pullFromNeon(): Promise<SyncResult> {
-  try {
-    const res = await fetch('/api/sync', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      return { ok: false, error: err.error || 'Failed to pull from Neon' }
-    }
-
-    const data = await res.json()
-    setIsApplyingNeonData(true)
-
-    try {
-      // 1. Transactions Merge: server items + local items not yet in server
-      if (Array.isArray(data.transactions)) {
-        const localTx = useTransactionStore.getState().transactions
-        const serverTxIds = new Set(data.transactions.map((t: any) => t.id))
-        const unpushedLocal = localTx.filter((t) => !serverTxIds.has(t.id))
-        useTransactionStore.getState().replaceTransactions([...data.transactions, ...unpushedLocal])
-      }
-
-      return { ok: true }
-    } finally {
-      setIsApplyingNeonData(false)
-    }
-  } catch (err: any) {
-    return { ok: false, error: err?.message || 'Network error during pull' }
-  }
+  return syncEngineOnce()
 }
 
 /**

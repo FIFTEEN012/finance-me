@@ -35,6 +35,8 @@ import * as goalsRoute from "@/app/api/goals/route";
 import * as goalRoute from "@/app/api/goals/[id]/route";
 import * as debtsRoute from "@/app/api/debts/route";
 import * as debtRoute from "@/app/api/debts/[id]/route";
+import * as transactionsRoute from "@/app/api/transactions/route";
+import * as transactionRoute from "@/app/api/transactions/[id]/route";
 import { createTestDb, insertUser, integrationDbUrl, type TestDb } from "@/test/pgTestDb";
 import { createAppDevice, createDevice, type DeviceNetwork, type Item } from "@/test/syncDevices";
 import { APP_SYNC_KINDS } from "@/lib/sync/appKinds";
@@ -119,6 +121,18 @@ const debt = asItem({
   updatedAt: "2026-11-26T00:00:00.000Z",
 });
 
+const transaction = asItem({
+  id: "77777777-7777-4777-8777-777777777777",
+  categoryId: "cat-expense-1",
+  type: "EXPENSE",
+  amount: 120.5,
+  description: "ข้าวมันไก่",
+  note: "กับเพื่อน",
+  tags: ["อาหาร"],
+  date: "2026-11-20",
+  createdAt: "2026-11-20T05:00:00.000Z",
+});
+
 type EntityRoute = {
   GET: () => Promise<Response>;
 };
@@ -151,6 +165,12 @@ const KINDS = [
     record: debt,
     rename: { personName: "สมชาย ใจดี" },
     api: { list: debtsRoute, item: debtRoute, key: "debts", put: { person: "สมชาย ใจดี" } },
+  },
+  {
+    kind: "transaction",
+    record: transaction,
+    rename: { description: "ข้าวมันไก่ไข่ต้ม" },
+    api: { list: transactionsRoute, item: transactionRoute, key: "transactions", put: { description: "ข้าวมันไก่ไข่ต้ม" } },
   },
 ] as const satisfies readonly {
   kind: string;
@@ -194,6 +214,23 @@ describe.skipIf(!integrationDbUrl())("Table-backed kinds sync across devices", (
     await b.engine.sync();
 
     expect(b.items()).toEqual([goal]);
+    expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
+  });
+
+  it("refuses transactions the table cannot hold (non-uuid id, amount not above zero) without holding up the others", async () => {
+    const a = createDevice(network, ALICE, { kind: "transaction" });
+    const b = createDevice(network, ALICE, { kind: "transaction" });
+    a.add(asItem({ ...transaction, id: "not-a-uuid" }));
+    a.add(asItem({ ...transaction, id: "99999999-9999-4999-8999-999999999999", amount: 0 }));
+    a.add(asItem({ ...transaction, id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", amount: -10 }));
+    a.add(transaction);
+    await a.engine.sync();
+    a.tick(1_000);
+    a.remove("not-a-uuid");
+    await a.engine.sync();
+    await b.engine.sync();
+
+    expect(b.items()).toEqual([transaction]);
     expect(a.engine.getStatus()).toMatchObject({ state: "synced", pending: 0 });
   });
 
