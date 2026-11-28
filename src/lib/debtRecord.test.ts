@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { debtToDatabasePayload, normalizeDebt } from './debtRecord'
+import { normalizeDebt } from './debtRecord'
 
 const remote = {
   id: 'debt-1', person: 'สมชาย', type: 'I_OWE',
@@ -27,7 +27,6 @@ describe('debt record sync', () => {
     expect(debt.paidAmount).toBe(800)
     expect(debt.payments).toEqual([payment])
     expect(debt.startDate).toBe('2026-08-30')
-    expect(debtToDatabasePayload(debt).remainingAmount).toBe(4200)
   })
 
   it('uses server repayment state when it is newer', () => {

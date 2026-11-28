@@ -26,7 +26,6 @@ vi.mock("@/lib/server-auth", () => ({
 }));
 
 import * as changesRoute from "@/app/api/sync/changes/route";
-import * as oldSyncRoute from "@/app/api/sync/route";
 import * as categoriesRoute from "@/app/api/categories/route";
 import * as categoryRoute from "@/app/api/categories/[id]/route";
 import * as budgetsRoute from "@/app/api/budgets/route";
@@ -52,6 +51,7 @@ import { useDebtStore } from "@/store/useDebtStore";
  */
 
 const ALICE = "user-alice";
+const BOB = "user-bob";
 
 const network: DeviceNetwork = {
   route: changesRoute,
@@ -359,23 +359,23 @@ describe.skipIf(!integrationDbUrl())("Table-backed kinds sync across devices", (
       expect(stale.items()).toEqual([]);
     });
 
-    it("is neither listed nor brought back by the old /api/sync once deleted", async () => {
-      const a = createDevice(network, ALICE, { kind });
-      a.add(record);
-      await a.engine.sync();
-      a.tick(1_000);
-      a.remove(record.id);
-      await a.engine.sync();
+    it("is untouched when another account syncs a record with the same id", async () => {
+      await insertUser(t!.db, BOB);
+      const alice = createDevice(network, ALICE, { kind });
+      alice.add(record);
+      await alice.engine.sync();
 
-      holder.currentUserId = ALICE;
-      expect((await (await oldSyncRoute.GET()).json())[api.key]).toEqual([]);
-      const post = await oldSyncRoute.POST(jsonRequest("POST", { [api.key]: [record] }));
-      expect(post.status).toBe(200);
-      expect((await (await oldSyncRoute.GET()).json())[api.key]).toEqual([]);
+      const bob = createDevice(network, BOB, { kind });
+      bob.tick(1_000);
+      bob.add({ ...record, ...rename });
+      await bob.engine.sync();
+      bob.tick(1_000);
+      bob.remove(record.id);
+      await bob.engine.sync();
 
-      const b = createDevice(network, ALICE, { kind });
-      await b.engine.sync();
-      expect(b.items()).toEqual([]);
+      const aliceAgain = createDevice(network, ALICE, { kind });
+      await aliceAgain.engine.sync();
+      expect(aliceAgain.items()).toEqual([record]);
     });
 
     it("reaches other devices when changed through the old per-item PUT", async () => {

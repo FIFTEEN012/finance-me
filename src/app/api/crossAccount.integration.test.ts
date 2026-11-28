@@ -43,7 +43,7 @@ import * as debtsRoute from "@/app/api/debts/route";
 import * as debtRoute from "@/app/api/debts/[id]/route";
 import * as transactionsRoute from "@/app/api/transactions/route";
 import * as transactionRoute from "@/app/api/transactions/[id]/route";
-import { GET as syncGET, POST as syncPOST } from "@/app/api/sync/route";
+import * as changesRoute from "@/app/api/sync/changes/route";
 import { createTestDb, insertUser, integrationDbUrl, type TestDb } from "@/test/pgTestDb";
 
 const A = "user-a";
@@ -74,9 +74,6 @@ type Resource = {
   };
   /** Field in the stored row that `createBody` derives from `tag`. */
   tagField: string;
-  /** Extra fields for a /api/sync re-upload, and what the stored row must then contain. */
-  syncPatch: Record<string, unknown>;
-  syncExpect: Record<string, unknown>;
   fetchRow: (owner: string, id: string) => Promise<Row | undefined>;
 };
 
@@ -93,8 +90,6 @@ const resources: Resource[] = [
     otherId: "cat-b-only",
     createBody: (id, tag) => ({ id, name: tag, type: "EXPENSE" }),
     updateBody: { name: "changed by B" },
-    syncPatch: {},
-    syncExpect: { name: "synced by A" },
     collection: categoriesRoute,
     item: categoryRoute,
     tagField: "name",
@@ -116,8 +111,6 @@ const resources: Resource[] = [
     otherId: "budget-b-only",
     createBody: (id, tag) => ({ id, categoryId: tag, amount: 100, month: 1, year: 2026 }),
     updateBody: { amount: 999 },
-    syncPatch: { amount: 250 },
-    syncExpect: { amount: "250.00" },
     collection: budgetsRoute,
     item: budgetRoute,
     tagField: "categoryId",
@@ -139,8 +132,6 @@ const resources: Resource[] = [
     otherId: "goal-b-only",
     createBody: (id, tag) => ({ id, name: tag, targetAmount: 100 }),
     updateBody: { name: "changed by B" },
-    syncPatch: {},
-    syncExpect: { name: "synced by A" },
     collection: goalsRoute,
     item: goalRoute,
     tagField: "name",
@@ -162,8 +153,6 @@ const resources: Resource[] = [
     otherId: "debt-b-only",
     createBody: (id, tag) => ({ id, person: tag, originalAmount: 100 }),
     updateBody: { person: "changed by B" },
-    syncPatch: {},
-    syncExpect: { person: "synced by A" },
     collection: debtsRoute,
     item: debtRoute,
     tagField: "person",
@@ -192,9 +181,8 @@ const resources: Resource[] = [
       date: "2026-01-15",
     }),
     updateBody: { description: "changed by B" },
-    syncPatch: {},
-    syncExpect: { description: "synced by A" },
-    collection: transactionsRoute,
+    // The app creates transactions through the sync engine only (no POST /api/transactions).
+    collection: { GET: transactionsRoute.GET, POST: createTransactionThroughSync },
     item: transactionRoute,
     tagField: "description",
     fetchRow: async (owner, id) =>
@@ -213,6 +201,26 @@ function jsonRequest(method: string, body?: unknown): Request {
     headers: { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+}
+
+/**
+ * Creates the transaction in a create request's body through
+ * /api/sync/changes, answering like a collection POST: 201 with the stored row.
+ */
+async function createTransactionThroughSync(req: Request): Promise<Response> {
+  const tx = (await req.json()) as { id: string };
+  const res = await changesRoute.POST(
+    jsonRequest("POST", {
+      changes: [{ kind: "transaction", id: tx.id, editedAt: new Date().toISOString(), data: tx }],
+    }),
+  );
+  const { results } = (await res.json()) as { results: { status: string }[] };
+  if (!res.ok || results[0]?.status !== "accepted") return Response.json({ results }, { status: 400 });
+  const [row] = await t.db
+    .select()
+    .from(financeTransactions)
+    .where(and(eq(financeTransactions.ownerId, holder.currentUserId!), eq(financeTransactions.id, tx.id)));
+  return Response.json({ transaction: row }, { status: 201 });
 }
 
 function ctx(id: string): Ctx {
@@ -301,47 +309,14 @@ describe.skipIf(!integrationDbUrl())("cross-account access through the API route
     expect((await r.fetchRow(B, r.sharedId))?.[r.tagField]).toBe("owned by B");
   });
 
-  it.each(table)("%s: sync POST by B with A's id leaves A's row unchanged", async (_name, r) => {
-    expect((await createAs(A, r, r.sharedId, "owned by A")).status).toBe(201);
-    const before = await r.fetchRow(A, r.sharedId);
-
-    holder.currentUserId = B;
-    const res = await syncPOST(jsonRequest("POST", { [r.listKey]: [r.createBody(r.sharedId, "owned by B")] }));
-    expect(res.status).toBe(200);
-
-    expect(await r.fetchRow(A, r.sharedId)).toEqual(before);
-    expect((await r.fetchRow(B, r.sharedId))?.[r.tagField]).toBe("owned by B");
-  });
-
-  it.each(table)("%s: sync POST upserts the caller's own row in place", async (_name, r) => {
-    expect((await createAs(A, r, r.sharedId, "owned by A")).status).toBe(201);
-    expect((await createAs(B, r, r.sharedId, "owned by B")).status).toBe(201);
-    const bBefore = await r.fetchRow(B, r.sharedId);
-
-    holder.currentUserId = A;
-    const item = { ...r.createBody(r.sharedId, "synced by A"), ...r.syncPatch };
-    const res = await syncPOST(jsonRequest("POST", { [r.listKey]: [item] }));
-    expect(res.status).toBe(200);
-
-    expect(await r.fetchRow(A, r.sharedId)).toMatchObject({ ownerId: A, id: r.sharedId, ...r.syncExpect });
-    expect(await r.fetchRow(B, r.sharedId)).toEqual(bBefore);
-  });
-
-  it("new user gets empty data from GET /api/sync", async () => {
+  it("new user pulls nothing from /api/sync/changes", async () => {
     for (const r of resources) {
       expect((await createAs(A, r, r.sharedId, "owned by A")).status).toBe(201);
     }
 
     holder.currentUserId = B;
-    const res = await syncGET();
+    const res = await changesRoute.GET(new Request("http://localhost/api/sync/changes"));
     expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data).toMatchObject({
-      transactions: [],
-      categories: [],
-      budgets: [],
-      goals: [],
-      debts: [],
-    });
+    expect((await res.json()).records).toEqual([]);
   });
 });

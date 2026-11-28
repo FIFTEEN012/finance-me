@@ -62,9 +62,9 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
   })
 
   it("clears the previous owner's persisted data when a different user signs in", async () => {
-    const { SYNC_STORE_KEYS } = await import('./cloudSync')
+    const { PERSISTED_STORE_KEYS } = await import('./persistedStores')
     data.set('finance-owner-id', 'user-a')
-    for (const key of SYNC_STORE_KEYS) {
+    for (const key of PERSISTED_STORE_KEYS) {
       data.set(key, '{"state":{},"version":0}')
       data.set(`${key}__synced_at`, '1')
       data.set(`${key}__modified_at`, '2')
@@ -76,7 +76,7 @@ describe('localOwner - ensureLocalDataBelongsTo', () => {
     expect(ensureLocalDataBelongsTo('user-b')).toBe(true)
 
     const devicePreferences = ['finance-dashboard-layout', 'finance-onboarding']
-    for (const key of SYNC_STORE_KEYS) {
+    for (const key of PERSISTED_STORE_KEYS) {
       if (devicePreferences.includes(key)) {
         expect(data.has(key), key).toBe(true)
         continue

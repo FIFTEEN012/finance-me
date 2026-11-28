@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from "zustand/vanilla";
+import { createJSONStorage, persist } from "zustand/middleware";
 import {
   createSyncEngine,
   type SyncEngine,
@@ -43,6 +44,8 @@ export type Item = { id: string; name: string; [key: string]: unknown };
 
 export type Device = {
   engine: SyncEngine;
+  /** The adapter binding `store` to the engine. */
+  adapter: SyncKindAdapter;
   store: StoreApi<{ items: Item[] }>;
   storage: ReturnType<typeof memoryStorage>;
   /** Requests this device sent, as "METHOD", in order. */
@@ -71,15 +74,26 @@ export function createDevice(
     items?: Item[];
     /** Record kind this device's items are synced as (default "supply"). */
     kind?: string;
+    /**
+     * Persist the items in this device's storage under this key, like the
+     * app's persisted stores (`store.persist.rehydrate()` re-reads them).
+     */
+    persistKey?: string;
   } = {},
 ): Device {
   let clock = opts.startAt ?? Date.parse("2026-11-26T00:00:00Z");
   const storage = opts.storage ?? memoryStorage();
-  const store = createStore<{ items: Item[] }>(() => ({ items: opts.items ?? [] }));
+  const initial = () => ({ items: opts.items ?? [] });
+  const store = opts.persistKey
+    ? createStore<{ items: Item[] }>()(
+        persist(initial, { name: opts.persistKey, storage: createJSONStorage(() => storage) }),
+      )
+    : createStore<{ items: Item[] }>(initial);
   const requests: string[] = [];
 
   const device: Device = {
     engine: undefined as unknown as SyncEngine,
+    adapter: arrayKind({ kind: opts.kind ?? "supply", store, field: "items" }),
     store,
     storage,
     requests,
@@ -109,7 +123,7 @@ export function createDevice(
     storage,
     now: () => clock,
   });
-  device.engine.register(arrayKind({ kind: opts.kind ?? "supply", store, field: "items" }));
+  device.engine.register(device.adapter);
   const account = createDeviceAccount({
     storage,
     engine: device.engine,

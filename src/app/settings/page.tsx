@@ -30,6 +30,7 @@ import { useCategoryStore } from '@/store/useCategoryStore'
 import { useGoalStore } from '@/store/useGoalStore'
 import { useDebtStore } from '@/store/useDebtStore'
 import { resetUserData } from '@/lib/sync/reset'
+import { countItems, downloadBackup, importBackup, parseBackup, type BackupFile } from '@/lib/backupFile'
 import { getAppSyncEngine } from '@/lib/sync/appEngine'
 import { clearLocalUserData } from '@/lib/localOwner'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -62,16 +63,6 @@ const CURRENCY_OPTIONS: { value: CurrencyCode; label: string; symbol: string }[]
   { value: 'GBP', label: 'ปอนด์อังกฤษ',    symbol: '£'  },
 ]
 
-interface BackupData {
-  version: number
-  exportedAt: string
-  transactions: any[]
-  budgets: any[]
-  categories: any[]
-  goals?: any[]
-  debts?: any[]
-}
-
 type TabKey = 'account' | 'appearance' | 'data'
 
 export default function SettingsPage() {
@@ -83,15 +74,15 @@ export default function SettingsPage() {
   const user = useAuthStore((state) => state.user)
   const { data: session } = authClient.useSession()
 
-  const { transactions, replaceTransactions } = useTransactionStore()
-  const { budgets, replaceBudgets } = useBudgetStore()
-  const { categories, replaceCategories } = useCategoryStore()
+  const transactions = useTransactionStore((s) => s.transactions)
+  const budgets = useBudgetStore((s) => s.budgets)
+  const categories = useCategoryStore((s) => s.categories)
   const goals = useGoalStore((s) => s.goals)
   const debts = useDebtStore((s) => s.debts)
 
   // Dialogs & Import state
   const fileRef = useRef<HTMLInputElement>(null)
-  const [importData, setImportData] = useState<BackupData | null>(null)
+  const [importData, setImportData] = useState<BackupFile | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [resetConfirmText, setResetConfirmText] = useState('')
@@ -129,22 +120,7 @@ export default function SettingsPage() {
 
   /* ── Backup Export ── */
   const handleExport = () => {
-    const data = {
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      transactions,
-      budgets,
-      categories,
-      goals,
-      debts,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `financeme-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBackup()
     toast.success('ส่งออกไฟล์ข้อมูลสำรองสำเร็จ')
   }
 
@@ -156,32 +132,7 @@ export default function SettingsPage() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       try {
-        const raw = JSON.parse(ev.target?.result as string)
-        let normalized: BackupData | null = null
-
-        if (raw && typeof raw === 'object' && raw.stores && typeof raw.stores === 'object') {
-          const s = raw.stores as Record<string, any>
-          normalized = {
-            version: raw.version || 2,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            transactions: s['finance-transactions']?.state?.transactions || [],
-            budgets: s['finance-budgets']?.state?.budgets || [],
-            categories: s['finance-categories']?.state?.categories || [],
-            goals: s['finance-goals']?.state?.goals || [],
-            debts: s['finance-debts']?.state?.debts || [],
-          }
-        } else if (raw && typeof raw === 'object' && Array.isArray(raw.transactions)) {
-          normalized = {
-            version: raw.version || 1,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            transactions: Array.isArray(raw.transactions) ? raw.transactions : [],
-            budgets: Array.isArray(raw.budgets) ? raw.budgets : [],
-            categories: Array.isArray(raw.categories) ? raw.categories : [],
-            goals: Array.isArray(raw.goals) ? raw.goals : [],
-            debts: Array.isArray(raw.debts) ? raw.debts : [],
-          }
-        }
-
+        const normalized = parseBackup(ev.target?.result as string)
         if (!normalized) {
           toast.error('ไฟล์ไม่ถูกต้อง — ไม่ใช่ไฟล์ backup ของระบบ')
           return
@@ -194,38 +145,17 @@ export default function SettingsPage() {
     reader.readAsText(file)
   }
 
+  // The imported data syncs through the sync engine like any other edit.
   const handleConfirmImport = async () => {
     if (!importData) return
     setIsImporting(true)
     try {
-      if (importData.transactions?.length) {
-        replaceTransactions(importData.transactions as Parameters<typeof replaceTransactions>[0])
-      }
-      if (importData.budgets?.length) {
-        replaceBudgets(importData.budgets as Parameters<typeof replaceBudgets>[0])
-      }
-      if (importData.categories?.length) {
-        replaceCategories(importData.categories as Parameters<typeof replaceCategories>[0])
-      }
-
-      await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactions: importData.transactions || [],
-          budgets: importData.budgets || [],
-          categories: importData.categories || [],
-          goals: importData.goals || [],
-          debts: importData.debts || [],
-        }),
-      })
-
-      toast.success(`นำเข้าและบันทึกฐานข้อมูลสำเร็จ — ${importData.transactions.length} รายการ`)
+      await importBackup(importData)
+      toast.success(`นำเข้าข้อมูลสำเร็จ — ${countItems(importData.stores).transactions} รายการ`)
       setImportData(null)
     } catch (e) {
       console.error(e)
-      toast.success(`นำเข้าสำเร็จ — ${importData.transactions.length} รายการ`)
-      setImportData(null)
+      toast.error('นำเข้าข้อมูลไม่สำเร็จ')
     } finally {
       setIsImporting(false)
     }
@@ -839,13 +769,13 @@ export default function SettingsPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-white/40">รายการธุรกรรม</span>
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {importData.transactions.length}
+                    {countItems(importData.stores).transactions}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-white/40">งบประมาณ</span>
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {importData.budgets.length}
+                    {countItems(importData.stores).budgets}
                   </span>
                 </div>
               </div>
