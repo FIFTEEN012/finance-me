@@ -11,7 +11,6 @@ import { OnboardingWizard } from '@/components/shared/OnboardingWizard'
 import { PwaRegister } from '@/components/shared/PwaRegister'
 import { ThemeApplier } from '@/components/shared/ThemeApplier'
 import { useBudgetAlert } from '@/hooks/useBudgetAlert'
-import { useInitialData } from '@/hooks/useInitialData'
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useOnboardingStore } from '@/store/useOnboardingStore'
@@ -25,15 +24,19 @@ import { cn } from '@/lib/utils'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   useBudgetAlert()
-  const { dataLoaded } = useInitialData()
 
   const { data: session, isPending } = authClient.useSession()
-  useRecurringTransactions(dataLoaded, !!session?.user)
+  // Signed out, the local data is Guest Data and the app works on it as is.
+  // Signed in, the record sync (useRecordSync) claims it for the user first.
   useEffect(() => {
-    if (session?.user) {
-      useAuthStore.getState().setUser(session.user)
-    }
-  }, [session])
+    if (isPending) return
+    const auth = useAuthStore.getState()
+    auth.setUser(session?.user ?? null)
+    auth.setLoading(false)
+  }, [session, isPending])
+  // Persisted stores hydrate from localStorage when created; signed in,
+  // recurring rules generate only after each record sync.
+  useRecurringTransactions(!isPending, !!session?.user)
   useRecordSync(session?.user?.id, ensureLocalDataBelongsTo)
 
   const holdings = useInvestmentStore((state) => state.holdings)

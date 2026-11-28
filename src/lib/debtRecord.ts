@@ -69,16 +69,3 @@ export function normalizeDebt(record: DebtRecord, local?: DebtRecord): DebtItem 
       : dateString(record.updatedAt) ?? createdAt,
   }
 }
-
-export function debtToDatabasePayload(debt: DebtItem) {
-  return {
-    person: debt.personName,
-    type: debt.type,
-    originalAmount: debt.totalAmount,
-    remainingAmount: Math.max(0, debt.totalAmount - debt.paidAmount),
-    dueDate: debt.dueDate ?? null,
-    note: debt.note ?? null,
-    status: debt.isSettled ? 'SETTLED' : 'ACTIVE',
-    payments: debt.payments,
-  }
-}

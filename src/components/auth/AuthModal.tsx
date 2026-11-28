@@ -37,10 +37,9 @@ type FormValues = z.infer<typeof schema>
 interface Props {
   open: boolean
   onOpenChange: (o: boolean) => void
-  forced?: boolean
 }
 
-export function AuthModal({ open, onOpenChange, forced = false }: Props) {
+export function AuthModal({ open, onOpenChange }: Props) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -50,14 +49,6 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
   })
 
   const toggle = () => { setMode((m) => m === 'login' ? 'signup' : 'login'); reset() }
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (forced && !nextOpen) {
-      // Prevent closing when auth is required
-      return
-    }
-    onOpenChange(nextOpen)
-  }
 
   const onSubmit = async (data: FormValues) => {
     setLoading(true)
@@ -101,23 +92,14 @@ export function AuthModal({ open, onOpenChange, forced = false }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="max-w-sm dark:bg-[rgba(8,14,30,0.97)] dark:border-white/[0.08]"
-        showCloseButton={!forced}
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm dark:bg-[rgba(8,14,30,0.97)] dark:border-white/[0.08]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="w-5 h-5 text-emerald-500" />
             {mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'} Neon PostgreSQL
           </DialogTitle>
         </DialogHeader>
-
-        {forced && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 p-2 rounded-lg border border-amber-200 dark:border-amber-500/20">
-            🔒 กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานและบันทึกข้อมูลเข้าสู่ฐานข้อมูลของคุณ
-          </p>
-        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-1">
           {/* Name (for signup only) */}

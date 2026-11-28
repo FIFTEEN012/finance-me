@@ -3,80 +3,17 @@
 import { useRef, useState } from 'react'
 import { Download, Upload, AlertTriangle, Database } from 'lucide-react'
 import { toast } from 'sonner'
-import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { rehydrateAllStores, SYNC_STORE_KEYS } from '@/lib/cloudSync'
-
-const BACKUP_VERSION = 2
-
-/* ── Schema ── */
-const backupSchema = z.object({
-  version:    z.number(),
-  exportedAt: z.string(),
-  stores:     z.record(z.string(), z.unknown()),
-})
-type BackupFile = z.infer<typeof backupSchema>
-
-/* ── Helpers ── */
-function readAllStores(): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  for (const key of SYNC_STORE_KEYS) {
-    const raw = localStorage.getItem(key)
-    out[key] = raw ? JSON.parse(raw) : {}
-  }
-  return out
-}
-
-function writeAllStores(stores: Record<string, unknown>) {
-  for (const key of SYNC_STORE_KEYS) {
-    if (key in stores) {
-      localStorage.setItem(key, JSON.stringify(stores[key]))
-    }
-  }
-}
-
-/* ── Stats helpers ── */
-interface StoreBlob {
-  state?: Record<string, unknown>
-}
-
-export function countItems(stores: Record<string, unknown>) {
-  function len(key: string) {
-    const blob = stores[key] as StoreBlob | undefined
-    const state = blob?.state ?? {}
-    const arr = Object.values(state).find(Array.isArray) as unknown[] | undefined
-    return arr?.length ?? 0
-  }
-
-  return {
-    transactions:   len('finance-transactions'),
-    goals:          len('finance-goals'),
-    investments:    len('finance-investments'),
-    debts:          len('finance-debts'),
-    recurrings:     len('finance-recurring-rules'),
-    supplies:       len('finance-supplies'),
-    nutrition: (() => {
-      const s = (stores['finance-nutrition'] as StoreBlob | undefined)?.state ?? {}
-      return ((s.food as unknown[])?.length ?? 0) + ((s.water as unknown[])?.length ?? 0) + ((s.exercise as unknown[])?.length ?? 0)
-    })(),
-    subscriptions:  len('finance-subscriptions'),
-    bankAccounts:   len('finance-bank-accounts'),
-    billSplits:     len('finance-bill-splits'),
-    netWorthItems: (() => {
-      const s = (stores['finance-networth'] as StoreBlob | undefined)?.state ?? {}
-      return ((s.items as unknown[])?.length ?? 0)
-    })(),
-    // Moves of the in-progress Workout Plan plus those of the unsaved draft.
-    workoutPlan: (() => {
-      const s = (stores['finance-workout-plan'] as StoreBlob | undefined)?.state ?? {}
-      const active = s.active as { plan?: { moves?: unknown[] } } | null | undefined
-      const draft = s.draft as { moves?: unknown[] } | null | undefined
-      return (active?.plan?.moves?.length ?? 0) + (draft?.moves?.length ?? 0)
-    })(),
-  }
-}
+import {
+  backupStoreCount,
+  countItems,
+  downloadBackup,
+  importBackup,
+  parseBackup,
+  type BackupFile,
+} from '@/lib/backupFile'
 
 export function DataManager() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -86,19 +23,7 @@ export function DataManager() {
 
   /* ── Export ── */
   const handleExport = () => {
-    const stores = readAllStores()
-    const backup = {
-      version:    BACKUP_VERSION,
-      exportedAt: new Date().toISOString(),
-      stores,
-    }
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `financeme-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBackup()
     toast.success('ส่งออกข้อมูลสำเร็จ — ครอบคลุมทุก store')
   }
 
@@ -111,31 +36,7 @@ export function DataManager() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       try {
-        const raw = JSON.parse(ev.target?.result as string)
-        let normalized: BackupFile | null = null
-
-        // Check if v2 format (has stores)
-        if (raw && typeof raw === 'object' && raw.stores && typeof raw.stores === 'object') {
-          normalized = {
-            version: raw.version || 2,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            stores: raw.stores,
-          }
-        } else if (raw && typeof raw === 'object' && Array.isArray(raw.transactions)) {
-          // Support v1 format (root arrays)
-          normalized = {
-            version: raw.version || 1,
-            exportedAt: raw.exportedAt || new Date().toISOString(),
-            stores: {
-              'finance-transactions': { state: { transactions: raw.transactions } },
-              'finance-budgets': { state: { budgets: raw.budgets || [] } },
-              'finance-categories': { state: { categories: raw.categories || [] } },
-              'finance-goals': { state: { goals: raw.goals || [] } },
-              'finance-debts': { state: { debts: raw.debts || [] } },
-            },
-          }
-        }
-
+        const normalized = parseBackup(ev.target?.result as string)
         if (!normalized) {
           toast.error('ไฟล์ไม่ถูกต้อง — ไม่ใช่ไฟล์ backup ของ FinanceMe')
           return
@@ -149,61 +50,31 @@ export function DataManager() {
     reader.readAsText(file)
   }
 
+  // The imported data syncs through the sync engine like any other edit.
   const handleConfirmImport = async () => {
     if (!pendingData) return
     setIsImporting(true)
     try {
-      writeAllStores(pendingData.stores as Record<string, unknown>)
-      await rehydrateAllStores()
+      await importBackup(pendingData)
 
-      // Extract entities from stores to push directly to Neon DB
-      const extractItems = (key: string, fieldName: string) => {
-        const blob = (pendingData.stores as any)?.[key]
-        const state = blob?.state ?? {}
-        return Array.isArray(state[fieldName]) ? state[fieldName] : []
-      }
-
-      const txs = extractItems('finance-transactions', 'transactions')
-      const cats = extractItems('finance-categories', 'categories')
-      const budgets = extractItems('finance-budgets', 'budgets')
-      const goals = extractItems('finance-goals', 'goals')
-      const debts = extractItems('finance-debts', 'debts')
-
-      // Persist directly to Neon DB
-      await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactions: txs,
-          categories: cats,
-          budgets: budgets,
-          goals: goals,
-          debts: debts,
-        }),
-      })
-
-      const stats = countItems(pendingData.stores as Record<string, unknown>)
+      const stats = countItems(pendingData.stores)
       toast.success(
-        `นำเข้าและบันทึกฐานข้อมูลสำเร็จ — ${stats.transactions} ธุรกรรม · ${stats.goals} เป้าหมาย · ${stats.investments} หลักทรัพย์ · ${stats.debts} หนี้สิน`,
+        `นำเข้าข้อมูลสำเร็จ — ${stats.transactions} ธุรกรรม · ${stats.goals} เป้าหมาย · ${stats.investments} หลักทรัพย์ · ${stats.debts} หนี้สิน`,
         { duration: 5000 }
       )
       setConfirmOpen(false)
       setPendingData(null)
     } catch (e) {
       console.error(e)
-      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูลลงฐานข้อมูล')
+      toast.error('นำเข้าข้อมูลไม่สำเร็จ')
     } finally {
       setIsImporting(false)
     }
   }
 
   /* ── Backup stats for confirm dialog ── */
-  const stats = pendingData ? countItems(pendingData.stores as Record<string, unknown>) : null
-  const storeCount = pendingData
-    ? Object.keys(pendingData.stores).filter((k) =>
-        SYNC_STORE_KEYS.includes(k as typeof SYNC_STORE_KEYS[number])
-      ).length
-    : 0
+  const stats = pendingData ? countItems(pendingData.stores) : null
+  const storeCount = pendingData ? backupStoreCount(pendingData) : 0
 
   return (
     <>
@@ -267,7 +138,6 @@ export function DataManager() {
                   { label: 'ของใช้',         value: stats.supplies },
                   { label: 'อาหาร น้ำ ออกกำลัง', value: stats.nutrition },
                   { label: 'ท่าในแผนออกกำลังกาย', value: stats.workoutPlan },
-                  { label: 'Net Worth items', value: stats.netWorthItems },
                   { label: 'บิลแบ่งจ่าย',    value: stats.billSplits    },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between">

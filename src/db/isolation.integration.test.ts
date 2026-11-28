@@ -34,8 +34,7 @@ import {
   financeTransactions,
 } from "@/db/schema";
 import { defaultCategories } from "@/lib/defaultCategories";
-import { GET as syncGET, POST as syncPOST } from "@/app/api/sync/route";
-import { POST as importLocalPOST } from "@/app/api/migrate/import-local/route";
+import { GET as changesGET, POST as changesPOST } from "@/app/api/sync/changes/route";
 import { createTestDb, insertUser, integrationDbUrl, type TestDb } from "@/test/pgTestDb";
 
 const A = "user-a";
@@ -48,6 +47,14 @@ function jsonRequest(body: unknown): Request {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+/** Pushes categories through /api/sync/changes as the current user. */
+function pushCategories<C extends { id: string }>(categories: readonly C[]) {
+  const editedAt = new Date().toISOString();
+  return changesPOST(
+    jsonRequest({ changes: categories.map((data) => ({ kind: "category", id: data.id, editedAt, data })) }),
+  );
 }
 
 describe.skipIf(!integrationDbUrl())("multi-user isolation (real Postgres)", () => {
@@ -137,15 +144,13 @@ describe.skipIf(!integrationDbUrl())("multi-user isolation (real Postgres)", () 
     },
   );
 
-  it("sync POST by B with A's default category ids leaves A's rows unchanged", async () => {
+  it("a sync push by B with A's default category ids leaves A's rows unchanged", async () => {
     await t.db.insert(financeCategories).values({
       id: "cat-expense-1", ownerId: A, name: "อาหาร", type: "EXPENSE", ...common,
     });
 
     holder.currentUserId = B;
-    const post = await syncPOST(
-      jsonRequest({ categories: [{ id: "cat-expense-1", name: "ของ B", type: "EXPENSE" }] }),
-    );
+    const post = await pushCategories([{ id: "cat-expense-1", name: "ของ B", type: "EXPENSE", ...common }]);
     expect(post.status).toBe(200);
 
     const [aRow] = await t.db
@@ -154,13 +159,13 @@ describe.skipIf(!integrationDbUrl())("multi-user isolation (real Postgres)", () 
       .where(and(eq(financeCategories.id, "cat-expense-1"), eq(financeCategories.ownerId, A)));
     expect(aRow?.name).toBe("อาหาร");
 
-    const res = await syncGET();
-    const data = await res.json();
-    const bCat = (data.categories as { id: string; name: string }[]).find((c) => c.id === "cat-expense-1");
-    expect(bCat?.name).toBe("ของ B");
+    const res = await changesGET(new Request("http://localhost/api/sync/changes"));
+    const { records } = (await res.json()) as { records: { kind: string; id: string; data: { name: string } }[] };
+    const bCat = records.find((r) => r.kind === "category" && r.id === "cat-expense-1");
+    expect(bCat?.data.name).toBe("ของ B");
   });
 
-  it("import-local by B stores all 14 default categories", async () => {
+  it("a sync push by B stores all 14 default categories", async () => {
     expect(defaultCategories).toHaveLength(14);
     for (const c of defaultCategories) {
       await t.db.insert(financeCategories).values({
@@ -169,7 +174,7 @@ describe.skipIf(!integrationDbUrl())("multi-user isolation (real Postgres)", () 
     }
 
     holder.currentUserId = B;
-    const res = await importLocalPOST(jsonRequest({ categories: defaultCategories }));
+    const res = await pushCategories(defaultCategories);
     expect(res.status).toBe(200);
 
     const bRows = await t.db.select().from(financeCategories).where(eq(financeCategories.ownerId, B));
@@ -181,9 +186,7 @@ describe.skipIf(!integrationDbUrl())("multi-user isolation (real Postgres)", () 
 
   it("ignores an ownerId supplied in the body", async () => {
     holder.currentUserId = B;
-    const res = await syncPOST(
-      jsonRequest({ categories: [{ id: "cat-body-owner", name: "x", type: "EXPENSE", ownerId: A }] }),
-    );
+    const res = await pushCategories([{ id: "cat-body-owner", name: "x", type: "EXPENSE", ...common, ownerId: A }]);
     expect(res.status).toBe(200);
 
     const rows = await t.db

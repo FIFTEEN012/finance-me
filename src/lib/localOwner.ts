@@ -1,6 +1,6 @@
 'use client'
 
-import { SYNC_STORE_KEYS, rehydrateAllStores } from '@/lib/cloudSync'
+import { PERSISTED_STORE_KEYS, rehydrateAllStores } from '@/lib/persistedStores'
 import { useTransactionStore } from '@/store/useTransactionStore'
 import { useBudgetStore } from '@/store/useBudgetStore'
 import { useCategoryStore } from '@/store/useCategoryStore'
@@ -107,8 +107,8 @@ export function clearLocalUserData() {
     }
   }
 
-  // Same naming as clearStoreKey/clearRemovedFeatureStorage in cloudSync.ts.
-  for (const key of SYNC_STORE_KEYS) {
+  // The __synced_at/__modified_at markers were written by the old sync.
+  for (const key of PERSISTED_STORE_KEYS) {
     if (DEVICE_PREFERENCE_KEYS.includes(key)) continue
     safeRemove(key)
     safeRemove(`${key}__synced_at`)
